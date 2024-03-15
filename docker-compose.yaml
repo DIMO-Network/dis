@@ -1,0 +1,52 @@
+version: '3.9'
+services:
+  zookeeper:
+      image: 'wurstmeister/zookeeper:latest'
+      ports:
+        - '2182:2182'
+      environment:
+        - ALLOW_ANONYMOUS_LOGIN=yes
+      # Does not persist anything!
+  kafka:
+    image: 'wurstmeister/kafka:latest'
+    ports:
+      - '9093:9093'
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_LISTENERS=PLAINTEXT://:9091,PLAINTEXT_HOST://:9093
+      - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9091,PLAINTEXT_HOST://localhost:9093
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2182
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    depends_on:
+      - zookeeper
+  clickhouse:
+    image: clickhouse/clickhouse-server
+    user: "101:101"
+    container_name: clickhouse
+    hostname: clickhouse
+    ports:
+      - "8122:8121"
+      - "9001:9000"
+    environment:
+      - CLICKHOUSE_USER=admin
+      - CLICKHOUSE_PASSWORD=password
+      - CLICKHOUSE_HTTP_PORT=8121
+      - CLICKHOUSE_TCP_PORT=9000
+      - CLICKHOUSE_LOG_LEVEL=info
+  vss-stream:
+    image: 'vss-stream:latest'
+    ports:
+      - '4195:4195'
+    container_name: vss-stream
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka
+      - KAFKA_BOOTSTRAP_PORT=9091
+      - DEVICE_STATUS_TOPIC=topic.device.status
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_TCP_PORT=9001
+      - CLICKHOUSE_USER=username
+      - CLICKHOUSE_PASSWORD=password
+    depends_on:
+      - kafka
+      - clickhouse
