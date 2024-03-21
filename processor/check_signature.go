@@ -67,7 +67,6 @@ func (s *signatureProcessor) Process(_ context.Context, msg *service.Message) (s
 		return nil, fmt.Errorf("recovered wrong address %s", recAddr)
 	}
 
-	msg = service.NewMessage([]byte("Signature is valid"))
 	return []*service.Message{msg}, nil
 }
 
