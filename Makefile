@@ -1,5 +1,5 @@
 .PHONY: clean run build install dep test lint format
-BIN_NAME			?= stream-vss
+BIN_NAME			?= benthos-plugin
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin
 DEFAULT_ARCH				:= $(shell go env GOARCH)
 DEFAULT_GOOS				:= $(shell go env GOOS)
