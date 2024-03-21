@@ -1,0 +1,17 @@
+input:
+  stdin:
+    scanner:
+      lines: {}
+buffer:
+  none: {}
+pipeline:
+  threads: -1
+  processors:
+    - check_signature: null # No default (required)
+    - catch:
+      - log:
+          message: "Processing failed due to: ${!error()}"
+output:
+  stdout:
+    codec: lines
+
