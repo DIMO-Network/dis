@@ -1,0 +1,60 @@
+input:
+  label: kafka_input
+  kafka:
+    addresses:
+      - ${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}
+    topics:
+      - '${TRANSFORMED_AUTOPI_EVENTS_TOPIC:topic.device.integration.transformed.autopi.events}'
+    consumer_group: "zone.dimo.export.elastic"
+    client_id: ${CONTAINER_NAME:localhost}-benthos-plugin-events
+    rack_id: ${NODE_NAME:localhost}
+    commit_period: 1s
+    fetch_buffer_cap: 500
+    checkpoint_limit: 500
+
+pipeline:
+  processors:
+    - label: remove_level
+      bloblang: |
+        root = this
+        root.data.level = deleted()
+    # - label: check_sig
+    #   <insert-sig-checker-here>
+
+        
+output:
+  label: "elastic_output"
+  elasticsearch:
+    urls:
+      - ${ELASTICSEARCH_URL:https://dimo.es.us-east-2.aws.elastic-cloud.com:9243}
+    index: device-events-${ENVIRONMENT:dev}-${!timestamp_unix().format_timestamp("2006-01")}
+    action: index
+    id: '${!json("id")}'
+    type: ""
+    sniff: ${ELASTIC_MULTIPLE_NODE:false}
+    healthcheck: true
+    timeout: 5s
+    tls:
+      enabled: true
+      skip_cert_verify: true
+      enable_renegotiation: false
+      root_cas: ""
+      root_cas_file: ""
+      client_certs: []
+    max_in_flight: 10
+    max_retries: 0
+    backoff:
+      initial_interval: 1s
+      max_interval: 5s
+      max_elapsed_time: 30s
+    basic_auth:
+      enabled: true
+      username: ${ELASTICSEARCH_USER:zone.dimo.export.elastic}
+      password: ${ELASTICSEARCH_PASSWORD:password}
+    batching:
+      count: 1000
+      byte_size: 0
+      period: "500ms"
+      check: ""
+      processors: []
+    gzip_compression: true

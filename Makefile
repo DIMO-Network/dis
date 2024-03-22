@@ -40,5 +40,5 @@ format:
 	@golangci-lint run --fix
 
 docker: dep
-	@docker build -f ./Dockerfile . -t dimozone/identity-api:$(VER_CUT)
-	@docker tag dimozone/identity-api:$(VER_CUT) dimozone/identity-api:latest
+	@docker build -f ./Dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
+	@docker tag dimozone/$(BIN_NAME):$(VER_CUT) dimozone/$(BIN_NAME):latest

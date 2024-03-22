@@ -1,4 +1,4 @@
-package vehicle
+package dimovss
 
 import (
 	"context"
