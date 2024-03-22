@@ -30,6 +30,8 @@ github.com/ClickHouse/ch-go v0.61.5 h1:zwR8QbYI0tsMiEcze/uIMK+Tz1D3XZXLdNrlaOpeE
 github.com/ClickHouse/ch-go v0.61.5/go.mod h1:s1LJW/F/LcFs5HJnuogFMta50kKDO0lf9zzfrbl0RQg=
 github.com/ClickHouse/clickhouse-go/v2 v2.21.1 h1:x8wZEMOHDh4K8kLQBtGMeIIguejiaj8/bUiF2VzG6n4=
 github.com/ClickHouse/clickhouse-go/v2 v2.21.1/go.mod h1:hTWNkV9mkQwiQ/df0rbN17VXF05UTResY4krnjbzVZA=
+github.com/DIMO-Network/model-garage v0.0.0-20240321200140-8d7120a55764 h1:v4snUtbSRfZDt5UWqPBk6GgFe1VXXHn9SwAvqvv3KOk=
+github.com/DIMO-Network/model-garage v0.0.0-20240321200140-8d7120a55764/go.mod h1:ptXMgvZoXehZ7VXoVGs6Fl4R2AfNrMVhygR9FT//eY8=
 github.com/IBM/sarama v1.42.2 h1:VoY4hVIZ+WQJ8G9KNY/SQlWguBQXQ9uvFPOnrcu8hEw=
 github.com/IBM/sarama v1.42.2/go.mod h1:FLPGUGwYqEs62hq2bVG6Io2+5n+pS6s/WOXVKWSLFtE=
 github.com/Jeffail/gabs/v2 v2.7.0 h1:Y2edYaTcE8ZpRsR2AtmPu5xQdFDIthFG0jYhu5PY8kg=
@@ -38,8 +40,6 @@ github.com/Jeffail/grok v1.1.0 h1:kiHmZ+0J5w/XUihRgU3DY9WIxKrNQCDjnfAb6bMLFaE=
 github.com/Jeffail/grok v1.1.0/go.mod h1:dm0hLksrDwOMa6To7ORXCuLbuNtASIZTfYheavLpsuE=
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c h1:RGWPOewvKIROun94nF7v2cua9qP+thov/7M50KEoeSU=
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c/go.mod h1:X0CRv0ky0k6m906ixxpzmDRLvX58TFUKS2eePweuyxk=
-github.com/KevinJoiner/model-garage v0.0.0-20240306204732-8580a7864c26 h1:EFC/q3gKlhXOytoDXZBNBsNgj2QggobFZ0IYnpb8Nqk=
-github.com/KevinJoiner/model-garage v0.0.0-20240306204732-8580a7864c26/go.mod h1:miLTqq+s4r5P+v5nwX53cQBwkl/7NqRiKVj2jQW4tNM=
 github.com/Masterminds/squirrel v1.5.4 h1:uUcX/aBc8O7Fg9kaISIUsHXdKuqehiXAMQTYX8afzqM=
 github.com/Masterminds/squirrel v1.5.4/go.mod h1:NNaOrjSoIDfDA40n7sr2tPNZRfjzjA400rg+riTZj10=
 github.com/Microsoft/go-winio v0.6.1 h1:9/kr64B9VUZrLm5YYwbGtUJnMgqWVOdUAXu6Migciow=

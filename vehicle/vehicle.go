@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/KevinJoiner/model-garage/pkg/vss"
+	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/benthosdev/benthos/v4/public/service"
 )
 
@@ -35,11 +35,11 @@ func (*vssProcessor) Process(_ context.Context, msg *service.Message) (service.M
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract message bytes: %w", err)
 	}
-	vehicle, err := vss.FromData(msgBytes, true)
+	dimoStatus, err := vss.FromData(msgBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode vehicle from JSON: %w", err)
+		return nil, fmt.Errorf("failed to decode dimoStatus from JSON: %w", err)
 	}
-	valSlice := vss.VehicleToSlice(vehicle)
+	valSlice := vss.DimoToSlice(dimoStatus)
 	msg.SetStructured(valSlice)
 	return []*service.Message{msg}, nil
 }

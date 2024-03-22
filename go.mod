@@ -1,12 +1,10 @@
-module github.com/KevinJoiner/stream-vss
+module github.com/DIMO-Network/benthos-plugin
 
 go 1.22.0
 
-// replace github.com/KevinJoiner/model-garage => /Users/kevinjoiner/dev/kevinjoiner/model-garage
-
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.21.1
-	github.com/KevinJoiner/model-garage v0.0.0-20240306204732-8580a7864c26
+	github.com/DIMO-Network/model-garage v0.0.0-20240321200140-8d7120a55764
 	github.com/benthosdev/benthos/v4 v4.25.1
 )
 
