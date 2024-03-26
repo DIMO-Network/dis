@@ -14,10 +14,10 @@ LABEL maintainer="hello@dimo.zone"
 
 USER nonroot:nonroot
 
-COPY --from=build --chown=nonroot:nonroot /build/bin/stream-vss /
+COPY --from=build --chown=nonroot:nonroot /build/bin/benthos-plugin /
 COPY --from=build --chown=nonroot:nonroot /build/sample-config.yaml /benthos.yaml
 
 
-ENTRYPOINT ["/stream-vss"]
+ENTRYPOINT ["/benthos-plugin"]
 
 CMD ["-c", "/benthos.yaml"]
