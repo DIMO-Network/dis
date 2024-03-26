@@ -6,20 +6,14 @@ import (
 	// explicitly import required clickhouse dependencies.
 	_ "github.com/ClickHouse/clickhouse-go/v2"
 
-	// required for the plugin to be registerd and imported.
-	_ "github.com/DIMO-Network/benthos-plugin/dimovss"
-	_ "github.com/benthosdev/benthos/v4/public/components/elasticsearch"
-	_ "github.com/benthosdev/benthos/v4/public/components/io"
-	_ "github.com/benthosdev/benthos/v4/public/components/kafka"
-	_ "github.com/benthosdev/benthos/v4/public/components/sql"
-
 	"github.com/benthosdev/benthos/v4/public/service"
 
 	// import _all_ Benthos components for third party services
 	_ "github.com/benthosdev/benthos/v4/public/components/all"
 
 	// Add our custom plugin packages here
-	_ "github.com/DIMO-Network/benthos-plugin/processor"
+	_ "github.com/DIMO-Network/benthos-plugin/checksignature"
+	_ "github.com/DIMO-Network/benthos-plugin/dimovss"
 )
 
 func main() {

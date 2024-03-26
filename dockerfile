@@ -10,7 +10,7 @@ RUN make build
 
 FROM gcr.io/distroless/static AS final
 
-LABEL maintainer="hello@dimo.zone"
+LABEL maintainer="DIMO <hello@dimo.zone>"
 
 USER nonroot:nonroot
 

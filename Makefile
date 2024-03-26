@@ -1,4 +1,5 @@
-.PHONY: clean run build install dep test lint format
+
+.PHONY: clean run build install dep test lint format docker
 BIN_NAME					?= benthos-plugin
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin
 DEFAULT_ARCH				:= $(shell go env GOARCH)

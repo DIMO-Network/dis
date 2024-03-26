@@ -1,10 +1,11 @@
-package processor
+package checksignature
 
 import (
 	"context"
+	"testing"
+
 	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSignatureProcessorSuccess(t *testing.T) {
