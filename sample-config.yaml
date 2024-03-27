@@ -19,12 +19,7 @@ pipeline:
         root = this
         root.data.vin = deleted()
     - vss_vehicle:
-    - sql_insert:
-        driver: clickhouse
-        dsn: clickhouse://${CLICKHOUSE_HOST:localhost}:${CLICKHOUSE_TCP_PORT:9000}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&dial_timeout=200ms&max_execution_time=60
-        table: vehicle
-        columns: []
-        args_mapping: root = this
+    - check_signature:
     - catch:
         - log:
             message: "Processing failed due to: ${!error()}"
