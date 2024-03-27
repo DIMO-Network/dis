@@ -1,9 +1,10 @@
-package processor
+package checksignature
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/DIMO-Network/shared"
 	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/ethereum/go-ethereum/common"
