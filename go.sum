@@ -102,6 +102,8 @@ github.com/ClickHouse/clickhouse-go/v2 v2.22.2 h1:T1BljsIjj+3aQog80jKMTeF4EqAUG4
 github.com/ClickHouse/clickhouse-go/v2 v2.22.2/go.mod h1:tBhdF3f3RdP7sS59+oBAtTyhWpy0024ZxDMhgxra0QE=
 github.com/DIMO-Network/model-garage v0.0.0-20240328203219-6ce3379d43b9 h1:bu6Mlvvi11tq3SQclbc+U2iVV0C3qifTrve9zY90P2o=
 github.com/DIMO-Network/model-garage v0.0.0-20240328203219-6ce3379d43b9/go.mod h1:XuNUPtMF/27n8J58wM2wG6CcVF3u/ldxoiXDsxjjPEQ=
+github.com/DIMO-Network/model-garage v0.0.0-20240328230217-cb22ffa9a5d3 h1:IlpcXpapaQK7JpRvImHEZNHHI7RVDKWMA18fvjp1474=
+github.com/DIMO-Network/model-garage v0.0.0-20240328230217-cb22ffa9a5d3/go.mod h1:XuNUPtMF/27n8J58wM2wG6CcVF3u/ldxoiXDsxjjPEQ=
 github.com/DIMO-Network/shared v0.10.10 h1:h9b0oj0hSvR2CRp6PzqPhsSjf03XUyTGFsAlPv1g1XM=
 github.com/DIMO-Network/shared v0.10.10/go.mod h1:sfeTTaAf4Y5aU15yGTksdZejJP+X6M2n2M70Qm5+Rqk=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
