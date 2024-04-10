@@ -20,6 +20,8 @@ pipeline:
         root.data.vin = deleted()
     - vss_vehicle:
       devices_api_grpc_addr: "localhost:3001"
+      init_migration: clickhouse://localhost:9000?username=admin&password=password&dial_timeout=200ms&max_execution_time=60
+
     - check_signature:
     - catch:
         - log:
