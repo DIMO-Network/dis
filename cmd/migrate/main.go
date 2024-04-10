@@ -13,7 +13,8 @@ func main() {
 	chConfig := getClickhouseENV()
 	if err := migrations.RunGoose(ctx, os.Args[1:], chConfig); err != nil {
 		fmt.Printf("failed to run goose: %v\n", err)
-		fmt.Printf("Clickhouse Host %s, Port %s, User %s\n", chConfig.Host, chConfig.Port, chConfig.User)
+		pswSet := chConfig.Password != ""
+		fmt.Printf("Clickhouse Host %s, Port %s, Database %s, User %s Password Set: %b\n", chConfig.Host, chConfig.Port, chConfig.DataBase, chConfig.User, pswSet)
 		os.Exit(1)
 	}
 }
@@ -27,6 +28,12 @@ func getClickhouseENV() migrations.ClickhouseConfig {
 	if !ok {
 		port = "9000"
 	}
+
+	dbName := os.Getenv("CLICKHOUSE_DATABASE")
+	if dbName == "" {
+		dbName = "default"
+	}
+
 	user, ok := os.LookupEnv("CLICKHOUSE_USER")
 	if !ok {
 		user = "default"
@@ -40,5 +47,6 @@ func getClickhouseENV() migrations.ClickhouseConfig {
 		Port:     port,
 		User:     user,
 		Password: password,
+		DataBase: dbName,
 	}
 }
