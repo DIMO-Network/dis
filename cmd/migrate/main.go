@@ -14,7 +14,7 @@ func main() {
 	if err := migrations.RunGoose(ctx, os.Args[1:], chConfig); err != nil {
 		fmt.Printf("failed to run goose: %v\n", err)
 		pswSet := chConfig.Password != ""
-		fmt.Printf("Clickhouse Host %s, Port %s, Database %s, User %s Password Set: %b\n", chConfig.Host, chConfig.Port, chConfig.DataBase, chConfig.User, pswSet)
+		fmt.Printf("Clickhouse Host %s, Port %s, Database %s, User %s Password Set: %t\n", chConfig.Host, chConfig.Port, chConfig.DataBase, chConfig.User, pswSet)
 		os.Exit(1)
 	}
 }

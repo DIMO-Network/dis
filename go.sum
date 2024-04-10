@@ -108,6 +108,8 @@ github.com/DIMO-Network/model-garage v0.0.0-20240409172850-41fcf028318b h1:teGtF
 github.com/DIMO-Network/model-garage v0.0.0-20240409172850-41fcf028318b/go.mod h1:ZZzhsrNv225EqrjlgKbZMmSAaeTd8gHVZSYOJqbqVT4=
 github.com/DIMO-Network/model-garage v0.0.0-20240410180852-9600736081ce h1:DVnRJ70nkTacuMMc611ttquY1F3GYYm/VMR+arDANC0=
 github.com/DIMO-Network/model-garage v0.0.0-20240410180852-9600736081ce/go.mod h1:ZZzhsrNv225EqrjlgKbZMmSAaeTd8gHVZSYOJqbqVT4=
+github.com/DIMO-Network/model-garage v0.0.0-20240410190914-2e02c32892f4 h1:sRj5qQZTKZhUqoYyKlWqTm4Fcrx1lTN4uicUAn+6pg0=
+github.com/DIMO-Network/model-garage v0.0.0-20240410190914-2e02c32892f4/go.mod h1:ZZzhsrNv225EqrjlgKbZMmSAaeTd8gHVZSYOJqbqVT4=
 github.com/DIMO-Network/shared v0.10.10 h1:h9b0oj0hSvR2CRp6PzqPhsSjf03XUyTGFsAlPv1g1XM=
 github.com/DIMO-Network/shared v0.10.10/go.mod h1:sfeTTaAf4Y5aU15yGTksdZejJP+X6M2n2M70Qm5+Rqk=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
