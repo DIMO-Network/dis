@@ -14,7 +14,9 @@ VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
 
 build:
 	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) \
-		go build -o bin/$(BIN_NAME) ./main.go
+		go build -o bin/$(BIN_NAME) ./
+	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) \
+		go build -o bin/migrate ./cmd/migrate
 
 run: build
 	@./bin/$(BIN_NAME)
@@ -26,6 +28,7 @@ clean:
 install: build
 	@install -d $(INSTALL_DIR)
 	@rm -f $(INSTALL_DIR)/benthos
+	@rm -f $(INSTALL_DIR)/migrate
 	@cp bin/* $(INSTALL_DIR)/
 
 dep: 
