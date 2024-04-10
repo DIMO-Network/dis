@@ -12,8 +12,8 @@ import (
 	_ "github.com/benthosdev/benthos/v4/public/components/all"
 
 	// Add our custom plugin packages here
-	_ "github.com/DIMO-Network/benthos-plugin/checksignature"
-	_ "github.com/DIMO-Network/benthos-plugin/dimovss"
+	_ "github.com/DIMO-Network/benthos-plugin/internal/checksignature"
+	_ "github.com/DIMO-Network/benthos-plugin/internal/dimovss"
 )
 
 func main() {
