@@ -26,7 +26,7 @@ func NewService(devicesConn *grpc.ClientConn) *Service {
 	return &Service{devicesConn: devicesConn, memoryCache: c}
 }
 
-func (s *Service) GetTokenIDFromID(ctx context.Context, id string) (uint32, error) {
+func (s *Service) TokenIDFromSubject(ctx context.Context, id string) (uint32, error) {
 	deviceClient := pb.NewUserDeviceServiceClient(s.devicesConn)
 	var err error
 	var userDevice *pb.UserDevice
