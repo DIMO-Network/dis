@@ -106,6 +106,8 @@ github.com/DIMO-Network/devices-api v1.25.16 h1:lGOTMgWlrmTcXPhatWewm7wBwuuaDfFN
 github.com/DIMO-Network/devices-api v1.25.16/go.mod h1:SYEGPaxWzNQ2wByAnYjqGhu+IZyML0xofkqpzog6lWU=
 github.com/DIMO-Network/model-garage v0.0.0-20240424151543-bac3531edf40 h1:JHe0s1+U32ktzvTVu94kxW8Y0DinPOvi0qFC2MXt9ro=
 github.com/DIMO-Network/model-garage v0.0.0-20240424151543-bac3531edf40/go.mod h1:5bHic+vrkizMOLUfFsMs0SkgOnKgbUzwTNf4i2vPmK0=
+github.com/DIMO-Network/model-garage v0.0.0-20240424210110-93cc109a57a4 h1:vbXhiAQD6hxDrJR+fWx7e48xLs7J4R3n8tX6tlpgG5A=
+github.com/DIMO-Network/model-garage v0.0.0-20240424210110-93cc109a57a4/go.mod h1:5bHic+vrkizMOLUfFsMs0SkgOnKgbUzwTNf4i2vPmK0=
 github.com/DIMO-Network/shared v0.10.10 h1:h9b0oj0hSvR2CRp6PzqPhsSjf03XUyTGFsAlPv1g1XM=
 github.com/DIMO-Network/shared v0.10.10/go.mod h1:sfeTTaAf4Y5aU15yGTksdZejJP+X6M2n2M70Qm5+Rqk=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
