@@ -15,6 +15,17 @@ const (
 	cacheDefaultExp     = 24 * time.Hour
 )
 
+// NotFoundError is an error type for when a device's token is not found.
+type NotFoundError struct {
+	DeviceID string
+}
+
+// Error returns the error message for a NotFoundError.
+func (e NotFoundError) Error() string {
+	return fmt.Sprintf("device token not found for userDevice '%s'", e.DeviceID)
+}
+
+// Service is a wrapper for a the device-api grpc client
 type Service struct {
 	devicesConn *grpc.ClientConn
 	memoryCache *gocache.Cache
@@ -26,6 +37,7 @@ func NewService(devicesConn *grpc.ClientConn) *Service {
 	return &Service{devicesConn: devicesConn, memoryCache: c}
 }
 
+// TokenIDFromSubject gets the tokenID from a userDevice subject
 func (s *Service) TokenIDFromSubject(ctx context.Context, id string) (uint32, error) {
 	deviceClient := pb.NewUserDeviceServiceClient(s.devicesConn)
 	var err error
@@ -45,7 +57,7 @@ func (s *Service) TokenIDFromSubject(ctx context.Context, id string) (uint32, er
 	}
 
 	if userDevice.TokenId == nil {
-		return 0, fmt.Errorf("device token not found for userDevice %s", id)
+		return 0, NotFoundError{DeviceID: id}
 	}
 	return uint32(*userDevice.TokenId), nil
 }

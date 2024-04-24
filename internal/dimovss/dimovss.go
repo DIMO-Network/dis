@@ -2,6 +2,7 @@ package dimovss
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/DIMO-Network/benthos-plugin/internal/service/deviceapi"
@@ -86,15 +87,22 @@ func (v *vssProcessor) Process(ctx context.Context, msg *service.Message) (servi
 	}
 
 	signals, retErr := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
-
+	if errors.Is(retErr, deviceapi.NotFoundError{}) {
+		// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
+		v.logger.Debug(fmt.Sprintf("dropping message: %v", retErr))
+		return nil, nil
+	}
 	retMsgs := make([]*service.Message, len(signals))
 	for i := range signals {
 		sigVals := vss.SignalToSlice(signals[i])
 		retMsgs[i] = msg.Copy()
 		retMsgs[i].SetStructured(sigVals)
 	}
-
-	return retMsgs, retErr
+	if retErr != nil {
+		// still reutrn retMsg since we may have partially converted signals.
+		return retMsgs, fmt.Errorf("failed to convert signals: %w", retErr)
+	}
+	return retMsgs, nil
 }
 
 // Close does nothing because our processor doesn't need to clean up resources.
