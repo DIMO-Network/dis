@@ -3,6 +3,7 @@ package dimovss
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -114,7 +115,7 @@ type testGetter struct{}
 
 func (t *testGetter) TokenIDFromSubject(ctx context.Context, subject string) (uint32, error) {
 	if subject == notFoundSubject {
-		return 0, deviceapi.NotFoundError{DeviceID: subject}
+		return 0, fmt.Errorf("%w: no tokenID set", deviceapi.NotFoundError{DeviceID: subject})
 	}
 	if subject == errorSubject {
 		return 0, errors.New("test error")

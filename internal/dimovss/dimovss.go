@@ -90,7 +90,7 @@ func (v *vssProcessor) Process(ctx context.Context, msg *service.Message) (servi
 	signals, retErr := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
 	if errors.As(retErr, &deviceapi.NotFoundError{}) {
 		// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
-		v.logger.Debug(fmt.Sprintf("dropping message: %v", retErr))
+		v.logger.Trace(fmt.Sprintf("dropping message: %v", retErr))
 		return nil, nil
 	}
 	verErr := convert.VersionError{}
