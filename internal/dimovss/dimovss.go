@@ -21,6 +21,7 @@ const (
 	grpcFieldName      = "devices_api_grpc_addr"
 	grpcFieldDesc      = "The address of the devices API gRPC server."
 	migrationFieldName = "init_migration"
+	convertedV2Version = "1.1"
 )
 
 func init() {
@@ -87,9 +88,14 @@ func (v *vssProcessor) Process(ctx context.Context, msg *service.Message) (servi
 	}
 
 	signals, retErr := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
-	if errors.Is(retErr, deviceapi.NotFoundError{}) {
+	if errors.As(retErr, &deviceapi.NotFoundError{}) {
 		// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
 		v.logger.Debug(fmt.Sprintf("dropping message: %v", retErr))
+		return nil, nil
+	}
+	verErr := convert.VersionError{}
+	if errors.As(retErr, &verErr) && verErr.Version == convertedV2Version {
+		// silently drop messages that were originally v2 messges to avoid duplicates.
 		return nil, nil
 	}
 	retMsgs := make([]*service.Message, len(signals))
