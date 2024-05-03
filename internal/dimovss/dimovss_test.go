@@ -43,13 +43,14 @@ func TestVSSProcessorProcess(t *testing.T) {
 		},
 		{
 			name: "v2 payload",
-			msg:  service.NewMessage([]byte(`{"specversion":"2.0", "vehicleTokenId": 1, "data": {"vehicle": {"signals": [{"name": "speed", "timestamp": 1734957240000, "value": 1.0}]}}}`)),
+			msg:  service.NewMessage([]byte(`{"specversion":"2.0", "vehicleTokenId": 1, "source": "source1", "data": {"vehicle": {"signals": [{"name": "speed", "timestamp": 1734957240000, "value": 1.0}]}}}`)),
 			expectedBatch: func() service.MessageBatch {
 				msg := service.NewMessage(nil)
 				sig := vss.Signal{
 					TokenID:     1,
 					Timestamp:   time.UnixMilli(1734957240000).UTC(),
 					Name:        vss.FieldSpeed,
+					Source:      "source1",
 					ValueNumber: 1.0,
 				}
 				msg.SetStructured(vss.SignalToSlice(sig))
@@ -58,7 +59,7 @@ func TestVSSProcessorProcess(t *testing.T) {
 		},
 		{
 			name:          "converted v2 payload",
-			msg:           service.NewMessage([]byte(`{"specversion":"1.1", "time": "2024-12-23T12:34:00Z", "subject": "1", "data"{"speed": 1.0}}`)),
+			msg:           service.NewMessage([]byte(`{"specversion":"1.1", "source": "source1", "time": "2024-12-23T12:34:00Z", "subject": "1", "data"{"speed": 1.0}}`)),
 			expectedBatch: func() service.MessageBatch { return nil },
 			expectedErr:   false,
 		},
@@ -70,13 +71,13 @@ func TestVSSProcessorProcess(t *testing.T) {
 		},
 		{
 			name:          "no tokenID for subject",
-			msg:           service.NewMessage([]byte(`{"specversion":"1.0", "time": "2024-12-23T12:34:00Z", "subject": "not_found", "data"{"speed": 1.0}}`)),
+			msg:           service.NewMessage([]byte(`{"specversion":"1.0", "source": "source1", "time": "2024-12-23T12:34:00Z", "subject": "not_found", "data"{"speed": 1.0}}`)),
 			expectedBatch: func() service.MessageBatch { return nil },
 			expectedErr:   false,
 		},
 		{
 			name:          "error getting tokenID",
-			msg:           service.NewMessage([]byte(`{"specversion":"1.0", "time": "2024-12-23T12:34:00Z", "subject": "error", "data"{"speed": 1.0}}`)),
+			msg:           service.NewMessage([]byte(`{"specversion":"1.0", "source": "source1", "time": "2024-12-23T12:34:00Z", "subject": "error", "data"{"speed": 1.0}}`)),
 			expectedBatch: func() service.MessageBatch { return nil },
 			expectedErr:   true,
 		},
