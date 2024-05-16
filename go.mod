@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.23.1
 	github.com/DIMO-Network/devices-api v1.25.16
-	github.com/DIMO-Network/model-garage v0.1.3-0.20240514182355-3952a34fea50
+	github.com/DIMO-Network/model-garage v0.1.3-0.20240516144138-d49d15a88020
 	github.com/DIMO-Network/shared v0.10.10
 	github.com/benthosdev/benthos/v4 v4.27.0
 	github.com/ethereum/go-ethereum v1.13.14
