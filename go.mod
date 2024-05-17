@@ -3,7 +3,6 @@ module github.com/DIMO-Network/benthos-plugin
 go 1.22.0
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.23.1
 	github.com/DIMO-Network/devices-api v1.25.16
 	github.com/DIMO-Network/model-garage v0.1.3-0.20240516144138-d49d15a88020
 	github.com/DIMO-Network/shared v0.10.10
@@ -40,6 +39,7 @@ require (
 	github.com/Azure/go-amqp v1.0.4 // indirect
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.1 // indirect
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
+	github.com/ClickHouse/clickhouse-go/v2 v2.23.1 // indirect
 	github.com/DataDog/zstd v1.5.2 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.21.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.45.0 // indirect
