@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/DIMO-Network/devices-api v1.25.16
-	github.com/DIMO-Network/model-garage v0.2.0
+	github.com/DIMO-Network/model-garage v0.2.1-0.20240520075345-8085430ee514
 	github.com/DIMO-Network/shared v0.10.10
 	github.com/benthosdev/benthos/v4 v4.27.0
 	github.com/ethereum/go-ethereum v1.14.3

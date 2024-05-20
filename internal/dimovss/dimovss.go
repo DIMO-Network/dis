@@ -86,16 +86,15 @@ func (v *vssProcessor) Process(ctx context.Context, msg *service.Message) (servi
 	if err != nil {
 		return nil, fmt.Errorf("failed to extract message bytes: %w", err)
 	}
-
+	schemaVersion := convert.GetSchemaVersion(msgBytes)
+	if schemaVersion == convert.StatusV1Converted {
+		// ignore v1.1 messages
+		return nil, nil
+	}
 	signals, retErr := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
 	if errors.As(retErr, &deviceapi.NotFoundError{}) {
 		// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
 		v.logger.Trace(fmt.Sprintf("dropping message: %v", retErr))
-		return nil, nil
-	}
-	verErr := convert.VersionError{}
-	if errors.As(retErr, &verErr) && verErr.Version == convertedV2Version {
-		// silently drop messages that were originally v2 messges to avoid duplicates.
 		return nil, nil
 	}
 	retMsgs := make([]*service.Message, len(signals))
