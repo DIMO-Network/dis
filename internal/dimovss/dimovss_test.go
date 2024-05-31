@@ -28,13 +28,14 @@ func TestVSSProcessorProcess(t *testing.T) {
 	}{
 		{
 			name: "v1 payload",
-			msg:  service.NewMessage([]byte(`{"specversion":"1.0", "time": "2024-12-23T12:34:00Z", "subject": "1" "data"{"speed": 1.0}}`)),
+			msg:  service.NewMessage([]byte(`{"specversion":"1.0", "time": "2024-12-23T12:34:00Z", "source": "source1", "subject": "1" "data"{"speed": 1.0}}`)),
 			expectedBatch: func() service.MessageBatch {
 				msg := service.NewMessage(nil)
 				sig := vss.Signal{
 					TokenID:     1,
 					Timestamp:   time.UnixMilli(1734957240000).UTC(),
 					Name:        vss.FieldSpeed,
+					Source:      "source1",
 					ValueNumber: 1.0,
 				}
 				msg.SetStructured(vss.SignalToSlice(sig))
