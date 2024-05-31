@@ -21,7 +21,6 @@ const (
 	grpcFieldName      = "devices_api_grpc_addr"
 	grpcFieldDesc      = "The address of the devices API gRPC server."
 	migrationFieldName = "init_migration"
-	convertedV2Version = "1.1"
 )
 
 func init() {
