@@ -16,7 +16,7 @@ const (
 
 var configSpec = service.NewConfigSpec().
 	Summary("Create an indexable string from provided Bloblang parameters.").
-	Field(service.NewInterpolatedStringField("timestamp").Description("Timestamp for the index").Default("now()")).
+	Field(service.NewInterpolatedStringField("timestamp").Description("Timestamp for the index")).
 	Field(service.NewInterpolatedStringField("primary_filler").Description("Primary filler for the index").Default("MM")).
 	Field(service.NewInterpolatedStringField("secondary_filler").Description("Secondary filler for the index").Default("00")).
 	Field(service.NewInterpolatedStringField("data_type").Description("Data type for the index").Default("FP/v0.0.1")).
@@ -92,20 +92,13 @@ func (p *Processor) Process(_ context.Context, msg *service.Message) (service.Me
 		return nil, fmt.Errorf("failed to evaluate address: %w", err)
 	}
 
-	// Parse the timestamp
-	var timestamp time.Time
-	if timestampStr == "now()" {
-		timestamp = time.Now()
-	} else {
-		timestamp, err = time.Parse(time.RFC3339, timestampStr)
-		if err != nil {
-			return nil, fmt.Errorf("invalid timestamp format: %w", err)
-		}
+	timestamp, err := time.Parse(time.RFC3339, timestampStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid timestamp format: %w", err)
 	}
 
-	// Parse the address
-	if addressStr == "null" || addressStr == "" {
-		return nil, fmt.Errorf("empty address field")
+	if !common.IsHexAddress(addressStr) {
+		return nil, fmt.Errorf("address is not a valid hexadecimal address: %s", addressStr)
 	}
 	address := common.HexToAddress(addressStr)
 
