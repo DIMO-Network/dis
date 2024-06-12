@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFingerprintIndexerProcessor(t *testing.T) {
+func TestNameIndexerProcessor(t *testing.T) {
 	config := `
 timestamp: '${!json("time")}'
 primary_filler: 'MM'
@@ -33,7 +33,7 @@ address: '${!json("subject")}'
 		expectErr    bool
 	}{
 		{
-			name: "Valid fingerprint message with default fillers",
+			name: "Valid name message with default fillers",
 			jsonString: `{
 				"time": "2024-06-11T15:30:00Z",
 				"subject": "0xc57d6d57fca59d0517038c968a1b831b071fa679"
