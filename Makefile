@@ -1,5 +1,9 @@
 
 .PHONY: clean run build install dep test lint format docker
+
+PATHINSTBIN = $(abspath ./bin)
+export PATH := $(PATHINSTBIN):$(PATH)
+
 BIN_NAME					?= benthos-plugin
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin
 DEFAULT_ARCH				:= $(shell go env GOARCH)
@@ -11,6 +15,10 @@ INSTALL_DIR					?= $(DEFAULT_INSTALL_DIR)
 
 VERSION   := $(shell git describe --tags || echo "v0.0.0")
 VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
+
+
+# Dependency versions
+GOLANGCI_VERSION   = latest
 
 build:
 	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) \
@@ -35,6 +43,7 @@ test:
 	@go test ./...
 
 lint:
+	@golangci-lint version
 	@golangci-lint run
 
 format:
@@ -43,3 +52,7 @@ format:
 docker: dep
 	@docker build -f ./Dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
 	@docker tag dimozone/$(BIN_NAME):$(VER_CUT) dimozone/$(BIN_NAME):latest
+
+tools-golangci-lint:
+	@mkdir -p $(PATHINSTBIN)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
