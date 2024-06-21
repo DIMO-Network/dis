@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/DIMO-Network/devices-api v1.25.16
-	github.com/DIMO-Network/model-garage v0.2.1
+	github.com/DIMO-Network/model-garage v0.2.3
 	github.com/DIMO-Network/nameindexer v0.0.0-20240612012111-22cbf394a69f
 	github.com/DIMO-Network/shared v0.10.10
 	github.com/benthosdev/benthos/v4 v4.27.0
