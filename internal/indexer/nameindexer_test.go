@@ -2,13 +2,16 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	chconfig "github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
 	"github.com/DIMO-Network/clickhouse-infra/pkg/container"
 	"github.com/DIMO-Network/nameindexer"
+	chindexer "github.com/DIMO-Network/nameindexer/pkg/clickhouse"
 	"github.com/benthosdev/benthos/v4/public/service"
+	"github.com/docker/go-connections/nat"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
@@ -190,6 +193,45 @@ subject:
 	}
 }
 
+func TestMigrationField(t *testing.T) {
+	chContainer := setupClickHouseContainer(t)
+	cfg := chContainer.Config()
+	conn, err := chContainer.GetClickHouseAsConn()
+	require.NoError(t, err)
+	nativePort := nat.Port("9000/tcp")
+	insecurePort, err := chContainer.MappedPort(context.Background(), nativePort)
+	require.NoError(t, err)
+	dsn := fmt.Sprintf("clickhouse://%s:%d/%s?username=%s&password=%s&dial_timeout=200ms&max_execution_time=60", cfg.Host, insecurePort.Int(), cfg.Database, cfg.User, cfg.Password)
+	config := fmt.Sprintf(`
+timestamp: 'now()'
+primary_filler: 'MM'
+secondary_filler: '00'
+data_type: 'FP/v0.0.1'
+subject:
+  address: '${!json("subject")}'
+migration: '%s'
+`, dsn)
+
+	parsedConfig, err := configSpec.ParseYAML(config, nil)
+	require.NoError(t, err)
+
+	_, err = ctor(parsedConfig, nil)
+	require.NoError(t, err)
+
+	// Verify the migration applied successfully by checking for a table created by the migration.
+	rows, err := conn.Query(context.Background(), "SHOW TABLES LIKE '%s'", chindexer.TableName)
+	require.NoError(t, err)
+	defer rows.Close()
+
+	var tableName string
+	for rows.Next() {
+		require.NoError(t, rows.Scan(&tableName))
+		require.Equal(t, chindexer.TableName, tableName)
+	}
+
+	require.NoError(t, rows.Err())
+}
+
 func mustEncode(index *nameindexer.Index) string {
 	encodedIndex, err := nameindexer.EncodeIndex(index)
 	if err != nil {
@@ -204,6 +246,7 @@ func ref[T any](val T) *T {
 
 // setupClickHouseContainer starts a ClickHouse container for testing and returns the connection.
 func setupClickHouseContainer(t *testing.T) *container.Container {
+	t.Helper()
 	ctx := context.Background()
 	settings := chconfig.Settings{
 		User:     "default",
