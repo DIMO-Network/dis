@@ -7,7 +7,7 @@ env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   golangci:
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, medium]
 
     name: lint
     steps:
@@ -22,8 +22,11 @@ jobs:
       - name: install golangci-lint
         run: make tools-golangci-lint
 
-      - name: install deps
+      - name: tidy
         run: go mod tidy
+
+      - name: build
+        run: go build
 
       - name: Run golangci-lint
         run: make lint
