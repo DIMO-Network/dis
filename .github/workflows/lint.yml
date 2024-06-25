@@ -22,5 +22,8 @@ jobs:
       - name: install golangci-lint
         run: make tools-golangci-lint
 
+      - name: install deps
+        run: go mod tidy
+
       - name: Run golangci-lint
         run: make lint
