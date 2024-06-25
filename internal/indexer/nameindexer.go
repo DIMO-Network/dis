@@ -25,7 +25,7 @@ var configSpec = service.NewConfigSpec().
 	Field(service.NewInterpolatedStringField("data_type").Description("Data type for the index").Default("FP/v0.0.1")).
 	Field(service.NewObjectField("subject",
 		service.NewInterpolatedStringField("address").Description("Ethereum address for the index").Optional(),
-		service.NewInterpolatedStringField("token_id").Description("Token ID for the index").Optional(),
+		service.NewInterpolatedStringField("token_id").Description("Token Id for the index").Optional(),
 	)).
 	Field(service.NewStringField("migration").Default("").Description("DSN connection string for database where migration should be run. If set, the plugin will run a database migration on startup using the provided DNS string."))
 

@@ -30,7 +30,7 @@ subject:
 		name            string
 		jsonString      string
 		config          string
-		expectedMeta    string
+		expectedIndex   *nameindexer.Index
 		expectErr       bool
 		expectConfigErr bool
 	}{
@@ -41,7 +41,7 @@ subject:
 				"subject": "0xc57d6d57fca59d0517038c968a1b831b071fa679"
 			}`,
 			config: defaultConfig,
-			expectedMeta: mustEncode(&nameindexer.Index{
+			expectedIndex: &nameindexer.Index{
 				Timestamp:       time.Date(2024, 6, 11, 15, 30, 0, 0, time.UTC),
 				PrimaryFiller:   "MM",
 				SecondaryFiller: "00",
@@ -49,15 +49,15 @@ subject:
 				Subject: nameindexer.Subject{
 					Address: ref(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
 				},
-			}),
+			},
 			expectErr: false,
 		},
 		{
-			name:         "Invalid JSON message",
-			jsonString:   `invalid json`,
-			config:       defaultConfig,
-			expectedMeta: "",
-			expectErr:    true,
+			name:          "Invalid JSON message",
+			jsonString:    `invalid json`,
+			config:        defaultConfig,
+			expectedIndex: nil,
+			expectErr:     true,
 		},
 		{
 			name: "Invalid subject (address)",
@@ -65,36 +65,36 @@ subject:
 				"time": "2024-06-11T15:30:00Z",
 				"subject": "invalid_address"
 			}`,
-			config:       defaultConfig,
-			expectedMeta: "",
-			expectErr:    true,
+			config:        defaultConfig,
+			expectedIndex: nil,
+			expectErr:     true,
 		},
 		{
 			name: "Missing subject",
 			jsonString: `{
 				"time": "2024-06-11T15:30:00Z"
 			}`,
-			config:       defaultConfig,
-			expectedMeta: "",
-			expectErr:    true,
+			config:        defaultConfig,
+			expectedIndex: nil,
+			expectErr:     true,
 		},
 		{
 			name: "Missing time",
 			jsonString: `{
 				"subject": "0xc57d6d57fca59d0517038c968a1b831b071fa679"
 			}`,
-			config:       defaultConfig,
-			expectedMeta: "",
-			expectErr:    true,
+			config:        defaultConfig,
+			expectedIndex: nil,
+			expectErr:     true,
 		},
 		{
 			name: "Missing time",
 			jsonString: `{
 				"subject": "0xc57d6d57fca59d0517038c968a1b831b071fa679"
 			}`,
-			config:       defaultConfig,
-			expectedMeta: "",
-			expectErr:    true,
+			config:        defaultConfig,
+			expectedIndex: nil,
+			expectErr:     true,
 		},
 		{
 			name: "Custom fillers and data type",
@@ -103,22 +103,22 @@ subject:
 				"subject": "0xc57d6d57fca59d0517038c968a1b831b071fa679"
 			}`,
 			config: `
-timestamp: '${!now()}'
+timestamp: '${!json("time")}'
 primary_filler: 'XX'
 secondary_filler: 'YY'
 data_type: 'CustomType'
 subject:
   address: '${!json("subject")}'
 `,
-			expectedMeta: mustEncode(&nameindexer.Index{
-				Timestamp:       time.Now(),
+			expectedIndex: &nameindexer.Index{
+				Timestamp:       time.Date(2024, 6, 11, 15, 30, 0, 0, time.UTC),
 				PrimaryFiller:   "XX",
 				SecondaryFiller: "YY",
 				DataType:        "CustomType",
 				Subject: nameindexer.Subject{
 					Address: ref(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
 				},
-			}),
+			},
 			expectErr: false,
 		},
 		{
@@ -133,7 +133,7 @@ data_type: 'CustomType'
 subject:
   token_id: '${!json("subject")}'
 `,
-			expectedMeta: mustEncode(&nameindexer.Index{
+			expectedIndex: &nameindexer.Index{
 				Timestamp:       time.Date(2024, 6, 11, 15, 30, 0, 0, time.UTC),
 				PrimaryFiller:   "MM",
 				SecondaryFiller: "00",
@@ -141,7 +141,7 @@ subject:
 				Subject: nameindexer.Subject{
 					TokenID: ref(uint32(123)),
 				},
-			}),
+			},
 			expectErr: false,
 		},
 		{
@@ -159,7 +159,7 @@ subject:
   address: '${!json("subject")}'
   token_id: '${!json("subject")}'
 `,
-			expectedMeta:    "",
+			expectedIndex:   nil,
 			expectConfigErr: true,
 		},
 	}
@@ -185,9 +185,14 @@ subject:
 				require.NoError(t, err)
 				require.NotNil(t, batch)
 				require.Len(t, batch, 1)
-				encodedIndex, ok := batch[0].MetaGet("index")
+				encodedIndex, ok := batch[0].MetaGetMut("index")
 				require.True(t, ok)
-				require.Equal(t, tt.expectedMeta, encodedIndex)
+				require.Equal(t, mustEncode(tt.expectedIndex), encodedIndex)
+				expectedValues, err := chindexer.IndexToSlice(tt.expectedIndex)
+				require.NoError(t, err)
+				indexValues, ok := batch[0].MetaGetMut("index_values")
+				require.True(t, ok)
+				require.Equal(t, expectedValues, indexValues)
 			}
 		})
 	}
