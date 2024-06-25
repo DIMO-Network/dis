@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	chconfig "github.com/DIMO-Network/clickhouse-infra/pkg/connect/config"
+	"github.com/DIMO-Network/clickhouse-infra/pkg/container"
 	"github.com/DIMO-Network/nameindexer"
 	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,15 +19,17 @@ timestamp: '${!json("time")}'
 primary_filler: 'MM'
 secondary_filler: '00'
 data_type: 'FP/v0.0.1'
-address: '${!json("subject")}'
+subject:
+  address: '${!json("subject")}'
 `
 
 	tests := []struct {
-		name         string
-		jsonString   string
-		config       string
-		expectedMeta string
-		expectErr    bool
+		name            string
+		jsonString      string
+		config          string
+		expectedMeta    string
+		expectErr       bool
+		expectConfigErr bool
 	}{
 		{
 			name: "Valid name message with default fillers",
@@ -39,7 +43,9 @@ address: '${!json("subject")}'
 				PrimaryFiller:   "MM",
 				SecondaryFiller: "00",
 				DataType:        "FP/v0.0.1",
-				Address:         common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679"),
+				Subject: nameindexer.Subject{
+					Address: ref(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
+				},
 			}),
 			expectErr: false,
 		},
@@ -98,16 +104,60 @@ timestamp: '${!now()}'
 primary_filler: 'XX'
 secondary_filler: 'YY'
 data_type: 'CustomType'
-address: '${!json("subject")}'
+subject:
+  address: '${!json("subject")}'
 `,
 			expectedMeta: mustEncode(&nameindexer.Index{
 				Timestamp:       time.Now(),
 				PrimaryFiller:   "XX",
 				SecondaryFiller: "YY",
 				DataType:        "CustomType",
-				Address:         common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679"),
+				Subject: nameindexer.Subject{
+					Address: ref(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
+				},
 			}),
 			expectErr: false,
+		},
+		{
+			name: "token_id subject",
+			jsonString: `{
+				"time": "2024-06-11T15:30:00Z",
+				"subject": "123"
+			}`,
+			config: `
+timestamp: '${!json("time")}'
+data_type: 'CustomType'
+subject:
+  token_id: '${!json("subject")}'
+`,
+			expectedMeta: mustEncode(&nameindexer.Index{
+				Timestamp:       time.Date(2024, 6, 11, 15, 30, 0, 0, time.UTC),
+				PrimaryFiller:   "MM",
+				SecondaryFiller: "00",
+				DataType:        "CustomType",
+				Subject: nameindexer.Subject{
+					TokenID: ref(uint32(123)),
+				},
+			}),
+			expectErr: false,
+		},
+		{
+			name: "Address and token ID set",
+			jsonString: `{
+				"time": "2024-06-11T15:30:00Z",
+				"subject": "123"
+			}`,
+			config: `
+timestamp: '${!now()}'
+primary_filler: 'XX'
+secondary_filler: 'YY'
+data_type: 'CustomType'
+subject:
+  address: '${!json("subject")}'
+  token_id: '${!json("subject")}'
+`,
+			expectedMeta:    "",
+			expectConfigErr: true,
 		},
 	}
 
@@ -118,6 +168,10 @@ address: '${!json("subject")}'
 			parsedConfig, err := configSpec.ParseYAML(tt.config, nil)
 			require.NoError(t, err)
 			processor, err := ctor(parsedConfig, nil)
+			if tt.expectConfigErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 
 			msg := service.NewMessage([]byte(tt.jsonString))
@@ -142,4 +196,21 @@ func mustEncode(index *nameindexer.Index) string {
 		panic(err)
 	}
 	return encodedIndex
+}
+
+func ref[T any](val T) *T {
+	return &val
+}
+
+// setupClickHouseContainer starts a ClickHouse container for testing and returns the connection.
+func setupClickHouseContainer(t *testing.T) *container.Container {
+	ctx := context.Background()
+	settings := chconfig.Settings{
+		User:     "default",
+		Database: "dimo",
+	}
+
+	chContainer, err := container.CreateClickHouseContainer(ctx, settings)
+	require.NoError(t, err)
+	return chContainer
 }
