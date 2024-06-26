@@ -110,8 +110,8 @@ github.com/DIMO-Network/devices-api v1.25.16 h1:lGOTMgWlrmTcXPhatWewm7wBwuuaDfFN
 github.com/DIMO-Network/devices-api v1.25.16/go.mod h1:SYEGPaxWzNQ2wByAnYjqGhu+IZyML0xofkqpzog6lWU=
 github.com/DIMO-Network/model-garage v0.2.4 h1:9U9ianLcahBmPCDZMcRc79dplvUYmT7Nv8l/7R0Mw3I=
 github.com/DIMO-Network/model-garage v0.2.4/go.mod h1:gLDGXuumK8FszJG2shVtD7gyhv1+oYKFtDgJ0lst7OQ=
-github.com/DIMO-Network/nameindexer v0.0.0-20240625135855-fe4a78770a41 h1:q835lwoVddHlag8qSVrx1rUenU9D0f6Ah4uZ4hDAWqA=
-github.com/DIMO-Network/nameindexer v0.0.0-20240625135855-fe4a78770a41/go.mod h1:EjLOF+p1fMJGwgLnFLa8Ic5eKxQQGuUEC3liYwPiKho=
+github.com/DIMO-Network/nameindexer v0.0.0-20240626103616-ddbc5172fd5f h1:in0HpLcmqJuao6XWlMmzA0NcKleSFcomovSaMm6f10w=
+github.com/DIMO-Network/nameindexer v0.0.0-20240626103616-ddbc5172fd5f/go.mod h1:EjLOF+p1fMJGwgLnFLa8Ic5eKxQQGuUEC3liYwPiKho=
 github.com/DIMO-Network/shared v0.10.10 h1:h9b0oj0hSvR2CRp6PzqPhsSjf03XUyTGFsAlPv1g1XM=
 github.com/DIMO-Network/shared v0.10.10/go.mod h1:sfeTTaAf4Y5aU15yGTksdZejJP+X6M2n2M70Qm5+Rqk=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
