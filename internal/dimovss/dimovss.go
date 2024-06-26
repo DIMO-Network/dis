@@ -115,7 +115,6 @@ func (*vssProcessor) Close(context.Context) error {
 }
 
 func runMigration(dsn string) error {
-	migrations.SetMigrations()
 	db, err := goose.OpenDBWithDriver("clickhouse", dsn)
 	if err != nil {
 		return fmt.Errorf("failed to open db: %w", err)
