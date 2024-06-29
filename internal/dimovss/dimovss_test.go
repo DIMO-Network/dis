@@ -44,7 +44,7 @@ func TestVSSProcessorProcess(t *testing.T) {
 		},
 		{
 			name: "v2 payload",
-			msg:  service.NewMessage([]byte(`{"specversion":"2.0", "vehicleTokenId": 1, "source": "source1", "data": {"vehicle": {"signals": [{"name": "speed", "timestamp": 1734957240000, "value": 1.0}]}}}`)),
+			msg:  service.NewMessage([]byte(`{"dataschema":"v2.0", "specversion":"1.0", "vehicleTokenId": 1, "source": "source1", "data": {"vehicle": {"signals": [{"name": "speed", "timestamp": 1734957240000, "value": 1.0}]}}}`)),
 			expectedBatch: func() service.MessageBatch {
 				msg := service.NewMessage(nil)
 				sig := vss.Signal{
@@ -76,14 +76,14 @@ func TestVSSProcessorProcess(t *testing.T) {
 		},
 		{
 			name:          "converted v2 payload",
-			msg:           service.NewMessage([]byte(`{"specversion":"1.o","dataschema":"dimo.zone.status/v1.1", "source": "source1", "time": "2024-12-23T12:34:00Z", "subject": "1", "data"{"speed": 1.0}}`)),
+			msg:           service.NewMessage([]byte(`{"specversion":"1.0","dataschema":"dimo.zone.status/v1.1", "source": "source1", "time": "2024-12-23T12:34:00Z", "subject": "1", "data"{"speed": 1.0}}`)),
 			expectedBatch: func() service.MessageBatch { return nil },
 			expectedErr:   false,
 		},
 
 		{
 			name:          "unknown version",
-			msg:           service.NewMessage([]byte(`{"specversion":"3.0", "time": "2024-12-23T12:34:00Z", "subject": "1", "data"{"speed": 1.0}}`)),
+			msg:           service.NewMessage([]byte(`{"specversion":"1.0","dataschema":"dimo.zone.status/v3.0", "vehicleTokenId": 1, "source": "source1", "data": {"vehicle": {"signals": [{"name": "speed", "timestamp": 1734957240000, "value": 1.0}]}}}`)),
 			expectedBatch: func() service.MessageBatch { return nil },
 			expectedErr:   true,
 		},

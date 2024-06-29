@@ -11,6 +11,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/pressly/goose"
+	"golang.org/x/mod/semver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -86,7 +87,7 @@ func (v *vssProcessor) Process(ctx context.Context, msg *service.Message) (servi
 		return nil, fmt.Errorf("failed to extract message bytes: %w", err)
 	}
 	schemaVersion := convert.GetSchemaVersion(msgBytes)
-	if schemaVersion == convert.StatusV1Converted {
+	if semver.Compare(convert.StatusV1Converted, schemaVersion) == 0 {
 		// ignore v1.1 messages
 		return nil, nil
 	}
