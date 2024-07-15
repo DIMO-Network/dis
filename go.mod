@@ -5,7 +5,7 @@ go 1.22.0
 require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.0-20240625130842-c9eff0c8aabe
 	github.com/DIMO-Network/devices-api v1.25.16
-	github.com/DIMO-Network/model-garage v0.2.7
+	github.com/DIMO-Network/model-garage v0.2.8
 	github.com/DIMO-Network/nameindexer v0.0.0-20240626103616-ddbc5172fd5f
 	github.com/DIMO-Network/shared v0.10.10
 	github.com/benthosdev/benthos/v4 v4.27.0
