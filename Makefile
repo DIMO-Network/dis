@@ -16,6 +16,9 @@ INSTALL_DIR					?= $(DEFAULT_INSTALL_DIR)
 VERSION   := $(shell git describe --tags || echo "v0.0.0")
 VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
 
+# List of supported GOOS and GOARCH
+GOOS_LIST := linux darwin windows
+GOARCH_LIST := amd64 arm64
 
 # Dependency versions
 GOLANGCI_VERSION   = latest
@@ -24,9 +27,14 @@ build:
 	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) \
 		go build -o bin/$(BIN_NAME) ./
 
-run: build
-	./bin/$(BIN_NAME) $(ARGS)
-all: clean target
+build-all:## Build target for all supported GOOS and GOARCH
+	@for goos in $(GOOS_LIST); do \
+		for goarch in $(GOARCH_LIST); do \
+			echo "Building for $$goos/$$goarch..."; \
+			CGO_ENABLED=0 GOOS=$$goos GOARCH=$$goarch \
+			go build -o bin/$(BIN_NAME)-$$goos-$$goarch ./; \
+		done \
+	done
 
 clean:
 	@rm -rf bin
