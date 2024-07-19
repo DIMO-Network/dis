@@ -1,0 +1,32 @@
+name: buildrelease
+on:
+  push:
+    tags:
+      - v*
+jobs:
+  release:
+    name: buildrelease
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.22"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: make build
+        run: make build
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/benthos-plugin
+
+
+permissions:
+  contents: write

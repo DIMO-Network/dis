@@ -36,11 +36,3 @@ jobs:
           push: true
           platforms: linux/amd64
           tags: dimozone/benthos-plugin:${{steps.tag.outputs.tag}}
-
-      - name: Build benthos-plugin
-        run: make build
-
-      - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: bin/benthos-plugin
