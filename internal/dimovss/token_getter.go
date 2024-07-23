@@ -2,6 +2,7 @@ package dimovss
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
@@ -12,6 +13,7 @@ import (
 type LimitedTokenGetter struct {
 	tokenGetter convert.TokenIDGetter
 	limiters    map[string]*rate.Sometimes
+	mapMutex    sync.RWMutex
 	logger      *service.Logger
 }
 
@@ -29,14 +31,18 @@ func (l *LimitedTokenGetter) TokenIDFromSubject(ctx context.Context, userDeviceI
 	if err != nil {
 		return 0, err
 	}
+	l.mapMutex.RLock()
 	limiter, ok := l.limiters[userDeviceID]
+	l.mapMutex.RUnlock()
 	if !ok {
 		// limit to one log per day.
 		limiter = &rate.Sometimes{
 			Interval: time.Hour * 24,
 			First:    1,
 		}
+		l.mapMutex.Lock()
 		l.limiters[userDeviceID] = limiter
+		l.mapMutex.Unlock()
 	}
 	limiter.Do(func() {
 		l.logger.Infof("Found token id '%d' for userDevice '%s'", tokenID, userDeviceID)
