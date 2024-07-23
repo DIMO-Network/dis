@@ -73,10 +73,10 @@ func newVSSProcessor(lgr *service.Logger, devicesAPIGRPCAddr string) (*vssProces
 		return nil, fmt.Errorf("failed to dial devices api: %w", err)
 	}
 	deviceAPI := deviceapi.NewService(devicesConn)
-
+	limitedDeviceAPI := NewLimitedTokenGetter(deviceAPI, lgr)
 	return &vssProcessor{
 		logger:      lgr,
-		tokenGetter: deviceAPI,
+		tokenGetter: limitedDeviceAPI,
 	}, nil
 }
 
