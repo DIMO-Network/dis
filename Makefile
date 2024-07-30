@@ -3,6 +3,7 @@
 
 PATHINSTBIN = $(abspath ./bin)
 export PATH := $(PATHINSTBIN):$(PATH)
+SHELL := env PATH=$(PATH) $(SHELL)
 
 BIN_NAME					?= benthos-plugin
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin
@@ -17,7 +18,7 @@ VERSION   := $(shell git describe --tags || echo "v0.0.0")
 VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
 
 # List of supported GOOS and GOARCH
-GOOS_LIST := linux darwin windows
+GOOS_LIST := linux darwin
 GOARCH_LIST := amd64 arm64
 
 # Dependency versions
