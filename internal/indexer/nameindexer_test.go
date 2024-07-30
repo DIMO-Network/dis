@@ -267,10 +267,6 @@ func mustEncode(index *nameindexer.Index) string {
 	return encodedIndex
 }
 
-func ref[T any](val T) *T {
-	return &val
-}
-
 // setupClickHouseContainer starts a ClickHouse container for testing and returns the connection.
 func setupClickHouseContainer(t *testing.T) *container.Container {
 	t.Helper()
