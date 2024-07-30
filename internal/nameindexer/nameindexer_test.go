@@ -1,4 +1,4 @@
-package indexer
+package nameindexer
 
 import (
 	"context"
@@ -47,8 +47,7 @@ subject:
 				SecondaryFiller: "00",
 				DataType:        "FP/v0.0.1",
 				Subject: nameindexer.Subject{
-					Address: ref(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
-				},
+					Identifier: nameindexer.Address(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679"))},
 			},
 			expectErr: false,
 		},
@@ -116,7 +115,7 @@ subject:
 				SecondaryFiller: "YY",
 				DataType:        "CustomType",
 				Subject: nameindexer.Subject{
-					Address: ref(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
+					Identifier: nameindexer.Address(common.HexToAddress("0xc57d6d57fca59d0517038c968a1b831b071fa679")),
 				},
 			},
 			expectErr: false,
@@ -139,7 +138,30 @@ subject:
 				SecondaryFiller: "00",
 				DataType:        "CustomType",
 				Subject: nameindexer.Subject{
-					TokenID: ref(uint32(123)),
+					Identifier: nameindexer.TokenID(123),
+				},
+			},
+			expectErr: false,
+		},
+		{
+			name: "IMEI subject",
+			jsonString: `{
+				"time": "2024-06-11T15:30:00Z",
+				"subject": "123456789012345"
+			}`,
+			config: `
+timestamp: '${!json("time")}'
+data_type: 'CustomType'
+subject:
+  imei: '${!json("subject")}'
+`,
+			expectedIndex: &nameindexer.Index{
+				Timestamp:       time.Date(2024, 6, 11, 15, 30, 0, 0, time.UTC),
+				PrimaryFiller:   "MM",
+				SecondaryFiller: "00",
+				DataType:        "CustomType",
+				Subject: nameindexer.Subject{
+					Identifier: nameindexer.IMEI("123456789012345"),
 				},
 			},
 			expectErr: false,
@@ -243,10 +265,6 @@ func mustEncode(index *nameindexer.Index) string {
 		panic(err)
 	}
 	return encodedIndex
-}
-
-func ref[T any](val T) *T {
-	return &val
 }
 
 // setupClickHouseContainer starts a ClickHouse container for testing and returns the connection.

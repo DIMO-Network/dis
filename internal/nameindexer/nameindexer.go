@@ -1,4 +1,4 @@
-package indexer
+package nameindexer
 
 import (
 	"context"
@@ -26,6 +26,7 @@ var configSpec = service.NewConfigSpec().
 	Field(service.NewObjectField("subject",
 		service.NewInterpolatedStringField("address").Description("Ethereum address for the index").Optional(),
 		service.NewInterpolatedStringField("token_id").Description("Token Id for the index").Optional(),
+		service.NewInterpolatedStringField("imei").Description("IMEI subject for the index").Optional(),
 	)).
 	Field(service.NewStringField("migration").Default("").Description("DSN connection string for database where migration should be run. If set, the plugin will run a database migration on startup using the provided DNS string."))
 
@@ -46,7 +47,7 @@ type Processor struct {
 
 type subjectInterpolatedString struct {
 	interpolatedString *service.InterpolatedString
-	isAddress          bool
+	subjectType        nameindexer.IsIdentifier
 }
 
 // TryIndexSubject evaluates the subject field and returns a nameindexer.Subject.
@@ -56,25 +57,30 @@ func (s *subjectInterpolatedString) TryIndexSubject(msg *service.Message) (namei
 	if err != nil {
 		return nameindexer.Subject{}, fmt.Errorf("failed to evaluate subject: %w", err)
 	}
-
-	if s.isAddress {
+	switch s.subjectType.(type) {
+	case nameindexer.IMEI:
+		return nameindexer.Subject{
+			Identifier: nameindexer.IMEI(subjectStr),
+		}, nil
+	case nameindexer.Address:
 		if !common.IsHexAddress(subjectStr) {
 			return nameindexer.Subject{}, fmt.Errorf("address is not a valid hexadecimal address: %s", subjectStr)
 		}
-		addr := common.HexToAddress(subjectStr)
 		return nameindexer.Subject{
-			Address: &addr,
+			Identifier: nameindexer.Address(common.HexToAddress(subjectStr)),
 		}, nil
+	case nameindexer.TokenID:
+		tokenID, err := strconv.ParseUint(subjectStr, 10, 32)
+		if err != nil {
+			return nameindexer.Subject{}, fmt.Errorf("failed to parse token_id: %w", err)
+		}
+		tokenID32 := uint32(tokenID)
+		return nameindexer.Subject{
+			Identifier: nameindexer.TokenID(tokenID32),
+		}, nil
+	default:
+		return nameindexer.Subject{}, fmt.Errorf("unknown subject type")
 	}
-
-	tokenID, err := strconv.ParseUint(subjectStr, 10, 32)
-	if err != nil {
-		return nameindexer.Subject{}, fmt.Errorf("failed to parse token_id: %w", err)
-	}
-	tokenID32 := uint32(tokenID)
-	return nameindexer.Subject{
-		TokenID: &tokenID32,
-	}, nil
 }
 
 // Constructor for the Processor.
@@ -185,8 +191,14 @@ func getSubject(config *service.ParsedConfig) (*subjectInterpolatedString, error
 	subConfig := config.Namespace("subject")
 	addrSet := subConfig.Contains("address")
 	tokenIDSet := subConfig.Contains("token_id")
-	if addrSet && tokenIDSet || !addrSet && !tokenIDSet {
-		return nil, fmt.Errorf("either address or token_id must be set as the subject")
+	imeiSet := subConfig.Contains("imei")
+
+	// check only one is set
+	if addrSet && tokenIDSet || addrSet && imeiSet || tokenIDSet && imeiSet {
+		return nil, fmt.Errorf("only one of address, token_id or imei must be set as the subject")
+	}
+	if !addrSet && !tokenIDSet && !imeiSet {
+		return nil, fmt.Errorf("either address, token_id or imei must be set as the subject")
 	}
 	if addrSet {
 		interpolatedString, err := subConfig.FieldInterpolatedString("address")
@@ -195,16 +207,26 @@ func getSubject(config *service.ParsedConfig) (*subjectInterpolatedString, error
 		}
 		return &subjectInterpolatedString{
 			interpolatedString: interpolatedString,
-			isAddress:          true,
+			subjectType:        nameindexer.Address{},
 		}, nil
 	}
-	interpolatedString, err := subConfig.FieldInterpolatedString("token_id")
+	if tokenIDSet {
+		interpolatedString, err := subConfig.FieldInterpolatedString("token_id")
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse token_id field: %w", err)
+		}
+		return &subjectInterpolatedString{
+			interpolatedString: interpolatedString,
+			subjectType:        nameindexer.TokenID(0),
+		}, nil
+	}
+	interpolatedString, err := subConfig.FieldInterpolatedString("imei")
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse token_id field: %w", err)
+		return nil, fmt.Errorf("failed to parse imei field: %w", err)
 	}
 	return &subjectInterpolatedString{
 		interpolatedString: interpolatedString,
-		isAddress:          false,
+		subjectType:        nameindexer.IMEI(""),
 	}, nil
 }
 
