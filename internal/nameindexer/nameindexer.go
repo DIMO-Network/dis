@@ -1,4 +1,4 @@
-package indexer
+package nameindexer
 
 import (
 	"context"
@@ -47,7 +47,7 @@ type Processor struct {
 
 type subjectInterpolatedString struct {
 	interpolatedString *service.InterpolatedString
-	nameindexer.IsIdentifier
+	subjectType        nameindexer.IsIdentifier
 }
 
 // TryIndexSubject evaluates the subject field and returns a nameindexer.Subject.
@@ -57,7 +57,7 @@ func (s *subjectInterpolatedString) TryIndexSubject(msg *service.Message) (namei
 	if err != nil {
 		return nameindexer.Subject{}, fmt.Errorf("failed to evaluate subject: %w", err)
 	}
-	switch s.IsIdentifier.(type) {
+	switch s.subjectType.(type) {
 	case nameindexer.IMEI:
 		return nameindexer.Subject{
 			Identifier: nameindexer.IMEI(subjectStr),
@@ -207,7 +207,7 @@ func getSubject(config *service.ParsedConfig) (*subjectInterpolatedString, error
 		}
 		return &subjectInterpolatedString{
 			interpolatedString: interpolatedString,
-			IsIdentifier:       nameindexer.Address{},
+			subjectType:        nameindexer.Address{},
 		}, nil
 	}
 	if tokenIDSet {
@@ -217,7 +217,7 @@ func getSubject(config *service.ParsedConfig) (*subjectInterpolatedString, error
 		}
 		return &subjectInterpolatedString{
 			interpolatedString: interpolatedString,
-			IsIdentifier:       nameindexer.TokenID(0),
+			subjectType:        nameindexer.TokenID(0),
 		}, nil
 	}
 	interpolatedString, err := subConfig.FieldInterpolatedString("imei")
@@ -226,7 +226,7 @@ func getSubject(config *service.ParsedConfig) (*subjectInterpolatedString, error
 	}
 	return &subjectInterpolatedString{
 		interpolatedString: interpolatedString,
-		IsIdentifier:       nameindexer.IMEI(""),
+		subjectType:        nameindexer.IMEI(""),
 	}, nil
 }
 
