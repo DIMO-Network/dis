@@ -9,9 +9,9 @@ import (
 	"github.com/DIMO-Network/nameindexer"
 	chindexer "github.com/DIMO-Network/nameindexer/pkg/clickhouse"
 	"github.com/DIMO-Network/nameindexer/pkg/clickhouse/migrations"
-	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/pressly/goose"
+	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
 const pluginName = "name_indexer"

@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 
-	"github.com/benthosdev/benthos/v4/public/service"
+	"github.com/redpanda-data/benthos/v4/public/service"
 
 	// Import all Benthos components for third party services.
-	_ "github.com/benthosdev/benthos/v4/public/components/all"
+	_ "github.com/redpanda-data/connect/public/bundle/free/v4"
 
 	// Add our custom plugin packages here.
 	_ "github.com/DIMO-Network/benthos-plugin/internal/checksignature"
