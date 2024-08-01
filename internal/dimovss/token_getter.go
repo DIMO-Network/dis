@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
-	"github.com/benthosdev/benthos/v4/public/service"
+	"github.com/redpanda-data/benthos/v4/public/service"
 	"golang.org/x/time/rate"
 )
 

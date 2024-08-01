@@ -9,8 +9,8 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/migrations"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
-	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/pressly/goose"
+	"github.com/redpanda-data/benthos/v4/public/service"
 	"golang.org/x/mod/semver"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -68,7 +68,7 @@ type vssProcessor struct {
 }
 
 func newVSSProcessor(lgr *service.Logger, devicesAPIGRPCAddr string) (*vssProcessor, error) {
-	devicesConn, err := grpc.Dial(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	devicesConn, err := grpc.NewClient(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial devices api: %w", err)
 	}

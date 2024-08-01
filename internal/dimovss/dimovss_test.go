@@ -10,7 +10,7 @@ import (
 
 	"github.com/DIMO-Network/benthos-plugin/internal/service/deviceapi"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/benthosdev/benthos/v4/public/service"
+	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/require"
 )
 

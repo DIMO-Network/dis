@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/shared"
-	"github.com/benthosdev/benthos/v4/public/service"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
 var zeroAddr common.Address
