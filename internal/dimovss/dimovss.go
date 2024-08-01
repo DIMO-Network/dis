@@ -68,7 +68,7 @@ type vssProcessor struct {
 }
 
 func newVSSProcessor(lgr *service.Logger, devicesAPIGRPCAddr string) (*vssProcessor, error) {
-	devicesConn, err := grpc.Dial(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	devicesConn, err := grpc.NewClient(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial devices api: %w", err)
 	}
