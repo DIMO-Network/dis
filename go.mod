@@ -6,7 +6,7 @@ require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.2
 	github.com/DIMO-Network/devices-api v1.27.38
 	github.com/DIMO-Network/model-garage v0.2.11
-	github.com/DIMO-Network/nameindexer v0.0.5
+	github.com/DIMO-Network/nameindexer v0.0.7
 	github.com/DIMO-Network/shared v0.10.18
 	github.com/docker/go-connections v0.5.0
 	github.com/ethereum/go-ethereum v1.14.7
