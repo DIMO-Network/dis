@@ -2,6 +2,7 @@ package dimovss
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -91,22 +92,41 @@ func (v *vssProcessor) Process(ctx context.Context, msg *service.Message) (servi
 		// ignore v1.1 messages
 		return nil, nil
 	}
-	signals, retErr := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
-	if errors.As(retErr, &deviceapi.NotFoundError{}) {
-		// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
-		v.logger.Trace(fmt.Sprintf("dropping message: %v", retErr))
-		return nil, nil
+	var partialErr *service.Message
+	var retMsgs service.MessageBatch
+	signals, err := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
+	if err != nil {
+		if errors.As(err, &deviceapi.NotFoundError{}) {
+			// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
+			v.logger.Trace(fmt.Sprintf("dropping message: %v", err))
+			return nil, nil
+		}
+
+		convertErr := convert.ConversionError{}
+		if !errors.As(err, &convertErr) {
+			return nil, fmt.Errorf("failed to convert signals: %w", err)
+		}
+		// if we have a conversion error we will add a error message with metadata to the batch.
+		// but still return the signals that we could decode.
+		partialErr = msg.Copy()
+		partialErr.SetError(err)
+		data, err := json.Marshal(convertErr)
+		if err == nil {
+			partialErr.SetBytes(data)
+		} else {
+			partialErr.SetBytes(nil)
+		}
+		retMsgs = append(retMsgs, partialErr)
+		signals = convertErr.DecodedSignals
 	}
-	retMsgs := make([]*service.Message, len(signals))
+
 	for i := range signals {
 		sigVals := vss.SignalToSlice(signals[i])
-		retMsgs[i] = msg.Copy()
-		retMsgs[i].SetStructured(sigVals)
+		msgCpy := msg.Copy()
+		msgCpy.SetStructured(sigVals)
+		retMsgs = append(retMsgs, msgCpy)
 	}
-	if retErr != nil {
-		// still reutrn retMsg since we may have partially converted signals.
-		return retMsgs, fmt.Errorf("failed to convert signals: %w", retErr)
-	}
+
 	return retMsgs, nil
 }
 

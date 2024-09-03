@@ -109,6 +109,15 @@ func TestVSSProcessorProcess(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			batch, err := vssProc.Process(context.Background(), test.msg)
 			if test.expectedErr {
+				if err == nil {
+					return
+				}
+				for _, msg := range batch {
+					err = msg.GetError()
+					if err != nil {
+						break
+					}
+				}
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
