@@ -1,4 +1,4 @@
-package signalconvert
+package tokengetter
 
 import (
 	"context"

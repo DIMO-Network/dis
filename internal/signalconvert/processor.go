@@ -7,18 +7,18 @@ import (
 )
 
 const (
-	processorName       = "dimo_signal_convert"
-	grpcFieldName       = "devices_api_grpc_addr"
-	migrationFieldName  = "init_migration"
-	moduleNameFieldName = "module_name"
+	processorName         = "dimo_signal_convert"
+	moduleConfigFieldName = "module_config"
+	migrationFieldName    = "init_migration"
+	moduleNameFieldName   = "module_name"
 )
 
 var configSpec = service.NewConfigSpec().
 	Summary("Converts events into a list of signals").
-	Field(service.NewStringField(grpcFieldName).
+	Field(service.NewStringField(migrationFieldName).
 		Description("DSN connection string for database where migration should be run. If set, the plugin will run a database migration on startup using the provided DNS string.")).
-	Field(service.NewStringField(migrationFieldName).Default("").Description("Primary filler for the index").Default("MM")).
-	Field(service.NewStringField(moduleNameFieldName).Description("Name of the module to use for decoding.").Default("MM"))
+	Field(service.NewStringField(moduleConfigFieldName).Default("").Description("Optional Configuration that will be passed to the module")).
+	Field(service.NewStringField(moduleNameFieldName).Description("Name of the module to use for decoding."))
 
 func init() {
 	err := service.RegisterBatchProcessor(processorName, configSpec, ctor)
@@ -28,9 +28,14 @@ func init() {
 }
 
 func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProcessor, error) {
-	grpcAddr, err := cfg.FieldString(grpcFieldName)
+	moduleName, err := cfg.FieldString(moduleNameFieldName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get grpc address: %w", err)
+		return nil, fmt.Errorf("failed to get module name: %w", err)
+	}
+
+	moduleConfig, err := cfg.FieldString(moduleConfigFieldName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get module config: %w", err)
 	}
 
 	dsn, err := cfg.FieldString(migrationFieldName)
@@ -44,5 +49,5 @@ func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProce
 		}
 	}
 
-	return newVSSProcessor(mgr.Logger(), grpcAddr)
+	return newVSSProcessor(mgr.Logger(), moduleName, moduleConfig)
 }

@@ -3,23 +3,20 @@ package signalconvert
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
-	"github.com/DIMO-Network/DIS/internal/service/deviceapi"
+	"github.com/DIMO-Network/DIS/internal/modules"
 	"github.com/DIMO-Network/model-garage/pkg/migrations"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	"github.com/pressly/goose"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"golang.org/x/mod/semver"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
+type SignalModule interface {
+	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
+}
 type vssProcessor struct {
-	logger      *service.Logger
-	tokenGetter convert.TokenIDGetter
+	signalModule SignalModule
 }
 
 // Close to fulfill the service.Processor interface.
@@ -27,62 +24,42 @@ func (*vssProcessor) Close(context.Context) error {
 	return nil
 }
 
-func newVSSProcessor(lgr *service.Logger, devicesAPIGRPCAddr string) (*vssProcessor, error) {
-	devicesConn, err := grpc.NewClient(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial devices api: %w", err)
+func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vssProcessor, error) {
+	moduleOpts := modules.Options{
+		Logger:       lgr,
+		FilePath:     "",
+		ModuleConfig: []byte(moduleConfig),
 	}
-	deviceAPI := deviceapi.NewService(devicesConn)
-	limitedDeviceAPI := NewLimitedTokenGetter(deviceAPI, lgr)
+	signalModule, err := modules.LoadSignalModule(moduleName, moduleOpts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load signal module: %w", err)
+	}
 	return &vssProcessor{
-		logger:      lgr,
-		tokenGetter: limitedDeviceAPI,
+		signalModule: signalModule,
 	}, nil
 }
 
 func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
-		partialErr := msg.Copy()
-		// Get the JSON message and convert it to a DIMO status.
+		var retBatch service.MessageBatch
+		errMsg := msg.Copy()
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
 			// Add the error to the batch and continue to the next message.
-			partialErr.SetError(fmt.Errorf("failed to extract message bytes: %w", err))
-			retBatches = append(retBatches, service.MessageBatch{partialErr})
+			errMsg.SetError(fmt.Errorf("failed to get msg bytes: %w", err))
+			retBatches = append(retBatches, service.MessageBatch{errMsg})
 			continue
 		}
-		schemaVersion := convert.GetSchemaVersion(msgBytes)
-		if semver.Compare(convert.StatusV1Converted, schemaVersion) == 0 {
-			// ignore v1.1 messages
-			continue
-		}
-		var retBatch service.MessageBatch
-		signals, err := convert.SignalsFromPayload(ctx, v.tokenGetter, msgBytes)
+
+		signals, err := v.signalModule.SignalConvert(ctx, msgBytes)
 		if err != nil {
-			if errors.As(err, &deviceapi.NotFoundError{}) {
-				// If we do not have an Token for this device we want to drop the message. But we don't want to log an error.
-				v.logger.Trace(fmt.Sprintf("dropping message: %v", err))
-				continue
-			}
-
-			convertErr := convert.ConversionError{}
-			if !errors.As(err, &convertErr) {
-				// Add the error to the batch and continue to the next message.
-				partialErr.SetError(fmt.Errorf("failed to convert signals: %w", err))
-				retBatches = append(retBatches, service.MessageBatch{partialErr})
-				continue
-			}
-
-			// If we have a conversion error we will add a error message with metadata to the batch,
-			// but still return the signals that we could decode.
-			partialErr.SetError(err)
-			data, err := json.Marshal(convertErr)
+			errMsg.SetError(err)
+			data, err := json.Marshal(err)
 			if err == nil {
-				partialErr.SetBytes(data)
+				errMsg.SetBytes(data)
 			}
-			retBatch = append(retBatch, partialErr)
-			signals = convertErr.DecodedSignals
+			retBatch = append(retBatch, errMsg)
 		}
 
 		for i := range signals {

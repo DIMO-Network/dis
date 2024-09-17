@@ -2,13 +2,9 @@ package signalconvert
 
 import (
 	"context"
-	"errors"
-	"fmt"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/DIMO-Network/DIS/internal/service/deviceapi"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/require"
@@ -101,9 +97,8 @@ func TestVSSProcessorProcess(t *testing.T) {
 		},
 	}
 
-	vssProc := &vssProcessor{
-		tokenGetter: &testGetter{},
-	}
+	vssProc, err := newVSSProcessor(nil, "macaron", "test")
+	require.NoError(t, err)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -142,17 +137,4 @@ func TestVSSProcessorProcess(t *testing.T) {
 			}
 		})
 	}
-}
-
-type testGetter struct{}
-
-func (t *testGetter) TokenIDFromSubject(ctx context.Context, subject string) (uint32, error) {
-	if subject == notFoundSubject {
-		return 0, fmt.Errorf("%w: no tokenID set", deviceapi.NotFoundError{DeviceID: subject})
-	}
-	if subject == errorSubject {
-		return 0, errors.New("test error")
-	}
-	id, err := strconv.Atoi(subject)
-	return uint32(id), err
 }
