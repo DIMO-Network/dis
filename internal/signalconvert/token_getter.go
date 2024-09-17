@@ -1,4 +1,4 @@
-package dimovss
+package signalconvert
 
 import (
 	"context"

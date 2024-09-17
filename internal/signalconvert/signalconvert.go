@@ -1,4 +1,4 @@
-package dimovss
+package signalconvert
 
 import (
 	"context"
@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	pluginName         = "vss_vehicle"
-	pluginSummary      = "Converts a Status message from a DIMO device into a list of values for insertion into clickhouse."
+	pluginName         = "dimo_signal_convert"
+	pluginSummary      = "Converts events into a list of signals"
 	grpcFieldName      = "devices_api_grpc_addr"
 	grpcFieldDesc      = "The address of the devices API gRPC server."
 	migrationFieldName = "init_migration"
