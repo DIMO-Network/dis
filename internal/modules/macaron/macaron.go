@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/DIMO-Network/DIS/internal/service/deviceapi"
 	"github.com/DIMO-Network/DIS/internal/tokengetter"
@@ -18,7 +17,7 @@ import (
 
 // MacaronModule is a module that converts macaron messages to signals.
 type MacaronModule struct {
-	tokenGetter convert.TokenIDGetter
+	TokenGetter convert.TokenIDGetter
 	logger      *service.Logger
 }
 
@@ -30,18 +29,14 @@ func (m *MacaronModule) SetLogger(logger *service.Logger) {
 // SetConfig sets the configuration for the module.
 func (m *MacaronModule) SetConfig(config []byte) error {
 	devicesAPIGRPCAddr := string(config)
-	var deviceAPI convert.TokenIDGetter
-	if devicesAPIGRPCAddr == "test" {
-		deviceAPI = &testGetter{}
-	} else {
-		devicesConn, err := grpc.NewClient(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		if err != nil {
-			return fmt.Errorf("failed to dial devices api: %w", err)
-		}
-		deviceAPI = deviceapi.NewService(devicesConn)
+	devicesConn, err := grpc.NewClient(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("failed to dial devices api: %w", err)
 	}
+
+	deviceAPI := deviceapi.NewService(devicesConn)
 	limitedDeviceAPI := tokengetter.NewLimitedTokenGetter(deviceAPI, m.logger)
-	m.tokenGetter = limitedDeviceAPI
+	m.TokenGetter = limitedDeviceAPI
 	return nil
 }
 
@@ -52,7 +47,7 @@ func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vs
 		// ignore v1.1 messages
 		return nil, nil
 	}
-	signals, err := convert.SignalsFromPayload(ctx, m.tokenGetter, msgBytes)
+	signals, err := convert.SignalsFromPayload(ctx, m.TokenGetter, msgBytes)
 	if err == nil {
 		return signals, nil
 	}
@@ -71,21 +66,3 @@ func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vs
 
 	return convertErr.DecodedSignals, convertErr
 }
-
-type testGetter struct{}
-
-func (*testGetter) TokenIDFromSubject(_ context.Context, subject string) (uint32, error) {
-	if subject == notFoundSubject {
-		return 0, fmt.Errorf("%w: no tokenID set", deviceapi.NotFoundError{DeviceID: subject})
-	}
-	if subject == errorSubject {
-		return 0, errors.New("test error")
-	}
-	id, err := strconv.Atoi(subject)
-	return uint32(id), err
-}
-
-const (
-	notFoundSubject = "not_found"
-	errorSubject    = "error"
-)
