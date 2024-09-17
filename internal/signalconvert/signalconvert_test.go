@@ -107,20 +107,25 @@ func TestVSSProcessorProcess(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			batch, err := vssProc.Process(context.Background(), test.msg)
+			batches, err := vssProc.ProcessBatch(context.Background(), []*service.Message{test.msg})
+			require.NoError(t, err)
 			if test.expectedErr {
-				if err == nil {
-					return
-				}
-				for _, msg := range batch {
-					err = msg.GetError()
-					if err != nil {
-						break
+				for _, batch := range batches {
+					for _, msg := range batch {
+						err = msg.GetError()
+						if err != nil {
+							return
+						}
 					}
 				}
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+				require.Fail(t, "expected an error from the processor")
+			}
+
+			var batch service.MessageBatch
+			if len(batches) > 1 {
+				require.Fail(t, "expected a single or no batches")
+			} else if len(batches) == 1 {
+				batch = batches[0]
 			}
 
 			var expectedBatch service.MessageBatch
