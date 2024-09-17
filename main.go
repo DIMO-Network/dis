@@ -5,13 +5,17 @@ import (
 
 	"github.com/redpanda-data/benthos/v4/public/service"
 
-	// Import all Benthos components for third party services.
-	_ "github.com/redpanda-data/connect/public/bundle/free/v4"
+	// Import aws for s3 output.
+	_ "github.com/redpanda-data/connect/v4/public/components/aws"
 
+	// Import sql for clickhouse output.
+	_ "github.com/redpanda-data/connect/v4/public/components/sql"
+
+	// Import io for http endpoints.
+	_ "github.com/redpanda-data/connect/v4/public/components/io"
 	// Add our custom plugin packages here.
-	_ "github.com/DIMO-Network/DIS/internal/checksignature"
-	_ "github.com/DIMO-Network/DIS/internal/dimovss"
-	_ "github.com/DIMO-Network/DIS/internal/nameindexer"
+	// _ "github.com/DIMO-Network/DIS/internal/dimovss"
+	// _ "github.com/DIMO-Network/DIS/internal/nameindexer"
 )
 
 func main() {
