@@ -1,4 +1,4 @@
-module github.com/DIMO-Network/benthos-plugin
+module github.com/DIMO-Network/DIS
 
 go 1.22.0
 

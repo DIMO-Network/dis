@@ -35,4 +35,4 @@ jobs:
           file: ./dockerfile
           push: true
           platforms: linux/amd64
-          tags: dimozone/benthos-plugin:${{steps.tag.outputs.tag}}
+          tags: dimozone/DIS:${{steps.tag.outputs.tag}}

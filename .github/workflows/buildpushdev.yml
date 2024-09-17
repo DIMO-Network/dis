@@ -33,4 +33,4 @@ jobs:
           file: ./dockerfile
           push: true
           platforms: linux/amd64
-          tags: dimozone/benthos-plugin:${{ steps.slug.outputs.sha7 }}, dimozone/benthos-plugin:latest
+          tags: dimozone/DIS:${{ steps.slug.outputs.sha7 }}, dimozone/DIS:latest

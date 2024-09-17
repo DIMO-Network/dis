@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/DIMO-Network/benthos-plugin/internal/service/deviceapi"
+	"github.com/DIMO-Network/DIS/internal/service/deviceapi"
 	"github.com/DIMO-Network/model-garage/pkg/migrations"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"

@@ -7,9 +7,9 @@
 
 # binary only
 bin
-benthos-plugin
-!benthos-plugin/
-!benthos-plugin/*
+DIS
+!DIS/
+!DIS/*
 
 # Test binary, built with `go test -c`
 *.test

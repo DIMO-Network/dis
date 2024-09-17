@@ -9,9 +9,9 @@ import (
 	_ "github.com/redpanda-data/connect/public/bundle/free/v4"
 
 	// Add our custom plugin packages here.
-	_ "github.com/DIMO-Network/benthos-plugin/internal/checksignature"
-	_ "github.com/DIMO-Network/benthos-plugin/internal/dimovss"
-	_ "github.com/DIMO-Network/benthos-plugin/internal/nameindexer"
+	_ "github.com/DIMO-Network/DIS/internal/checksignature"
+	_ "github.com/DIMO-Network/DIS/internal/dimovss"
+	_ "github.com/DIMO-Network/DIS/internal/nameindexer"
 )
 
 func main() {

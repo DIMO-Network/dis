@@ -6,7 +6,7 @@ input:
     topics:
       - "${DEVICE_STATUS_TOPIC:topic.device.status}"
     consumer_group: "zone.dimo.export.elastic"
-    client_id: ${CONTAINER_NAME:localhost}-benthos-plugin
+    client_id: ${CONTAINER_NAME:localhost}-DIS
     rack_id: ${NODE_NAME:localhost}
     commit_period: 1s
     fetch_buffer_cap: 500
