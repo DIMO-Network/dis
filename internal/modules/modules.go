@@ -38,17 +38,18 @@ func LoadSignalModule(name string, opts Options) (SignalModule, error) { //nolin
 	if !ok {
 		return nil, NotFoundError(fmt.Sprintf("signal module '%s' not found", name))
 	}
-	module := moduleCtor()
+	module, err := moduleCtor()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create module '%s': %w", name, err)
+	}
 	module.SetLogger(opts.Logger)
-	err := module.SetConfig(opts.ModuleConfig)
+	err = module.SetConfig(opts.ModuleConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to set config for module '%s': %w", name, err)
 	}
 	return module, nil
 }
 
-var signalModules = map[string]func() SignalModule{
-	"macaron": func() SignalModule {
-		return &macaron.MacaronModule{}
-	},
+var signalModules = map[string]func() (SignalModule, error){
+	"macaron": func() (SignalModule, error) { return macaron.New() },
 }

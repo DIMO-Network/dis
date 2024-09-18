@@ -21,6 +21,11 @@ type MacaronModule struct {
 	logger      *service.Logger
 }
 
+// New creates a new MacaronModule.
+func New() (*MacaronModule, error) {
+	return &MacaronModule{}, nil
+}
+
 // SetLogger sets the logger for the module.
 func (m *MacaronModule) SetLogger(logger *service.Logger) {
 	m.logger = logger
