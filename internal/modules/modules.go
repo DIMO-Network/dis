@@ -10,18 +10,36 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
+type Module interface {
+	SetLogger(logger *service.Logger)
+	SetConfig(config string) error
+}
+
+// SignalModule is an interface for converting messages to signals.
+type SignalModule interface {
+	Module
+	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
+}
+
+// CloudEventModule is an interface for converting messages to cloud events.
+type CloudEventModule interface {
+	Module
+	CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error)
+}
+
+var signalModules = map[string]func() (SignalModule, error){
+	"macaron": func() (SignalModule, error) { return macaron.New() },
+}
+
+var cloudEventModules = map[string]func() (CloudEventModule, error){
+	"macaron": func() (CloudEventModule, error) { return macaron.New() },
+}
+
 // NotFoundError is an error type for when a module is not found.
 type NotFoundError string
 
 func (e NotFoundError) Error() string {
 	return string(e)
-}
-
-// SignalModule is an interface for converting messages to signals.
-type SignalModule interface {
-	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
-	SetLogger(logger *service.Logger)
-	SetConfig(config string) error
 }
 
 // Options is a struct for configuring signal modules.
@@ -50,6 +68,21 @@ func LoadSignalModule(name string, opts Options) (SignalModule, error) { //nolin
 	return module, nil
 }
 
-var signalModules = map[string]func() (SignalModule, error){
-	"macaron": func() (SignalModule, error) { return macaron.New() },
+// LoadCloudEventModule attempts to load a specific cloudEvent module.
+func LoadCloudEventModule(name string, opts Options) (CloudEventModule, error) { //nolint // I don't like returning an interface here, but we don't have a concrete type to return.
+	// Load signal modules from the given path.
+	moduleCtor, ok := cloudEventModules[name]
+	if !ok {
+		return nil, NotFoundError(fmt.Sprintf("signal module '%s' not found", name))
+	}
+	module, err := moduleCtor()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create module '%s': %w", name, err)
+	}
+	module.SetLogger(opts.Logger)
+	err = module.SetConfig(opts.ModuleConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set config for module '%s': %w", name, err)
+	}
+	return module, nil
 }

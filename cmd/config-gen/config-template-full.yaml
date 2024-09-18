@@ -18,7 +18,7 @@ input:
 pipeline:
   processors:
     - label: convert_cloudEvent_{{ .IntegrationName }}
-      convert_cloudEvent:
+      dimo_cloudevent_convert:
         moduleName: {{ .ModuleName }}
         moduleConfig: {{ base64 .ModuleConfig }}
     - catch:

@@ -8,7 +8,10 @@ COPY . ./
 RUN make dep
 RUN make build
 
-FROM gcr.io/distroless/static AS final
+# FROM gcr.io/distroless/static AS final
+# TODO (Kevin): repalce with distroless/static later
+# reuse golang for debugging purposes 
+FROM golang:1.22 AS final 
 
 LABEL maintainer="DIMO <hello@dimo.zone>"
 
