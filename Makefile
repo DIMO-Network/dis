@@ -5,7 +5,7 @@ PATHINSTBIN = $(abspath ./bin)
 export PATH := $(PATHINSTBIN):$(PATH)
 SHELL := env PATH=$(PATH) $(SHELL)
 
-BIN_NAME					?= DIS
+BIN_NAME					?= dis
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin
 DEFAULT_ARCH				:= $(shell go env GOARCH)
 DEFAULT_GOOS				:= $(shell go env GOOS)

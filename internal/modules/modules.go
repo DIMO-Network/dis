@@ -5,7 +5,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/DIMO-Network/DIS/internal/modules/macaron"
+	"github.com/DIMO-Network/dis/internal/modules/macaron"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )

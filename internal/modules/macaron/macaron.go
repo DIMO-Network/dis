@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/DIMO-Network/DIS/internal/service/deviceapi"
-	"github.com/DIMO-Network/DIS/internal/tokengetter"
+	"github.com/DIMO-Network/dis/internal/service/deviceapi"
+	"github.com/DIMO-Network/dis/internal/tokengetter"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	"github.com/redpanda-data/benthos/v4/public/service"

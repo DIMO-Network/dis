@@ -14,8 +14,8 @@ import (
 	// Import io for http endpoints.
 	_ "github.com/redpanda-data/connect/v4/public/components/io"
 	// Add our custom plugin packages here.
-	_ "github.com/DIMO-Network/DIS/internal/signalconvert"
-	// _ "github.com/DIMO-Network/DIS/internal/nameindexer"
+	_ "github.com/DIMO-Network/dis/internal/signalconvert"
+	// _ "github.com/DIMO-Network/dis/internal/nameindexer"
 )
 
 func main() {

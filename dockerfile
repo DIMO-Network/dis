@@ -17,9 +17,9 @@ LABEL maintainer="DIMO <hello@dimo.zone>"
 
 USER nonroot:nonroot
 
-COPY --from=build --chown=nonroot:nonroot /build/bin/DIS /
+COPY --from=build --chown=nonroot:nonroot /build/bin/dis /
 COPY --from=build --chown=nonroot:nonroot /build/sample-config.yaml /benthos.yaml
 
-ENTRYPOINT ["/DIS"]
+ENTRYPOINT ["/dis"]
 
 CMD ["-c", "/benthos.yaml"]

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/DIMO-Network/DIS/internal/modules"
+	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/model-garage/pkg/migrations"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/pressly/goose"
