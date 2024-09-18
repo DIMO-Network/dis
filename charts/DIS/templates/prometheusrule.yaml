@@ -2,8 +2,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   namespace: {{ .Release.Namespace }}
-  name: {{ include "DIS.fullname" . }}-alerts
+  name: {{ include "dis.fullname" . }}-alerts
   labels:
-    {{- include "DIS.labels" . | nindent 4 }}
+    {{- include "dis.labels" . | nindent 4 }}
 spec:
   {{- include "alerts" . | nindent 2 }}

@@ -1,11 +1,11 @@
-# Default values for DIS.
+# Default values for dis.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image:
-  repository: dimozone/benthos-plugin
+  repository: dimozone/dis
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "4ad38f5"
@@ -45,12 +45,6 @@ securityContext:
       - all
 
 env:
-  KAFKA_BOOTSTRAP_SERVERS: kafka-dev-dimo-kafka-kafka-brokers
-  DEVICE_STATUS_TOPIC: topic.device.status.enriched
-  DEVICE_STATUS_V2_TOPIC: topic.device.status.private.v2
-  AFTERMARKET_DEVICE_LOGS_TOPIC: topic.aftermarket.device.logs
-  DBC_DECODING_TOPIC: topic.dbc.decoding
-  ELASTIC_MULTIPLE_NODE: false
   ENVIRONMENT: dev
   CLICKHOUSE_PORT: 9440
   CLICKHOUSE_DATABASE: dimo
@@ -121,7 +115,7 @@ tolerations: []
 
 affinity: {}
 
-podDisruptionBudget:
+poddisruptionBudget:
   maxUnavailable: 1
   #minAvailable: 1
 

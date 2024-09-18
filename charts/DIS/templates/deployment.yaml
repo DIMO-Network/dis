@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "DIS.fullname" . }}
+  name: {{ include "dis.fullname" . }}
   labels:
-    {{- include "DIS.labels" . | nindent 4 }}
+    {{- include "dis.labels" . | nindent 4 }}
 spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
   selector:
     matchLabels:
-      {{- include "DIS.selectorLabels" . | nindent 6 }}
+      {{- include "dis.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -20,13 +20,13 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "DIS.selectorLabels" . | nindent 8 }}
+        {{- include "dis.selectorLabels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "DIS.serviceAccountName" . }}
+      serviceAccountName: {{ include "dis.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -45,9 +45,9 @@ spec:
           {{ end }}
           envFrom:
           - configMapRef:
-              name: {{ include "DIS.fullname" . }}-config
+              name: {{ include "dis.fullname" . }}-config
           - secretRef:
-              name: {{ include "DIS.fullname" . }}-secret
+              name: {{ include "dis.fullname" . }}-secret
           env:
           - name: CONTAINER_NAME
             valueFrom:
@@ -71,48 +71,27 @@ spec:
           resources:
 {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            - name: status
-              mountPath: /streams/devicestatus.yaml
-              subPath: devicestatus.yaml
-            - name: status-ch
-              mountPath: /streams/devicestatus-clickhouse.yaml
-              subPath: devicestatus-clickhouse.yaml
-            - name: dbc
-              mountPath: /streams/dbcdecoding.yaml
-              subPath: dbcdecoding.yaml                    
+            {{- $files := .Files.Glob "files/streams/*" }}
+            {{- range $path, $_ := $files }}
+            - name: {{ $path | base | replace "." "-" }}
+              mountPath: /streams/{{ $path | base }}
+              subPath: {{ $path | base }}
+            {{- end }}
             - name: config
               mountPath: /config
-            - name: logs
-              mountPath: /streams/devicelogs.yaml
-              subPath: devicelogs.yaml
+
       volumes:
-        - name: status
+        {{- range $path, $_ := $files }}
+        - name: {{ $path | base | replace "." "-" }}
           configMap:
-            name: {{ include "DIS.fullname" . }}-stream-config
+            name: {{ include "dis.fullname" $ }}-stream-config
             items:
-              - key: devicestatus.yaml
-                path: devicestatus.yaml
-        - name: logs
-          configMap:
-            name: {{ include "DIS.fullname" . }}-stream-config
-            items:
-              - key: devicelogs.yaml
-                path: devicelogs.yaml
-        - name: status-ch
-          configMap:
-            name: {{ include "DIS.fullname" . }}-stream-config
-            items:
-              - key: devicestatus-clickhouse.yaml
-                path: devicestatus-clickhouse.yaml      
-        - name: dbc
-          configMap:
-            name: {{ include "DIS.fullname" . }}-stream-config
-            items:
-              - key: dbcdecoding.yaml
-                path: dbcdecoding.yaml        
+              - key: {{ $path | base }}
+                path: {{ $path | base }}
+        {{- end }}
         - name: config
           configMap:
-            name: {{ include "DIS.fullname" . }}-stream-config
+            name: {{ include "dis.fullname" . }}-stream-config
             items:
               - key: config.yaml
                 path: config.yaml

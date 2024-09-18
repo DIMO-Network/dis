@@ -1,12 +1,12 @@
 apiVersion: policy/v1
-kind: PodDisruptionBudget
+kind: PoddisruptionBudget
 metadata:
-  name: {{ include "DIS.fullname" . }}
+  name: {{ include "dis.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-{{ include "DIS.labels" . | indent 4 }}
+{{ include "dis.labels" . | indent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "DIS.selectorLabels" . | nindent 6 }}
-{{ toYaml .Values.podDisruptionBudget | indent 2 }}
+      {{- include "dis.selectorLabels" . | nindent 6 }}
+{{ toYaml .Values.poddisruptionBudget | indent 2 }}

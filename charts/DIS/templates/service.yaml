@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "DIS.fullname" . }}
+  name: {{ include "dis.fullname" . }}
   labels:
-    {{- include "DIS.labels" . | nindent 4 }}
+    {{- include "dis.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +12,4 @@ spec:
 {{ toYaml $value | indent 6 }}
   {{- end }}
   selector:
-    {{- include "DIS.selectorLabels" . | nindent 4 }}
+    {{- include "dis.selectorLabels" . | nindent 4 }}
