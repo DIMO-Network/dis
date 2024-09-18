@@ -2,6 +2,7 @@ package signalconvert
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -25,10 +26,14 @@ func (*vssProcessor) Close(context.Context) error {
 }
 
 func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vssProcessor, error) {
+	decodedModuelConfig, err := base64.StdEncoding.DecodeString(moduleConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode module config: %w", err)
+	}
 	moduleOpts := modules.Options{
 		Logger:       lgr,
 		FilePath:     "",
-		ModuleConfig: []byte(moduleConfig),
+		ModuleConfig: string(decodedModuelConfig),
 	}
 	signalModule, err := modules.LoadSignalModule(moduleName, moduleOpts)
 	if err != nil {

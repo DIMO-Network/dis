@@ -1,0 +1,13 @@
+integrations:
+  - integrationId: "ruptela_integration_id"
+    moduleName: "ruptela.wasm"
+    integrationName: "Ruptela"
+    
+
+  - integrationId: "macaron_integration_id"
+    integrationName: "Macaron"
+    moduleName: "macaron"
+    moduleConfig: |
+      {
+        "device_api_url": "http://devices-api-prod:8086"
+      }

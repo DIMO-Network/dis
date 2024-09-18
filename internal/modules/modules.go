@@ -21,14 +21,14 @@ func (e NotFoundError) Error() string {
 type SignalModule interface {
 	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
 	SetLogger(logger *service.Logger)
-	SetConfig(config []byte) error
+	SetConfig(config string) error
 }
 
 // Options is a struct for configuring signal modules.
 type Options struct {
 	Logger       *service.Logger
 	FilePath     string
-	ModuleConfig []byte
+	ModuleConfig string
 }
 
 // LoadSignalModule attempts to load a specific signal module.
