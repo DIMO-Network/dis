@@ -68,7 +68,7 @@ func (v *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			msgCpy.SetStructured(event)
 			retBatch = append(retBatch, msgCpy)
 		}
-
+		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
 }
