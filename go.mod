@@ -4,7 +4,7 @@ go 1.22.0
 
 require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.2
-	github.com/DIMO-Network/devices-api v1.29.16
+	github.com/DIMO-Network/devices-api v1.29.17
 	github.com/DIMO-Network/model-garage v0.2.18
 	github.com/DIMO-Network/nameindexer v0.0.7
 	github.com/docker/go-connections v0.5.0

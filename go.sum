@@ -38,8 +38,8 @@ github.com/ClickHouse/clickhouse-go/v2 v2.27.1 h1:cSUewKnQ2XWvCNpCV0WRAQGvShElJ1
 github.com/ClickHouse/clickhouse-go/v2 v2.27.1/go.mod h1:XvcaX7ai9T9si83rZ0cB3y2upq9AYMwdj16Trqm+sPg=
 github.com/DIMO-Network/clickhouse-infra v0.0.2 h1:bKbBWgsZEqQKrXCfc93mag0JALg747SoNFODybgutxA=
 github.com/DIMO-Network/clickhouse-infra v0.0.2/go.mod h1:NX0pmwYzZj1M9sh1RRhFjhMZ0J9OkuMgXMA9Jad6lX0=
-github.com/DIMO-Network/devices-api v1.29.16 h1:G2ApPVMbr9kVp8GldDIz5UNIOOLLvz1jW2t8Byqx+HI=
-github.com/DIMO-Network/devices-api v1.29.16/go.mod h1:40nT8pXM4UXqq63fNgmi7IqVv0ygXP9X+l9/Z7ZdJ1A=
+github.com/DIMO-Network/devices-api v1.29.17 h1:D8hi0uSM9V2vaSf7Yaik9FbZ3EfnHWeM4oAKydPLGec=
+github.com/DIMO-Network/devices-api v1.29.17/go.mod h1:40nT8pXM4UXqq63fNgmi7IqVv0ygXP9X+l9/Z7ZdJ1A=
 github.com/DIMO-Network/model-garage v0.2.18 h1:WO29m+MARq21yf5t6YR6UcK9V0k5ToOkfI5bf7ww+yQ=
 github.com/DIMO-Network/model-garage v0.2.18/go.mod h1:K/dHdToIvfPNPYX3DZwDoOX8oEkSy39sN3/FmpUlg1Q=
 github.com/DIMO-Network/nameindexer v0.0.7 h1:aigO9WZGvoGkyu2R92ZXZGT44zB3O0bgLB+A7wbmEsk=
