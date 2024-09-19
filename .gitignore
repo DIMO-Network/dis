@@ -7,9 +7,9 @@
 
 # binary only
 bin
-DIS
-!DIS/
-!DIS/*
+dis
+!dis/
+!dis/*
 
 # Test binary, built with `go test -c`
 *.test

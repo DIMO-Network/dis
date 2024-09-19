@@ -1,0 +1,23 @@
+{{- define "alerts" -}}
+groups:
+  - name: data-ingest-autopi
+    rules:
+      - alert: VssConversionHighFailureRate
+        expr:  sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="log_convert_errors"}[5m])) BY (pod, job, namespace)  / sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="convert_vss"}[5m])) BY (pod, job, namespace) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'High failure rate for convert_vss processor detected'
+          description: 'The failure rate has exceeded 5% in the last 5 minutes.'
+      - alert: VssConversionCriticalFailureRate
+        expr:  sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="log_convert_errors"}[5m])) BY (pod, job, namespace)  / sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="convert_vss"}[5m])) BY (pod, job, namespace) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'Critical failure rate for convert_vss processor detected'
+          description: 'The failure rate has exceeded 10% in the last 5 minutes.'
+{{- end -}}

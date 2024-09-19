@@ -2,11 +2,12 @@ package macaron
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/DIMO-Network/DIS/internal/service/deviceapi"
-	"github.com/DIMO-Network/DIS/internal/tokengetter"
+	"github.com/DIMO-Network/dis/internal/service/deviceapi"
+	"github.com/DIMO-Network/dis/internal/tokengetter"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -15,10 +16,19 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type moduleConfig struct {
+	DevicesAPIGRPCAddr string `json:"devices_api_grpc_addr"`
+}
+
 // MacaronModule is a module that converts macaron messages to signals.
 type MacaronModule struct {
 	TokenGetter convert.TokenIDGetter
 	logger      *service.Logger
+}
+
+// New creates a new MacaronModule.
+func New() (*MacaronModule, error) {
+	return &MacaronModule{}, nil
 }
 
 // SetLogger sets the logger for the module.
@@ -27,9 +37,13 @@ func (m *MacaronModule) SetLogger(logger *service.Logger) {
 }
 
 // SetConfig sets the configuration for the module.
-func (m *MacaronModule) SetConfig(config []byte) error {
-	devicesAPIGRPCAddr := string(config)
-	devicesConn, err := grpc.NewClient(devicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+func (m *MacaronModule) SetConfig(config string) error {
+	var cfg moduleConfig
+	err := json.Unmarshal([]byte(config), &cfg)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+	devicesConn, err := grpc.NewClient(cfg.DevicesAPIGRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("failed to dial devices api: %w", err)
 	}
@@ -65,4 +79,9 @@ func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vs
 	}
 
 	return convertErr.DecodedSignals, convertErr
+}
+
+// CloudEventConvert converts a macaron message to cloud events.
+func (MacaronModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
+	return [][]byte{msgData}, nil
 }

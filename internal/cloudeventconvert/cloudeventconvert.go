@@ -1,4 +1,4 @@
-package signalconvert
+package cloudeventconvert
 
 import (
 	"context"
@@ -7,25 +7,22 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules"
-	"github.com/DIMO-Network/model-garage/pkg/migrations"
-	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/pressly/goose"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
-type SignalModule interface {
-	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
+type CloudEventModule interface {
+	CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error)
 }
-type vssProcessor struct {
-	signalModule SignalModule
+type cloudeventProcessor struct {
+	cloudEventModule CloudEventModule
 }
 
 // Close to fulfill the service.Processor interface.
-func (*vssProcessor) Close(context.Context) error {
+func (*cloudeventProcessor) Close(context.Context) error {
 	return nil
 }
 
-func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vssProcessor, error) {
+func newCloudConvertProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*cloudeventProcessor, error) {
 	decodedModuelConfig, err := base64.StdEncoding.DecodeString(moduleConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode module config: %w", err)
@@ -35,16 +32,16 @@ func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vss
 		FilePath:     "",
 		ModuleConfig: string(decodedModuelConfig),
 	}
-	signalModule, err := modules.LoadSignalModule(moduleName, moduleOpts)
+	cloudEventModule, err := modules.LoadCloudEventModule(moduleName, moduleOpts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load signal module: %w", err)
 	}
-	return &vssProcessor{
-		signalModule: signalModule,
+	return &cloudeventProcessor{
+		cloudEventModule: cloudEventModule,
 	}, nil
 }
 
-func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
+func (v *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
 		var retBatch service.MessageBatch
@@ -57,7 +54,7 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 			continue
 		}
 
-		signals, err := v.signalModule.SignalConvert(ctx, msgBytes)
+		events, err := v.cloudEventModule.CloudEventConvert(ctx, msgBytes)
 		if err != nil {
 			errMsg.SetError(err)
 			data, err := json.Marshal(err)
@@ -66,26 +63,12 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 			}
 			retBatch = append(retBatch, errMsg)
 		}
-
-		for i := range signals {
-			sigVals := vss.SignalToSlice(signals[i])
+		for _, event := range events {
 			msgCpy := msg.Copy()
-			msgCpy.SetStructured(sigVals)
+			msgCpy.SetStructured(event)
 			retBatch = append(retBatch, msgCpy)
 		}
 		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
-}
-
-func runMigration(dsn string) error {
-	db, err := goose.OpenDBWithDriver("clickhouse", dsn)
-	if err != nil {
-		return fmt.Errorf("failed to open db: %w", err)
-	}
-	err = migrations.RunGoose(context.Background(), []string{"up", "-v"}, db)
-	if err != nil {
-		return fmt.Errorf("failed to run migration: %w", err)
-	}
-	return nil
 }

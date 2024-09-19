@@ -5,7 +5,7 @@ PATHINSTBIN = $(abspath ./bin)
 export PATH := $(PATHINSTBIN):$(PATH)
 SHELL := env PATH=$(PATH) $(SHELL)
 
-BIN_NAME					?= DIS
+BIN_NAME					?= dis
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin
 DEFAULT_ARCH				:= $(shell go env GOARCH)
 DEFAULT_GOOS				:= $(shell go env GOOS)
@@ -65,3 +65,6 @@ docker: dep
 tools-golangci-lint:
 	@mkdir -p $(PATHINSTBIN)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
+
+config-gen:
+	go run ./cmd/config-gen -input=./integrations/integrations.yaml -output=charts/$(BIN_NAME)/files/streams
