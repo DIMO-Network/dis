@@ -4,8 +4,6 @@ kafka:
   clusterName: kafka-prod-dimo-kafka
 
 env:
-  KAFKA_BOOTSTRAP_SERVERS: kafka-prod-dimo-kafka-kafka-bootstrap
-  DEVICE_STATUS_TOPIC: topic.device.status.enriched
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
   
