@@ -8,7 +8,7 @@ image:
   args:
     - '-w'
     - '-r'
-    - config/resources.yaml
+    - /config/resources.yaml
     - '-c'
     - /config/config.yaml
     - streams
