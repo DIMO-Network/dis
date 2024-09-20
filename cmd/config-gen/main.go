@@ -49,6 +49,7 @@ func main() {
 			"base64": func(s string) string {
 				return base64.StdEncoding.EncodeToString([]byte(s))
 			},
+			"toLower": strings.ToLower,
 		}).Parse(templateContent)
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
