@@ -7,11 +7,7 @@ input:
     allowed_verbs:
       - POST
     timeout: 5s
-    rate_limit:
-      label: "integration_rate_limit"
-      local:
-        count: 100000
-        interval: 1s
+    rate_limit: "integration_rate_limit"
     sync_response:
       status: "200"
       headers:
@@ -23,10 +19,10 @@ pipeline:
         module_name: {{ .ModuleName }}
         module_config: {{ base64 .ModuleConfig }}
     - catch:
-        - label: "convert_cloudEvent_errors"
+        - label: "convert_cloudevent_errors"
           log:
             level: WARN
-            message: "failed to convert to cloudEvent: ${!error()}"
+            message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
                source = "{{ .IntegrationID }}"
         - mapping: root = deleted()
@@ -41,28 +37,28 @@ output:
             file:
               path: '/tmp/clickhouse_${! counter(min: 1, max: 100) }.json' # No default (required)
               codec: all-bytes
-              processors:
-                - label: convert_signals
-                  dimo_signal_convert:
-                    module_name: {{ .ModuleName }}
-                    module_config: {{ base64 .ModuleConfig }}
-                - catch:
-                    - label: "log_convert_errors"
-                      log:
-                        level: WARN
-                        message: "status processing failed: ${!error()}"
-                        fields_mapping: |
-                          vehicleTokenId = this.tokenId.or(-1)
-                          source = this.source.or("unknown")
-                    - mapping: root = deleted()
+            processors:
+              - label: convert_signals
+                dimo_signal_convert:
+                  module_name: {{ .ModuleName }}
+                  module_config: {{ base64 .ModuleConfig }}
+              - catch:
+                  - label: "log_convert_errors"
+                    log:
+                      level: WARN
+                      message: "status processing failed: ${!error()}"
+                      fields_mapping: |
+                        vehicleTokenId = this.tokenId.or(-1)
+                        source = this.source.or("unknown")
+                  - mapping: root = deleted()
       - label: "object_output_{{ toLower .IntegrationName }}"
         drop_on:
           error: true
           output:
-            - broker:
-                pattern: fan_out
-                outputs:
-                  - label: "s3_object_insert_{{ toLower .IntegrationName }}"
-                    file:
-                      path: '/tmp/s3_${! counter(min: 1, max: 100) }.json' # No default (required)
-                      codec: all-bytes
+            broker:
+              pattern: fan_out
+              outputs:
+                - label: "s3_object_insert_{{ toLower .IntegrationName }}"
+                  file:
+                    path: '/tmp/s3_${! counter(min: 1, max: 100) }.json' # No default (required)
+                    codec: all-bytes

@@ -7,11 +7,7 @@ input:
     allowed_verbs:
       - POST
     timeout: 5s
-    rate_limit:
-      label: "integration_rate_limit"
-      local:
-        count: 100000
-        interval: 1s
+    rate_limit: "integration_rate_limit"
     sync_response:
       status: "200"
       headers:
@@ -26,7 +22,7 @@ pipeline:
         - label: "convert_cloudevent_errors"
           log:
             level: WARN
-            message: "failed to convert to cloudEvent: ${!error()}"
+            message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
               source = "{{ .IntegrationID }}"
         - mapping: root = deleted()
@@ -49,35 +45,35 @@ output:
                 byte_size: 0
                 period: "200ms"
                 check: ""
-              processors:
-                - label: convert_signals
-                  dimo_signal_convert:
-                    module_name: {{ .ModuleName }}
-                    module_config: {{ base64 .ModuleConfig }}
-                - catch:
-                    - label: "log_convert_errors"
-                      log:
-                        level: WARN
-                        message: "status processing failed: ${!error()}"
-                        fields_mapping: |
-                          vehicleTokenId = this.tokenId.or(-1)
-                          source = this.source.or("unknown")
-                    - mapping: root = deleted()
+            processors:
+              - label: convert_signals
+                dimo_signal_convert:
+                  module_name: {{ .ModuleName }}
+                  module_config: {{ base64 .ModuleConfig }}
+              - catch:
+                  - label: "log_convert_errors"
+                    log:
+                      level: WARN
+                      message: "status processing failed: ${!error()}"
+                      fields_mapping: |
+                        vehicleTokenId = this.tokenId.or(-1)
+                        source = this.source.or("unknown")
+                  - mapping: root = deleted()
       - label: "object_output_{{ toLower .IntegrationName }}"
         drop_on:
           error: true
           output:
-            - broker:
-                pattern: fan_out
-                outputs:
-                  - label: "s3_object_insert_{{ toLower .IntegrationName }}"
-                    aws_s3:
-                      bucket: ${DEVICE_STATUS_S3_BUCKET}
-                      path: ${!meta("index")}
-                      content_type: application/json
-                      region: us-east-2
-                      max_in_flight: 250
-                      timeout: 30s
-                      credentials:
-                        id: ${S3_AWS_ACCESS_KEY_ID}
-                        secret: ${S3_AWS_SECRET_ACCESS_KEY}
+            broker:
+              pattern: fan_out
+              outputs:
+                - label: "s3_object_insert_{{ toLower .IntegrationName }}"
+                  aws_s3:
+                    bucket: ${DEVICE_STATUS_S3_BUCKET}
+                    path: ${!meta("index")}
+                    content_type: application/json
+                    region: us-east-2
+                    max_in_flight: 250
+                    timeout: 30s
+                    credentials:
+                      id: ${S3_AWS_ACCESS_KEY_ID}
+                      secret: ${S3_AWS_SECRET_ACCESS_KEY}

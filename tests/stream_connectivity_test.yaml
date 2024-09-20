@@ -1,0 +1,120 @@
+tests:
+  - name: "Happy path twilio index decoding"
+    target_processors: '../charts/stream-s3/files/stream_connectivity_twilio.yaml#/output/processors'
+    input_batch:
+      - content: | 
+          {
+              "specversion": "1.0",
+              "type": "com.twilio.iot.supersim.connection.data-session.started",
+              "source": "/v1/SuperSim/ConnectionEvents/Ezwf7baed2c31664ce0badc725f5f4b517b",
+              "id": "Ezwf7baed2c31664ce0badc725f5f4b517b",
+              "dataschema": "https://events-schemas.twilio.com/SuperSim.ConnectionEvent/1",
+              "datacontenttype": "application/json",
+              "time": "2024-07-30T18:26:08.000Z",
+              "data": {
+                  "network": {
+                      "iso_country": "US",
+                      "mnc": "410",
+                      "mcc": "310",
+                      "sid": "asdfasd",
+                      "friendly_name": "AT&T"
+                  },
+                  "imei": "353338974210992",
+                  "imsi": "234106309552992",
+                  "location": {
+                      "lon": -76.8675228,
+                      "cell_id": "18610455",
+                      "lat": 38.8396753,
+                      "lac": "4660"
+                  },
+                  "timestamp": "2024-07-30T18:26:08Z",
+                  "rat_type": "4G LTE",
+                  "event_type": "com.twilio.iot.supersim.connection.data-session.started",
+                  "apn": "super"
+              }
+          }
+    output_batches:
+      -
+        - metadata_equals:
+            index: "759269MMTwilio_1.0IMEI00000000000000000000000035333897421099200182608"
+  - name: "Twilio missing imei"
+    target_processors: '../charts/stream-s3/files/stream_connectivity_twilio.yaml#/output/processors'
+    input_batch:
+      - content: |
+          {
+            "time": "2024-07-30T18:26:08.000Z"
+          }
+    output_batches: []
+
+  - name: "Happy path lorawan index decoding"
+    target_processors: '../charts/stream-s3/files/stream_connectivity_lorawan.yaml#/output/processors'
+    input_batch:
+      - content: | 
+         {
+          "data": {
+              "decodedPayload": {
+                  "header": 3,
+                  "intakeTemp": 48,
+                  "latitude": 36.056347,
+                  "longTermFuelTrim1": 5.46875,
+                  "longitude": -115.024811,
+                  "maf": 0.07,
+                  "nsat": 4,
+                  "speed": 70,
+                  "throttlePosition": "17.6",
+                  "timestamp": "2024-07-30T18:42:44.000Z",
+                  "vinLast8": "ROGERROG"
+              },
+              "device": {
+                  "id": "F4CE36ROGER5FBF0",
+                  "name": "0xBCE1CD40C75754714fc288b2753B9dB6C785f201",
+                  "nonce": 1,
+                  "protocol": "lora_helium"
+              },
+              "id": "f9d35132-8d83-46c2-b362-4b28e330eae3",
+              "metadata": {
+                  "app_eui": "44494D4F5A4F4E43",
+                  "dc_balance": 28817413,
+                  "devAddr": "60080048",
+                  "fPort": "2",
+                  "fcnt": "1253",
+                  "payload_size": "31"
+              },
+              "payload": "AyQ0qWazORBCtAzmwlJKMDMzNDU1RgAHAAAAWACHLQ==",
+              "timestamp": 1722364964162,
+              "via": [
+                  {
+                      "channel": 3,
+                      "frequency": 904.5,
+                      "id": "11Tn6MC2n265TWgQswPv6Srvt4C1vNczVDpdG6uga8eEsC2yG5h",
+                      "location": {
+                          "latitude": 36.056217998262554,
+                          "longitude": -115.03149788111533,
+                          "ref": "11Tn6MC2n265TWgQswPv6Srvt4C1vNczVDpdG6uga8eEsC2yG5h",
+                          "rssi": -123,
+                          "snr": -6.5
+                      },
+                      "metadata": {
+                          "gatewayId": "11Tn6MC2n265TWgQswPv6Srvt4C1vNczVDpdG6uga8eEsC2yG5h",
+                          "gatewayName": "fun-cotton-gerbil"
+                      },
+                      "network": "helium",
+                      "protocol": "LORAWAN",
+                      "spreading": "SF9BW125",
+                      "status": "success",
+                      "timestamp": 1722364964162
+                  }
+              ]
+          },
+          "id": "2jygwC9tIIKIPnqdiiBTSA7QFL",
+          "source": "lorawan/webhook/notification",
+          "specversion": "1.0",
+          "subject": "ERCE5315D3A5FBR2",
+          "time": "2024-07-30T18:42:46.305Z",
+          "type": "zone.dimo.lorawan.notification"
+          }
+    output_batches:
+      -
+        - metadata_equals:
+            index: "759269MM00Lora_1.0bCE1CD40c75754714FC288b2753b9DB6C785F20100184246"
+

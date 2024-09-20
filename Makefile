@@ -51,8 +51,9 @@ dep:
 test:
 	@go test ./...
 
-lint:
-	@golangci-lint version
+lint: build
+	@dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
+	golangci-lint version
 	@golangci-lint run --timeout=30m
 
 format:

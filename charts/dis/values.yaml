@@ -7,6 +7,8 @@ image:
     - /dis
   args:
     - '-w'
+    - '-r'
+    - "config/resources.yaml"
     - '-c'
     - /config/config.yaml
     - streams

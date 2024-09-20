@@ -1,0 +1,66 @@
+tests:
+  - name: "Drop messages without vehicleTokenId and dataschema v1.1 or v1.1.0"
+    target_processors: '../charts/stream-s3/files/stream_status.yaml#skip_invalid_messages'
+    input_batch:
+      - content: | 
+          {
+            "dataschema": "v1.1",
+            "some_other_field": "some_value"
+          }
+    output_batches: []
+
+  - name: "Drop messages with vehicleTokenId but dataschema v1.1"
+    target_processors: '../charts/stream-s3/files/stream_status.yaml#skip_invalid_messages'
+    input_batch:
+      - content: |
+          {
+            "vehicleTokenId": "12345",
+            "dataschema": "v1.1.0",
+            "some_other_field": "some_value"
+          }
+    output_batches: []
+
+  - name: "Drop messages missing vehicleTokenId"
+    target_processors: '../charts/stream-s3/files/stream_status.yaml#skip_invalid_messages'
+    input_batch:
+      - content: |
+          {
+            "dataschema": "v2.0",
+            "some_other_field": "some_value"
+          }
+    output_batches: []
+
+  - name: "Keep messages with vehicleTokenId and dataschema v2.0"
+    target_processors: '../charts/stream-s3/files/stream_status.yaml#skip_invalid_messages'
+    input_batch:
+      - content: |
+          {
+            "vehicleTokenId": "12345",
+            "dataschema": "v2.0",
+            "some_other_field": "some_value"
+          }
+    output_batches:
+      -
+        - json_equals: |
+            {
+              "vehicleTokenId": "12345",
+              "dataschema": "v2.0",
+              "some_other_field": "some_value"
+            }
+  - name: "Keep messages with vehicleTokenId and dataschema v1.0"
+    target_processors: '../charts/stream-s3/files/stream_status.yaml#skip_invalid_messages'
+    input_batch:
+      - content: |
+          {
+            "vehicleTokenId": "12345",
+            "dataschema": "v1.0",
+            "some_other_field": "some_value"
+          }
+    output_batches:
+      -
+        - json_equals: |
+            {
+              "vehicleTokenId": "12345",
+              "dataschema": "v1.0",
+              "some_other_field": "some_value"
+            }

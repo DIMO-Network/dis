@@ -15,7 +15,7 @@ const (
 
 var configSpec = service.NewConfigSpec().
 	Summary("Converts events into a list of signals").
-	Field(service.NewStringField(migrationFieldName).
+	Field(service.NewStringField(migrationFieldName).Default("").
 		Description("DSN connection string for database where migration should be run. If set, the plugin will run a database migration on startup using the provided DNS string.")).
 	Field(service.NewStringField(moduleConfigFieldName).Default("").Description("Optional Configuration that will be passed to the module")).
 	Field(service.NewStringField(moduleNameFieldName).Description("Name of the module to use for decoding."))
