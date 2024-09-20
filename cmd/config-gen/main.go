@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	"gopkg.in/yaml.v3"
@@ -96,7 +97,7 @@ func generateYAMLFile(tmpl *template.Template, config IntegrationConfig, outputD
 	}
 
 	// Write the output to a YAML file in the output directory
-	outputFile := filepath.Join(outputDir, config.IntegrationName+"-ingest.yaml")
+	outputFile := filepath.Join(outputDir, strings.ToLower(config.IntegrationName)+"-ingest.yaml")
 	err = os.WriteFile(outputFile, buffer.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing YAML file: %w", err)
