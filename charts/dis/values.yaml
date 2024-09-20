@@ -1,56 +1,39 @@
-# Default values for dis.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 replicaCount: 1
-
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: "4ad38f5"
+  tag: b94a227
   command:
-    - "/benthos-plugin"
+    - /benthos-plugin
   args:
-    - -w
-    - -c
+    - '-w'
+    - '-c'
     - /config/config.yaml
     - streams
     - /streams/
-
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
-
+nameOverride: ''
+fullnameOverride: ''
 serviceAccount:
-  # Specifies whether a service account should be created
   create: true
-  # Annotations to add to the service account
   annotations: {}
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name: ""
-
+  name: ''
 podAnnotations: {}
-
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 10001
   runAsGroup: 10001
-
 securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
       - all
-
 env:
   ENVIRONMENT: dev
   CLICKHOUSE_PORT: 9440
   CLICKHOUSE_DATABASE: dimo
   DEVICES_APIGRPC_ADDR: devices-api-dev:8086
   LOG_LEVEL: INFO
-
 service:
   type: ClusterIP
   ports:
@@ -62,7 +45,6 @@ service:
       port: 8080
       targetPort: http
       protocol: TCP
-
 ports:
   - name: mon-http
     containerPort: 8888
@@ -70,7 +52,6 @@ ports:
   - name: http
     containerPort: 8080
     protocol: TCP
-
 livenessProbe:
   httpGet:
     path: /ping
@@ -80,7 +61,6 @@ livenessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
-
 readinessProbe:
   httpGet:
     path: /ready
@@ -90,10 +70,8 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
-
 ingress:
   enabled: false
-
 resources:
   limits:
     cpu: 250m
@@ -101,26 +79,18 @@ resources:
   requests:
     cpu: 50m
     memory: 128Mi
-
 autoscaling:
   enabled: false
   minReplicas: 1
   maxReplicas: 100
   targetCPUUtilizationPercentage: 80
-  # targetMemoryUtilizationPercentage: 80
-
 nodeSelector: {}
-
 tolerations: []
-
 affinity: {}
-
 poddisruptionBudget:
   maxUnavailable: 1
-  #minAvailable: 1
-
 serviceMonitor:
   enabled: true
-  path: "/metrics"
+  path: /metrics
   port: mon-http
   interval: 30s
