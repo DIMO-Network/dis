@@ -2,13 +2,13 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: c3eddfa
+  tag: a5cab18
   command:
     - /dis
   args:
     - '-w'
     - '-r'
-    - "config/resources.yaml"
+    - config/resources.yaml
     - '-c'
     - /config/config.yaml
     - streams
