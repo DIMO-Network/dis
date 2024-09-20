@@ -59,7 +59,7 @@ format:
 	@golangci-lint run --fix
 
 docker: dep
-	@docker build -f ./dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
+	@docker build -f ./docker/dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
 	@docker tag dimozone/$(BIN_NAME):$(VER_CUT) dimozone/$(BIN_NAME):latest
 
 tools-golangci-lint:
