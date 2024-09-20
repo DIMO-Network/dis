@@ -4,7 +4,7 @@ image:
   pullPolicy: IfNotPresent
   tag: 15aea90
   command:
-    - /benthos-plugin
+    - /dis
   args:
     - '-w'
     - '-c'
