@@ -6,9 +6,10 @@ logger:
   add_timestamp: true
   format: json
   static_fields:
-    'app': zone.dimo.dis
+    'app': 'zone.dimo.dis'
 
 metrics:
   prometheus: {}
+  mapping: ""
 
 shutdown_timeout: 20s
