@@ -8,7 +8,7 @@ input:
       - POST
     timeout: 5s
     rate_limit:
-      label: "integration_ratet_limit"
+      label: "integration_rate_limit"
       local:
         count: 100000
         interval: 1s
@@ -20,8 +20,8 @@ pipeline:
   processors:
     - label: convert_cloudevent_ruptela
       dimo_cloudevent_convert:
-        moduleName: ruptela.wasm
-        moduleConfig: 
+        module_name: ruptela.wasm
+        module_config: 
     - catch:
         - label: "convert_cloudEvent_errors"
           log:
@@ -44,8 +44,8 @@ output:
               processors:
                 - label: convert_signals
                   dimo_signal_convert:
-                    moduleName: ruptela.wasm
-                    moduleConfig: 
+                    module_name: ruptela.wasm
+                    module_config: 
                 - catch:
                     - label: "log_convert_errors"
                       log:

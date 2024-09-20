@@ -14,7 +14,7 @@ GOOS						?= $(DEFAULT_GOOS)
 INSTALL_DIR					?= $(DEFAULT_INSTALL_DIR)
 .DEFAULT_GOAL := run
 
-VERSION   := $(shell git describe --tags || echo "v0.0.0")
+VERSION   := $(shell git describe --tags 2>/dev/null || echo "v0.0.0")
 VER_CUT   := $(shell echo $(VERSION) | cut -c2-)
 
 # List of supported GOOS and GOARCH
@@ -67,4 +67,7 @@ tools-golangci-lint:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
 
 config-gen:
-	go run ./cmd/config-gen -input=./integrations/integrations.yaml -output=charts/$(BIN_NAME)/files/streams
+	@go run ./cmd/config-gen -input=./integrations/integrations.yaml -output=charts/$(BIN_NAME)/files/streams
+
+generate: config-gen
+	@go generate ./...
