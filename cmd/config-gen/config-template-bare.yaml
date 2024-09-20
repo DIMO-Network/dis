@@ -8,7 +8,7 @@ input:
       - POST
     timeout: 5s
     rate_limit:
-      label: "integration_ratet_limit"
+      label: "integration_rate_limit"
       local:
         count: 100000
         interval: 1s
@@ -20,8 +20,8 @@ pipeline:
   processors:
     - label: convert_cloudevent_{{ toLower .IntegrationName }}
       dimo_cloudevent_convert:
-        moduleName: {{ .ModuleName }}
-        moduleConfig: {{ base64 .ModuleConfig }}
+        module_name: {{ .ModuleName }}
+        module_config: {{ base64 .ModuleConfig }}
     - catch:
         - label: "convert_cloudEvent_errors"
           log:
@@ -44,8 +44,8 @@ output:
               processors:
                 - label: convert_signals
                   dimo_signal_convert:
-                    moduleName: {{ .ModuleName }}
-                    moduleConfig: {{ base64 .ModuleConfig }}
+                    module_name: {{ .ModuleName }}
+                    module_config: {{ base64 .ModuleConfig }}
                 - catch:
                     - label: "log_convert_errors"
                       log:

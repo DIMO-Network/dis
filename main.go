@@ -14,6 +14,9 @@ import (
 	// Import io for http endpoints.
 	_ "github.com/redpanda-data/connect/v4/public/components/io"
 
+	// Import pure for basic processing.
+	_ "github.com/redpanda-data/benthos/v4/public/components/pure"
+
 	// Import prometheus for metrics.
 	_ "github.com/redpanda-data/connect/v4/public/components/prometheus"
 
