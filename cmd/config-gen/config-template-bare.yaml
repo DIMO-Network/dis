@@ -2,6 +2,7 @@
 input:
   label: "ingest-server for {{ .IntegrationName }}"
   http_server:
+    address: 0.0.0.0:8080
     path: /integration/{{ .IntegrationID }}/store
     allowed_verbs:
       - POST

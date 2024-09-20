@@ -2,6 +2,7 @@
 input:
   label: "ingest-server for Macaron"
   http_server:
+    address: 0.0.0.0:8080
     path: /integration/macaron_integration_id/store
     allowed_verbs:
       - POST
@@ -18,7 +19,7 @@ input:
 pipeline:
   processors:
     - label: convert_cloudEvent_Macaron
-      convert_cloudEvent:
+      dimo_cloudevent_convert:
         moduleName: macaron
         moduleConfig: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktcHJvZDo4MDg2Igp9Cg==
     - catch:
@@ -37,17 +38,9 @@ output:
         drop_on:
           error: true
           output:
-            sql_insert:
-              driver: clickhouse
-              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=60
-              table: signal
-              columns: []
-              args_mapping: root = this
-              batching:
-                count: 10000
-                byte_size: 0
-                period: "200ms"
-                check: ""
+            file:
+              path: '/tmp/clickhouse_${! counter(min: 1, max: 100) }.json' # No default (required)
+              codec: all-bytes
               processors:
                 - label: convert_signals
                   dimo_signal_convert:
@@ -70,13 +63,6 @@ output:
                 pattern: fan_out
                 outputs:
                   - label: "s3_object_insert_Macaron"
-                    aws_s3:
-                      bucket: ${DEVICE_STATUS_S3_BUCKET}
-                      path: ${!meta("index")}
-                      content_type: application/json
-                      region: us-east-2
-                      max_in_flight: 250
-                      timeout: 30s
-                      credentials:
-                        id: ${S3_AWS_ACCESS_KEY_ID}
-                        secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                    file:
+                      path: '/tmp/s3_${! counter(min: 1, max: 100) }.json' # No default (required)
+                      codec: all-bytes
