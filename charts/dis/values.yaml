@@ -101,7 +101,7 @@ autoscaling:
 nodeSelector: {}
 tolerations: []
 affinity: {}
-poddisruptionBudget:
+podDisruptionBudget:
   maxUnavailable: 1
 serviceMonitor:
   enabled: true
