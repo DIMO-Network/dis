@@ -8,7 +8,21 @@ env:
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
   
 ingress:
-  enabled: false
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
+    nginx.ingress.kubernetes.io/cors-allow-origin: https://app.dimo.zone, https://admin.team.dimo.zone
+    nginx.ingress.kubernetes.io/limit-rps: '50'
+    external-dns.alpha.kubernetes.io/hostname: dis-api.dimo.zone
+  hosts:
+    - host: dis-api.dimo.zone
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
 
 resources: 
   limits:
