@@ -10,6 +10,5 @@ logger:
 
 metrics:
   prometheus: {}
-  mapping: ""
 
 shutdown_timeout: 20s

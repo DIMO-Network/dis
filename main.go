@@ -13,9 +13,13 @@ import (
 
 	// Import io for http endpoints.
 	_ "github.com/redpanda-data/connect/v4/public/components/io"
+
+	// Import prometheus for metrics.
+	_ "github.com/redpanda-data/connect/v4/public/components/prometheus"
+
 	// Add our custom plugin packages here.
+	_ "github.com/DIMO-Network/dis/internal/cloudeventconvert"
 	_ "github.com/DIMO-Network/dis/internal/signalconvert"
-	// _ "github.com/DIMO-Network/dis/internal/nameindexer"
 )
 
 func main() {
