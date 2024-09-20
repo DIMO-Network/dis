@@ -99,6 +99,7 @@ spec:
             items:
               - key: config.yaml
                 path: config.yaml
+        - name: resources
           configMap:
             name: {{ include "dis.fullname" . }}-stream-config
             items:
