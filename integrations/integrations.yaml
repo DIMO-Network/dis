@@ -1,7 +1,7 @@
 integrations:
-  - integrationId: "ruptela_integration_id"
-    moduleName: "ruptela.wasm"
-    integrationName: "Ruptela"
+  # - integrationId: "ruptela_integration_id"
+  #   moduleName: "ruptela.wasm"
+  #   integrationName: "Ruptela"
     
 
   - integrationId: "macaron_integration_id"
