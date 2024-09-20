@@ -2,9 +2,9 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: 15aea90
+  tag: e2a5cd0
   command:
-    - /dis
+    - /benthos-plugin
   args:
     - '-w'
     - '-c'
