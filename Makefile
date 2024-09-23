@@ -24,6 +24,11 @@ GOARCH_LIST := amd64 arm64
 # Dependency versions
 GOLANGCI_VERSION   = latest
 
+help:
+	@echo "\nSpecify a subcommand:\n"
+	@grep -hE '^[0-9a-zA-Z_-]+:.*?## .*$$' ${MAKEFILE_LIST} | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[0;36m%-20s\033[m %s\n", $$1, $$2}'
+	@echo ""
+
 build:
 	@CGO_ENABLED=0 GOOS=$(GOOS) GOARCH=$(ARCH) \
 		go build -o bin/$(BIN_NAME) ./
@@ -48,10 +53,13 @@ install: build
 dep: 
 	@go mod tidy
 
-test:
+test: test-benthos ## Run all tests
 	@go test ./...
+	
+test-benthos: ## Run Benthos tests
+	@dis test --log debug ./test-benthos/...
 
-lint: build
+lint: build ## Run linter for benthos config and go code
 	@dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
 	golangci-lint version
 	@golangci-lint run --timeout=30m
@@ -67,8 +75,8 @@ tools-golangci-lint:
 	@mkdir -p $(PATHINSTBIN)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
 
-config-gen:
+config-gen: ## Generate Benthos config files
 	@go run ./cmd/config-gen -input=./integrations/integrations.yaml -output=charts/$(BIN_NAME)/files/streams
 
-generate: config-gen
+generate: config-gen ## Run all generate commands
 	@go generate ./...

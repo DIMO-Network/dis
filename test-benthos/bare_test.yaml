@@ -1,0 +1,57 @@
+tests:
+  - name: "Test S3 file output"
+    target_processors: "../charts/dis/files/streams/macaron-ingest.yaml#s3_object_insert_macaron"
+    environment: {}
+    input_batch:
+      - json_content:
+          tokenId: "testToken123"
+          source: "testSource"
+          someOtherField: "someValue"
+        metadata:
+          example_key: example metadata value
+    output_batches:
+      - # Expected batch
+        - json_equals:
+            msg:
+              tokenId: "testToken123"
+              source: "testSource"
+              someOtherField: "someValue"
+            metadata: 
+              example_key: example metadata value
+
+  - name: "Test Clickhouse file output"
+    target_processors: "../charts/dis/files/streams/macaron-ingest.yaml#clickhouse_signal_insert_macaron_file"
+    environment: {}
+    input_batch:
+       - metadata:
+          example_key: example metadata value 
+         content: | 
+          {
+            "source": "dimo/integration/123",
+            "dataschema": "testschema/v2.0",
+            "subject": "0x98D78d711C0ec544F6fb5d54fcf6559CF41546a9",
+            "time": "2024-04-18T17:20:46.436008782Z",
+            "vehicleTokenId": 123,
+            "data": {
+                "timestamp": 1713460846435,
+                "device": {
+                    "rpiUptimeSecs": 218,
+                    "batteryVoltage": 12.28
+                },
+                "vehicle": {
+                    "signals": [
+                        {
+                            "timestamp": 1713460826633,
+                            "name": "coolantTemp",
+                            "value": 107
+                        },
+                    ]
+                }
+            }
+          }
+    output_batches:
+      - # Expected batch
+        - json_equals:
+            msg: [123, "2024-04-18T17:20:26.633Z", "powertrainCombustionEngineECT", "dimo/integration/123", 107, ""]
+            metadata: 
+              example_key: example metadata value
