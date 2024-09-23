@@ -34,8 +34,9 @@ output:
         drop_on:
           error: true
           output:
+            label: "clickhouse_signal_insert_{{ toLower .IntegrationName }}_file"
             file:
-              path: '/tmp/clickhouse_${! counter(min: 1, max: 100) }.json' # No default (required)
+              path: '/tmp/clickhouse_${! counter(min: 1, max: 100) }.json'
               codec: all-bytes
             processors:
               - label: convert_signals
@@ -50,15 +51,19 @@ output:
                       fields_mapping: |
                         vehicleTokenId = this.tokenId.or(-1)
                         source = this.source.or("unknown")
-                  - mapping: root = deleted()
+                  - mapping: root = deleted()      
+              - mapping: | 
+                  root.msg = this
+                  root.metadata = metadata()
       - label: "object_output_{{ toLower .IntegrationName }}"
         drop_on:
           error: true
           output:
-            broker:
-              pattern: fan_out
-              outputs:
-                - label: "s3_object_insert_{{ toLower .IntegrationName }}"
-                  file:
-                    path: '/tmp/s3_${! counter(min: 1, max: 100) }.json' # No default (required)
-                    codec: all-bytes
+            label: "s3_object_insert_{{ toLower .IntegrationName }}"
+            file:
+              path: '/tmp/s3_${! counter(min: 1, max: 100) }.json'
+              codec: all-bytes
+            processors:
+              - mapping: | 
+                  root.msg = this
+                  root.metadata = metadata()
