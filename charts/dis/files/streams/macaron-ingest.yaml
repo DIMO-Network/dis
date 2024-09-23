@@ -53,7 +53,7 @@ output:
                         source = this.source.or("unknown")
                   - mapping: root = deleted()      
               - mapping: | 
-                  root.msg = this
+                  root.msg = this.string()
                   root.metadata = metadata()
       - label: "object_output_macaron"
         drop_on:
@@ -65,5 +65,5 @@ output:
               codec: all-bytes
             processors:
               - mapping: | 
-                  root.msg = this
+                  root.msg = this.string()
                   root.metadata = metadata()

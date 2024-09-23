@@ -1,5 +1,5 @@
 
-.PHONY: clean run build install dep test lint format docker
+.PHONY: clean run build install dep test lint format docker test-benthos tools-golangci-lint config-gen generate
 
 PATHINSTBIN = $(abspath ./bin)
 export PATH := $(PATHINSTBIN):$(PATH)
@@ -57,7 +57,7 @@ test: test-benthos ## Run all tests
 	@go test ./...
 	
 test-benthos: ## Run Benthos tests
-	@dis test --log debug ./test-benthos/...
+	dis test --log debug ./test-benthos/...
 
 lint: build ## Run linter for benthos config and go code
 	@dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
