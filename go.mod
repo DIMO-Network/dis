@@ -2,6 +2,8 @@ module github.com/DIMO-Network/dis
 
 go 1.22.0
 
+replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20240924193744-bbc4e3f59532
+
 require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.2
 	github.com/DIMO-Network/devices-api v1.29.16

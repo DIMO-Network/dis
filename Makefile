@@ -59,8 +59,10 @@ test: test-benthos ## Run all tests
 test-benthos: ## Run Benthos tests
 	dis test --log debug ./test-benthos/...
 
-lint: build ## Run linter for benthos config and go code
+lint-benthos: build ## Run Benthos linter
 	@dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
+
+lint: lint-benthos ## Run linter for benthos config and go code
 	golangci-lint version
 	@golangci-lint run --timeout=30m
 

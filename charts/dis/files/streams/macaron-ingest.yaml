@@ -8,6 +8,8 @@ input:
       - POST
     timeout: 5s
     rate_limit: "integration_rate_limit"
+    tls:
+      require_mutual_tls: true
     sync_response:
       status: "200"
       headers:
@@ -53,7 +55,7 @@ output:
                         source = this.source.or("unknown")
                   - mapping: root = deleted()      
               - mapping: | 
-                  root.msg = this.string()
+                  root.msg = this
                   root.metadata = metadata()
       - label: "object_output_macaron"
         drop_on:
@@ -65,5 +67,5 @@ output:
               codec: all-bytes
             processors:
               - mapping: | 
-                  root.msg = this.string()
+                  root.msg = this
                   root.metadata = metadata()
