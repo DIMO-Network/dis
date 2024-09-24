@@ -8,8 +8,13 @@ input:
       - POST
     timeout: 5s
     rate_limit: "integration_rate_limit"
-    tls:
-      require_mutual_tls: true
+    # tls:
+    #   enabled: true
+    #   client_root_cas: /etc/ssl/certs/ca-certificates.crt
+    #   server_certs:
+    #     - cert_file: /etc/ssl/certs/server.crt
+    #       key_file: /etc/ssl/certs/server.key
+    #   require_mutual_tls: true
     sync_response:
       status: "200"
       headers:
