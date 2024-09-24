@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: 85e0fd2
+  tag: 91137a6
   command:
     - /dis
   args:
@@ -76,11 +76,11 @@ ingress:
   enabled: true
   className: nginx-direct
   annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
     external-dns.alpha.kubernetes.io/hostname: dis.dev.dimo.zone
     nginx.ingress.kubernetes.io/limit-rps: '50'
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
   hosts:
     - host: dis.dev.dimo.zone
       paths:
