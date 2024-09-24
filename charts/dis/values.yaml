@@ -74,14 +74,13 @@ readinessProbe:
   successThreshold: 1
 ingress:
   enabled: true
-  className: nginx
+  className: nginx-direct
   annotations:
-    nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
-    nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
-    nginx.ingress.kubernetes.io/enable-cors: 'true'
-    nginx.ingress.kubernetes.io/cors-allow-origin: https://app.dev.dimo.zone, https://admin.dev.dimo.zone
-    nginx.ingress.kubernetes.io/limit-rps: '25'
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
     external-dns.alpha.kubernetes.io/hostname: dis.dev.dimo.zone
+    nginx.ingress.kubernetes.io/limit-rps: '50'
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   hosts:
     - host: dis.dev.dimo.zone
       paths:
