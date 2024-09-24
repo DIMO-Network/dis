@@ -3,16 +3,16 @@ tests:
     target_processors: "../charts/dis/files/streams/macaron-ingest.yaml#s3_object_insert_macaron"
     environment: {}
     input_batch:
-      - json_content:
-          tokenId: "testToken123"
-          source: "testSource"
-          someOtherField: "someValue"
+      - file_content: "./content.yaml"
         metadata:
           example_key: example metadata value
     output_batches:
       - # Expected batch
         - json_equals:
-            msg: '{"someOtherField":"someValue","source":"testSource","tokenId":"testToken123"}'
+            msg: 
+              someOtherField: "someValue"
+              source: "testSource"
+              tokenId: "testToken123"
             metadata: 
               example_key: example metadata value
 
@@ -41,6 +41,6 @@ tests:
     output_batches:
       - # Expected batch
         - json_equals:
-            msg: '[123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","dimo/integration/123",107,""]'
+            msg: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","dimo/integration/123",107,""]
             metadata: 
               example_key: example metadata value
