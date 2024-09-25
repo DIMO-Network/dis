@@ -87,6 +87,13 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
   tls: []
+
+
+certificate:
+  commonName: dis.dev.dimo.zone
+  issuer: cae-dev-dimo-ca-issuer
+  caConfigMap: cae-dev-dimo-ca-certs
+
 resources:
   limits:
     cpu: 250m

@@ -83,6 +83,9 @@ spec:
             - name: resources
               mountPath: /config/resources.yaml
               subPath: resources.yaml
+            - name: external-http-server-tls
+              mountPath: /etc/ssl/certs/dis
+              readOnly: true
 
       volumes:
         {{- range $path, $_ := $files }}
@@ -105,6 +108,21 @@ spec:
             items:
               - key: resources.yaml
                 path: resources.yaml
+        - name: external-http-server-tls
+          projected:
+            sources:
+              - secret:
+                secretName: {{ include "dis.fullname" . }}-tls
+                items:
+                  - key: tls.crt
+                    path: tls.crt
+                  - key: tls.key
+                    path: tls.key
+              - configMap:
+                  name: {{ .Values.certificate.caConfigMap }}
+                  items:
+                    - key: root_ca.crt
+                      path: root_ca.crt
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
