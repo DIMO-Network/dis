@@ -43,7 +43,7 @@ service:
       port: 8888
       targetPort: mon-http
       protocol: TCP
-    http:
+    https:
       port: 443
       targetPort: https
       protocol: TCP
