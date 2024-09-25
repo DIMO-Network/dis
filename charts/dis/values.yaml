@@ -89,7 +89,7 @@ ingress:
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
-  issuer: cae-dev-dimo-ca-issuer
+  issuer: cas-dev-dimo-ca-issuer
   caConfigMap: cae-dev-dimo-ca-certs
 resources:
   limits:

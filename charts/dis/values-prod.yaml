@@ -25,7 +25,7 @@ ingress:
 
 certificate:
   commonName: dis.dimo.zone
-  issuer: cae-dimo-ca-issuer
+  issuer: cas-dimo-ca-issuer
   caConfigMap: cae-dimo-ca-certs
 
 resources: 
