@@ -45,14 +45,14 @@ service:
       protocol: TCP
     https:
       port: 443
-      targetPort: https
+      targetPort: 9443
       protocol: TCP
 ports:
   - name: mon-http
     containerPort: 8888
     protocol: TCP
   - name: https
-    containerPort: 443
+    containerPort: 9443
     protocol: TCP
 livenessProbe:
   httpGet:

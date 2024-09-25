@@ -2,7 +2,7 @@
 input:
   label: "ingest_server_macaron"
   http_server:
-    address: 0.0.0.0:443
+    address: 0.0.0.0:9443
     path: /integration/macaron_integration_id/store
     allowed_verbs:
       - POST
