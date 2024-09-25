@@ -14,7 +14,7 @@ input:
       server_certs:
         - cert_file: /etc/ssl/certs/dis/tls.crt
           key_file: /etc/ssl/certs/dis/tls.key
-    #   require_mutual_tls: true
+      require_mutual_tls: true
     sync_response:
       status: "200"
       headers:
