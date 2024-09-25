@@ -77,6 +77,9 @@ tools-golangci-lint:
 	@mkdir -p $(PATHINSTBIN)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
 
+tools: tools-golangci-lint ## Install all tools
+
+
 config-gen: ## Generate Benthos config files
 	@go run ./cmd/config-gen -input=./integrations/integrations.yaml -output=charts/$(BIN_NAME)/files/streams
 
