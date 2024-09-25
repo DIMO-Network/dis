@@ -112,7 +112,7 @@ spec:
           projected:
             sources:
               - secret:
-                secretName: {{ include "dis.fullname" . }}-tls
+                name: {{ include "dis.fullname" . }}-tls
                 items:
                   - key: tls.crt
                     path: tls.crt
