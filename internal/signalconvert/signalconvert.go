@@ -18,6 +18,7 @@ type SignalModule interface {
 }
 type vssProcessor struct {
 	signalModule SignalModule
+	Logger       *service.Logger
 }
 
 // Close to fulfill the service.Processor interface.
@@ -41,6 +42,7 @@ func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vss
 	}
 	return &vssProcessor{
 		signalModule: signalModule,
+		Logger:       lgr,
 	}, nil
 }
 
@@ -56,7 +58,7 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 			retBatches = append(retBatches, service.MessageBatch{errMsg})
 			continue
 		}
-
+		v.Logger.Infof("msgBytes: %s", string(msgBytes))
 		signals, err := v.signalModule.SignalConvert(ctx, msgBytes)
 		if err != nil {
 			errMsg.SetError(err)
