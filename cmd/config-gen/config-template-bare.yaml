@@ -10,7 +10,7 @@ input:
     rate_limit: "integration_rate_limit"
     tls:
       enabled: true
-      client_root_cas: /etc/ssl/certs/dis/root_ca.crt
+      client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
       server_certs:
         - cert_file: /etc/ssl/certs/dis/tls.crt
           key_file: /etc/ssl/certs/dis/tls.key
