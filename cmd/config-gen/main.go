@@ -18,9 +18,9 @@ import (
 //go:embed config-template-bare.yaml
 var templateContent string
 
-// Integrations represents the input configuration structure
-type Integrations struct {
-	Configs []IntegrationConfig `yaml:"integrations"`
+// IntegrationConfigs represents the input configuration structure
+type IntegrationConfigs struct {
+	Integrations []IntegrationConfig `yaml:"integrations"`
 }
 
 // IntegrationConfig represents the input configuration structure
@@ -62,24 +62,22 @@ func main() {
 	}
 
 	// Generate YAML files for each integration config
-	for _, config := range configs.Configs {
-		err := generateYAMLFile(tmpl, config, *outputDir)
-		if err != nil {
-			log.Printf("Failed to generate YAML file for %s: %v", config.IntegrationName, err)
-		} else {
-			log.Printf("Successfully generated config for %s", config.IntegrationName)
-		}
+	err = generateYAMLFile(tmpl, *configs, *outputDir)
+	if err != nil {
+		log.Printf("Failed to generate ingest YAML file: %v", err)
+	} else {
+		log.Printf("Successfully generated ingeset YAML file!")
 	}
 }
 
 // loadConfig loads the list of integration configurations from a YAML/JSON file.
-func loadConfig(filePath string) (*Integrations, error) {
+func loadConfig(filePath string) (*IntegrationConfigs, error) {
 	data, err := os.ReadFile(filepath.Clean(filePath))
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
-	var configs Integrations
+	var configs IntegrationConfigs
 	err = yaml.Unmarshal(data, &configs)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling config: %w", err)
@@ -89,7 +87,7 @@ func loadConfig(filePath string) (*Integrations, error) {
 }
 
 // generateYAMLFile generates a YAML file for a given integration config using the provided template.
-func generateYAMLFile(tmpl *template.Template, config IntegrationConfig, outputDir string) error {
+func generateYAMLFile(tmpl *template.Template, config IntegrationConfigs, outputDir string) error {
 	// Execute the template with the integration data
 	var buffer bytes.Buffer
 	err := tmpl.Execute(&buffer, config)
@@ -98,7 +96,7 @@ func generateYAMLFile(tmpl *template.Template, config IntegrationConfig, outputD
 	}
 
 	// Write the output to a YAML file in the output directory
-	outputFile := filepath.Join(outputDir, strings.ToLower(config.IntegrationName)+"-ingest.yaml")
+	outputFile := filepath.Join(outputDir, "external-ingest.yaml")
 	err = os.WriteFile(outputFile, buffer.Bytes(), 0644)
 	if err != nil {
 		return fmt.Errorf("error writing YAML file: %w", err)

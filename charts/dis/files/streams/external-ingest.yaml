@@ -23,14 +23,18 @@ pipeline:
   processors:
     - label: "cloudevent_switch"
       switch:
-          {{- range .Integrations }}
-          - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+          - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
             processors:
-              - label: convert_cloudevent_{{ toLower .IntegrationName }}
+              - label: convert_cloudevent_ruptela
                 dimo_cloudevent_convert:
-                  module_name: {{ .ModuleName }}
-                  module_config: {{ base64 .ModuleConfig }}
-          {{- end }}
+                  module_name: ruptela
+                  module_config: 
+          - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+            processors:
+              - label: convert_cloudevent_macaron
+                dimo_cloudevent_convert:
+                  module_name: macaron
+                  module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktcHJvZDo4MDg2Igp9Cg==
     - catch:
         - label: "convert_cloudevent_errors"
           log:
@@ -51,24 +55,31 @@ output:
             label: "clickhouse_signal_insert_file"
             switch:
               cases:
-                  {{- range .Integrations }}
-                  - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+                  - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
                     output:
                       file:
-                        path: '/tmp/clickhouse_{{ toLower .IntegrationName }}${! counter(min: 1, max: 100) }.json'
+                        path: '/tmp/clickhouse_ruptela${! counter(min: 1, max: 100) }.json'
                         codec: all-bytes
-                  {{- end }}
+                  - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+                    output:
+                      file:
+                        path: '/tmp/clickhouse_macaron${! counter(min: 1, max: 100) }.json'
+                        codec: all-bytes
             processors:
               - label: convert_signals_switch
                 switch:
-                  {{- range .Integrations }}
-                  - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+                  - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
                     processors:
-                      - label: convert_signals_{{ toLower .IntegrationName }}
+                      - label: convert_signals_ruptela
                         dimo_signal_convert:
-                          module_name: {{ .ModuleName }}
-                          module_config: {{ base64 .ModuleConfig }}
-                  {{- end }}
+                          module_name: ruptela
+                          module_config: 
+                  - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+                    processors:
+                      - label: convert_signals_macaron
+                        dimo_signal_convert:
+                          module_name: macaron
+                          module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktcHJvZDo4MDg2Igp9Cg==
               - catch:
                   - label: "log_convert_errors"
                     log:
@@ -89,13 +100,16 @@ output:
             label: "s3_object_insert"
             switch:
               cases:
-                  {{- range .Integrations }}
-                  - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+                  - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
                     output:
                       file:
-                        path: '/tmp/s3_{{ toLower .IntegrationName }}${! counter(min: 1, max: 100) }.json'
+                        path: '/tmp/s3_ruptela${! counter(min: 1, max: 100) }.json'
                         codec: all-bytes
-                  {{- end }}
+                  - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+                    output:
+                      file:
+                        path: '/tmp/s3_macaron${! counter(min: 1, max: 100) }.json'
+                        codec: all-bytes
             processors:
               - label: "s3_file_mapping"
                 mapping: |
