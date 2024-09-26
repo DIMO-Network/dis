@@ -59,7 +59,8 @@ output:
                         vehicleTokenId = this.tokenId.or(-1)
                         source = this.source.or("unknown")
                   - mapping: root = deleted()      
-              - mapping: | 
+              - label: "clickhouse_file_mapping"
+                mapping: |
                   root.msg = this
                   root.metadata = metadata()
       - label: "object_output_macaron"
@@ -71,6 +72,7 @@ output:
               path: '/tmp/s3_${! counter(min: 1, max: 100) }.json'
               codec: all-bytes
             processors:
-              - mapping: | 
+              - label: "s3_file_mapping"
+                mapping: |
                   root.msg = this
                   root.metadata = metadata()

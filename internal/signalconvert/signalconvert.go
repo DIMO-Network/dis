@@ -58,7 +58,6 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 			retBatches = append(retBatches, service.MessageBatch{errMsg})
 			continue
 		}
-		v.Logger.Infof("msgBytes: %s", string(msgBytes))
 		signals, err := v.signalModule.SignalConvert(ctx, msgBytes)
 		if err != nil {
 			errMsg.SetError(err)
