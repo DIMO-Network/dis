@@ -3,7 +3,6 @@ package ruptela
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
@@ -33,18 +32,7 @@ func (m *Module) SetConfig(config string) error {
 
 // SignalConvert converts a message to signals.
 func (m Module) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
-	signals, err := convert.SignalsFromPayload(ctx, m.TokenGetter, msgBytes)
-	if err == nil {
-		return signals, nil
-	}
-
-	convertErr := convert.ConversionError{}
-	if !errors.As(err, &convertErr) {
-		// Add the error to the batch and continue to the next message.
-		return nil, fmt.Errorf("failed to convert signals: %w", err)
-	}
-
-	return convertErr.DecodedSignals, convertErr
+	return nil, errors.New("ruptela signal conversion not implemented")
 }
 
 // CloudEventConvert converts a message to cloud events.
