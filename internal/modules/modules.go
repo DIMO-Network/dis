@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules/macaron"
+	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
@@ -29,10 +30,12 @@ type CloudEventModule interface {
 
 var signalModules = map[string]func() (SignalModule, error){
 	"macaron": func() (SignalModule, error) { return macaron.New() },
+	"ruptela": func() (SignalModule, error) { return ruptela.New() },
 }
 
 var cloudEventModules = map[string]func() (CloudEventModule, error){
 	"macaron": func() (CloudEventModule, error) { return macaron.New() },
+	"ruptela": func() (CloudEventModule, error) { return ruptela.New() },
 }
 
 // NotFoundError is an error type for when a module is not found.
