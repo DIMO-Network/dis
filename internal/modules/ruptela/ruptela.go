@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	dimoshared "github.com/DIMO-Network/shared"
 	"github.com/google/uuid"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"time"
 )
 
 // RuptelaModule is a module that converts ruptela messages to signals.
@@ -76,28 +77,38 @@ func (RuptelaModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][
 
 	// If the VIN is present in the payload, create a fingerprint event
 	if event.DS == "r/v0/s" {
-		// Check if the VIN is present in the payload
-		isVinPresent, err := checkVinPresenceInPayload(event.Data)
+		additionalEvents, err := handleStatusEvent(event)
 		if err != nil {
 			return nil, err
 		}
-
-		if isVinPresent {
-			cloudEventFingerprint, err := createCloudEvent(event, "fingerprint")
-			if err != nil {
-				return nil, err
-			}
-
-			cloudEventFingerprintBytes, err := marshalCloudEvent(cloudEventFingerprint)
-			if err != nil {
-				return nil, err
-			}
-
-			result = append(result, cloudEventFingerprintBytes)
-		}
+		result = append(result, additionalEvents...)
 	}
 
 	return result, nil
+}
+
+// handleStatusEvent add fingerprint event to the result if the VIN is present in the payload.
+func handleStatusEvent(event RuptelaEvent) ([][]byte, error) {
+	isVinPresent, err := checkVinPresenceInPayload(event.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	if !isVinPresent {
+		return nil, nil
+	}
+
+	cloudEventFingerprint, err := createCloudEvent(event, "fingerprint")
+	if err != nil {
+		return nil, err
+	}
+
+	cloudEventFingerprintBytes, err := marshalCloudEvent(cloudEventFingerprint)
+	if err != nil {
+		return nil, err
+	}
+
+	return [][]byte{cloudEventFingerprintBytes}, nil
 }
 
 // createCloudEvent creates a cloud event from a ruptela event.
@@ -129,7 +140,7 @@ func checkVinPresenceInPayload(eventData json.RawMessage) (bool, error) {
 	var dataContent DataContent
 	err := json.Unmarshal(eventData, &dataContent)
 	if err != nil {
-		return false, fmt.Errorf("Failed to unmarshal data: %v\n", err)
+		return false, fmt.Errorf("failed to unmarshal data: %v\n", err)
 	}
 	// VIN keys in the ruptela payload
 	vinKeys := []string{"104", "105", "106"}
