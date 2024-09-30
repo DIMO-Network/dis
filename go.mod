@@ -1,6 +1,8 @@
 module github.com/DIMO-Network/dis
 
-go 1.22.0
+go 1.22.3
+
+toolchain go1.22.6
 
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20240924193744-bbc4e3f59532
 
@@ -9,7 +11,7 @@ require (
 	github.com/DIMO-Network/devices-api v1.29.16
 	github.com/DIMO-Network/model-garage v0.2.18
 	github.com/DIMO-Network/nameindexer v0.0.7
-	github.com/DIMO-Network/shared v0.12.0
+	github.com/DIMO-Network/shared v0.12.4
 	github.com/docker/go-connections v0.5.0
 	github.com/ethereum/go-ethereum v1.14.9
 	github.com/google/uuid v1.6.0
@@ -36,6 +38,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.27.1 // indirect
+	github.com/DIMO-Network/yaml v0.1.0 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
 	github.com/Jeffail/checkpoint v1.0.1 // indirect
 	github.com/Jeffail/gabs/v2 v2.7.0 // indirect

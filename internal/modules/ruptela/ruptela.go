@@ -123,7 +123,7 @@ func createCloudEvent(event RuptelaEvent, eventType string) (CloudEvent[json.Raw
 			DataContentType: "application/json",
 			ID:              uuid.New().String(),
 			Subject:         event.Subject,
-			Source:          "<ruptela_integration_id>",
+			Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
 			SpecVersion:     "1.0",
 			Time:            timeValue,
 			Type:            eventType,
