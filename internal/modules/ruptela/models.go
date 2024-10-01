@@ -2,7 +2,7 @@ package ruptela
 
 import (
 	"encoding/json"
-	dimoshared "github.com/DIMO-Network/shared"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 )
 
 type RuptelaEvent struct {
@@ -15,7 +15,7 @@ type RuptelaEvent struct {
 }
 
 type CloudEvent[A any] struct {
-	dimoshared.CloudEvent[A]
+	cloudevent.CloudEvent[A]
 	DataVersion string `json:"dataversion,omitempty"`
 	Producer    string `json:"producer,omitempty"`
 	Signature   string `json:"signature,omitempty"`

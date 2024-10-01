@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
-	dimoshared "github.com/DIMO-Network/shared"
 	"github.com/google/uuid"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
@@ -139,15 +139,17 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 		return CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
 	}
 	return CloudEvent[json.RawMessage]{
-		CloudEvent: dimoshared.CloudEvent[json.RawMessage]{
-			Data:            event.Data,
-			DataContentType: "application/json",
-			ID:              uuid.New().String(),
-			Subject:         subject,
-			Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
-			SpecVersion:     "1.0",
-			Time:            timeValue,
-			Type:            eventType,
+		CloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+			CloudEventHeader: cloudevent.CloudEventHeader{
+				DataContentType: "application/json",
+				ID:              uuid.New().String(),
+				Subject:         subject,
+				Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
+				SpecVersion:     "1.0",
+				Time:            timeValue,
+				Type:            eventType,
+			},
+			Data: event.Data,
 		},
 		DataVersion: "1.0.0",
 		Producer:    producer,
