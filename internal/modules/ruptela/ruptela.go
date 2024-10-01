@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"time"
 
@@ -20,6 +19,12 @@ var chainID string
 var aftermarketContractAddr string
 var vehicleContractAddr string
 
+type moduleConfig struct {
+	ChainID                 string `json:"chain_id"`
+	AftermarketContractAddr string `json:"aftermarket_contract_addr"`
+	VehicleContractAddr     string `json:"vehicle_contract_addr"`
+}
+
 // RuptelaModule is a module that converts ruptela messages to signals.
 type RuptelaModule struct {
 	TokenGetter convert.TokenIDGetter
@@ -28,12 +33,6 @@ type RuptelaModule struct {
 
 // New creates a new RuptelaModule.
 func New() (*RuptelaModule, error) {
-	aftermarketContractAddr = os.Getenv("AFTERMARKET_CONTRACT_ADDR")
-	vehicleContractAddr = os.Getenv("VEHICLE_CONTRACT_ADDR")
-	chainID = os.Getenv("CHAIN_ID")
-	if aftermarketContractAddr == "" || vehicleContractAddr == "" || chainID == "" {
-		return nil, errors.New("missing aftermarket or vehicle contract address or chain ID")
-	}
 	return &RuptelaModule{}, nil
 }
 
@@ -44,6 +43,18 @@ func (m *RuptelaModule) SetLogger(logger *service.Logger) {
 
 // SetConfig sets the configuration for the module.
 func (m *RuptelaModule) SetConfig(config string) error {
+	var cfg moduleConfig
+	err := json.Unmarshal([]byte(config), &cfg)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	chainID = cfg.ChainID
+	aftermarketContractAddr = cfg.AftermarketContractAddr
+	vehicleContractAddr = cfg.VehicleContractAddr
+	if aftermarketContractAddr == "" || vehicleContractAddr == "" || chainID == "" {
+		return errors.New("missing aftermarket or vehicle contract address or chain ID")
+	}
 	return nil
 }
 
