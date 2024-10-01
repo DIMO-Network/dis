@@ -6,7 +6,6 @@ kafka:
 env:
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
-
 ingress:
   enabled: true
   className: nginx-direct
