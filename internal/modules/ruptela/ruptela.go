@@ -178,7 +178,7 @@ func checkVinPresenceInPayload(eventData json.RawMessage) (bool, error) {
 	var dataContent DataContent
 	err := json.Unmarshal(eventData, &dataContent)
 	if err != nil {
-		return false, fmt.Errorf("failed to unmarshal data: %v\n", err)
+		return false, fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 	// VIN keys in the ruptela payload
 	vinKeys := []string{"104", "105", "106"}
