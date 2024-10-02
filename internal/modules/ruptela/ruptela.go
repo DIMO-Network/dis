@@ -170,7 +170,7 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 
 // constructDID constructs a DID from the chain ID, contract address, and token ID.
 func constructDID(contractAddress string, tokenID uint64) string {
-	return fmt.Sprintf("did:nft:%s:%s_%s", chainID, contractAddress, strconv.FormatUint(tokenID, 10))
+	return fmt.Sprintf("did:nft:%s:%s_%d", chainID, contractAddress, tokenID)
 }
 
 // checkVinPresenceInPayload checks if the VIN is present in the payload.
