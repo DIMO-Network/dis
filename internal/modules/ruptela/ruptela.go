@@ -70,7 +70,7 @@ func (RuptelaModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][
 	var event RuptelaEvent
 	err := json.Unmarshal(msgData, &event)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to unmarshal record data: %v\n", err)
+		return nil, fmt.Errorf("failed to unmarshal record data: %w", err)
 	}
 
 	// Construct the producer DID
