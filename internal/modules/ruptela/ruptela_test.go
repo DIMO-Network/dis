@@ -9,7 +9,7 @@ import (
 )
 
 func TestCloudEventConvert(t *testing.T) {
-	module := RuptelaModule{}
+	module := Module{}
 
 	tests := []struct {
 		name             string

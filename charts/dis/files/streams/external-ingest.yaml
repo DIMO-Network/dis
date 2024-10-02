@@ -28,7 +28,7 @@ pipeline:
               - label: convert_cloudevent_ruptela
                 dimo_cloudevent_convert:
                   module_name: ruptela
-                  module_config: 
+                  module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
           - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
             processors:
               - label: convert_cloudevent_macaron
@@ -73,7 +73,7 @@ output:
                       - label: convert_signals_ruptela
                         dimo_signal_convert:
                           module_name: ruptela
-                          module_config: 
+                          module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
                   - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
                     processors:
                       - label: convert_signals_macaron

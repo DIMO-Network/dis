@@ -5,14 +5,20 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/google/uuid"
 	"github.com/redpanda-data/benthos/v4/public/service"
+)
+
+const (
+	StatusEventDS   = "r/v0/s"
+	DevStatusDS     = "r/v0/dev"
+	LocationEventDS = "r/v0/loc"
 )
 
 var chainID string
@@ -25,28 +31,36 @@ type moduleConfig struct {
 	VehicleContractAddr     string `json:"vehicle_contract_addr"`
 }
 
-// RuptelaModule is a module that converts ruptela messages to signals.
-type RuptelaModule struct {
+// Module is a module that converts ruptela messages to signals.
+type Module struct {
 	TokenGetter convert.TokenIDGetter
 	logger      *service.Logger
 }
 
-// New creates a new RuptelaModule.
-func New() (*RuptelaModule, error) {
-	return &RuptelaModule{}, nil
+// New creates a new Module.
+func New() (*Module, error) {
+	return &Module{}, nil
 }
 
 // SetLogger sets the logger for the module.
-func (m *RuptelaModule) SetLogger(logger *service.Logger) {
+func (m *Module) SetLogger(logger *service.Logger) {
 	m.logger = logger
 }
 
 // SetConfig sets the configuration for the module.
-func (m *RuptelaModule) SetConfig(config string) error {
+func (m *Module) SetConfig(config string) error {
 	var cfg moduleConfig
 	err := json.Unmarshal([]byte(config), &cfg)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	if !common.IsHexAddress(cfg.AftermarketContractAddr) {
+		return fmt.Errorf("invalid aftermarket contract address: %s", cfg.AftermarketContractAddr)
+	}
+
+	if !common.IsHexAddress(cfg.VehicleContractAddr) {
+		return fmt.Errorf("invalid vehicle contract address: %s", cfg.VehicleContractAddr)
 	}
 
 	chainID = cfg.ChainID
@@ -59,12 +73,12 @@ func (m *RuptelaModule) SetConfig(config string) error {
 }
 
 // SignalConvert converts a message to signals.
-func (m RuptelaModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
+func (m Module) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
 	return nil, errors.New("ruptela signal conversion not implemented")
 }
 
 // CloudEventConvert converts a message to cloud events.
-func (RuptelaModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
+func (Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
 	var result [][]byte
 
 	var event RuptelaEvent
@@ -94,10 +108,10 @@ func (RuptelaModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][
 	result = append(result, cloudEventBytes)
 
 	// If the VIN is present in the payload, create a fingerprint event
-	if event.DS == "r/v0/s" {
-		additionalEvents, err := handleStatusEvent(event, producer, subject)
+	if event.DS == StatusEventDS {
+		additionalEvents, err := createAdditionalEvents(event, producer, subject)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed making the additional events: %w", err)
 		}
 		result = append(result, additionalEvents...)
 	}
@@ -109,9 +123,9 @@ func (RuptelaModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][
 func determineSubject(event RuptelaEvent, producer string) (string, error) {
 	var subject string
 	switch event.DS {
-	case "r/v0/s", "r/v0/loc":
+	case StatusEventDS, LocationEventDS:
 		subject = constructDID(vehicleContractAddr, event.VehicleTokenID)
-	case "r/v0/dev":
+	case DevStatusDS:
 		subject = producer
 	default:
 		return "", fmt.Errorf("unknown DS type: %s", event.DS)
@@ -119,9 +133,9 @@ func determineSubject(event RuptelaEvent, producer string) (string, error) {
 	return subject, nil
 }
 
-// handleStatusEvent add fingerprint event to the result if the VIN is present in the payload.
-func handleStatusEvent(event RuptelaEvent, producer, subject string) ([][]byte, error) {
-	isVinPresent, err := checkVinPresenceInPayload(event.Data)
+// createAdditionalEvents add fingerprint event to the result if the VIN is present in the payload.
+func createAdditionalEvents(event RuptelaEvent, producer, subject string) ([][]byte, error) {
+	isVinPresent, err := checkVINPresenceInPayload(event.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -173,8 +187,8 @@ func constructDID(contractAddress string, tokenID uint64) string {
 	return fmt.Sprintf("did:nft:%s:%s_%d", chainID, contractAddress, tokenID)
 }
 
-// checkVinPresenceInPayload checks if the VIN is present in the payload.
-func checkVinPresenceInPayload(eventData json.RawMessage) (bool, error) {
+// checkVINPresenceInPayload checks if the VIN is present in the payload.
+func checkVINPresenceInPayload(eventData json.RawMessage) (bool, error) {
 	var dataContent DataContent
 	err := json.Unmarshal(eventData, &dataContent)
 	if err != nil {
