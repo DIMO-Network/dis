@@ -21,7 +21,7 @@ func TestCloudEventConvert(t *testing.T) {
 	}{
 		{
 			name:             "Status payload with VIN",
-			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z","data":{"signals":{"104":"4148544241334344","105":"3930363235323539","106":"3300000000000000"}},"subject":"test","vehicleTokenId":1, "tokenId":2}`),
+			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z","data":{"signals":{"104":"4148544241334344","105":"3930363235323539","106":"3300000000000000"}},"subject":"test","vehicleTokenId":1, "deviceTokenId":2}`),
 			expectError:      false,
 			length:           2,
 			expectedSubject:  "did:nft::_1",
@@ -45,7 +45,7 @@ func TestCloudEventConvert(t *testing.T) {
 		},
 		{
 			name:             "Dev status payload",
-			input:            []byte(`{"ds":"r/v0/dev","signature":"test","time":"2022-01-01T00:00:00Z","vehicleTokenId":1, "tokenId":2,"data":{"sn":"869267077308554","battVolt":"12420","hwVersion":"FTX-04-12231","imei":"869267077308554","fwVersion":"00.06.56.45","sigStrength":"14","accessTech":"0","operator":"23415","locAreaCode":"13888","cellId":"29443"}}`),
+			input:            []byte(`{"ds":"r/v0/dev","signature":"test","time":"2022-01-01T00:00:00Z","vehicleTokenId":1, "deviceTokenId":2,"data":{"sn":"869267077308554","battVolt":"12420","hwVersion":"FTX-04-12231","imei":"869267077308554","fwVersion":"00.06.56.45","sigStrength":"14","accessTech":"0","operator":"23415","locAreaCode":"13888","cellId":"29443"}}`),
 			expectError:      false,
 			length:           1,
 			expectedSubject:  "did:nft::_2",

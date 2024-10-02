@@ -21,10 +21,6 @@ const (
 	LocationEventDS = "r/v0/loc"
 )
 
-var chainID string
-var aftermarketContractAddr string
-var vehicleContractAddr string
-
 type moduleConfig struct {
 	ChainID                 string `json:"chain_id"`
 	AftermarketContractAddr string `json:"aftermarket_contract_addr"`
@@ -35,6 +31,10 @@ type moduleConfig struct {
 type Module struct {
 	TokenGetter convert.TokenIDGetter
 	logger      *service.Logger
+
+	aftermarketContractAddr string
+	chainID                 string
+	vehicleContractAddr     string
 }
 
 // New creates a new Module.
@@ -63,12 +63,13 @@ func (m *Module) SetConfig(config string) error {
 		return fmt.Errorf("invalid vehicle contract address: %s", cfg.VehicleContractAddr)
 	}
 
-	chainID = cfg.ChainID
-	aftermarketContractAddr = cfg.AftermarketContractAddr
-	vehicleContractAddr = cfg.VehicleContractAddr
-	if aftermarketContractAddr == "" || vehicleContractAddr == "" || chainID == "" {
-		return errors.New("missing aftermarket or vehicle contract address or chain ID")
+	if cfg.ChainID == "" {
+		return fmt.Errorf("invalid chain ID: %s", cfg.ChainID)
 	}
+
+	m.chainID = cfg.ChainID
+	m.aftermarketContractAddr = cfg.AftermarketContractAddr
+	m.vehicleContractAddr = cfg.VehicleContractAddr
 	return nil
 }
 
@@ -78,7 +79,7 @@ func (m Module) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signa
 }
 
 // CloudEventConvert converts a message to cloud events.
-func (Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
+func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
 	var result [][]byte
 
 	var event RuptelaEvent
@@ -88,8 +89,8 @@ func (Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, 
 	}
 
 	// Construct the producer DID
-	producer := constructDID(aftermarketContractAddr, event.TokenID)
-	subject, err := determineSubject(event, producer)
+	producer := m.constructDID(m.aftermarketContractAddr, event.DeviceTokenID)
+	subject, err := m.determineSubject(event, producer)
 	if err != nil {
 		return nil, err
 	}
@@ -120,11 +121,11 @@ func (Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, 
 }
 
 // determineSubject determines the subject of the cloud event based on the DS type.
-func determineSubject(event RuptelaEvent, producer string) (string, error) {
+func (m Module) determineSubject(event RuptelaEvent, producer string) (string, error) {
 	var subject string
 	switch event.DS {
 	case StatusEventDS, LocationEventDS:
-		subject = constructDID(vehicleContractAddr, event.VehicleTokenID)
+		subject = m.constructDID(m.vehicleContractAddr, event.VehicleTokenID)
 	case DevStatusDS:
 		subject = producer
 	default:
@@ -183,8 +184,8 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 }
 
 // constructDID constructs a DID from the chain ID, contract address, and token ID.
-func constructDID(contractAddress string, tokenID uint64) string {
-	return fmt.Sprintf("did:nft:%s:%s_%d", chainID, contractAddress, tokenID)
+func (m Module) constructDID(contractAddress string, tokenID uint64) string {
+	return fmt.Sprintf("did:nft:%s:%s_%d", m.chainID, contractAddress, tokenID)
 }
 
 // checkVINPresenceInPayload checks if the VIN is present in the payload.

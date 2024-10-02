@@ -11,7 +11,7 @@ type RuptelaEvent struct {
 	Time           string          `json:"time"`
 	Data           json.RawMessage `json:"data"`
 	VehicleTokenID uint64          `json:"vehicleTokenId"`
-	TokenID        uint64          `json:"tokenId"`
+	DeviceTokenID  uint64          `json:"deviceTokenId"`
 }
 
 type CloudEvent[A any] struct {
