@@ -10,6 +10,7 @@ import (
 
 func TestCloudEventConvert(t *testing.T) {
 	module := Module{}
+	module.SetConfig(`{"chain_id":"1","aftermarket_contract_addr":"0x06012c8cf97BEaD5deAe237070F9587f8E7A266d","vehicle_contract_addr":"0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"}`)
 
 	tests := []struct {
 		name             string
@@ -24,32 +25,32 @@ func TestCloudEventConvert(t *testing.T) {
 			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z","data":{"signals":{"104":"4148544241334344","105":"3930363235323539","106":"3300000000000000"}},"subject":"test","vehicleTokenId":1, "deviceTokenId":2}`),
 			expectError:      false,
 			length:           2,
-			expectedSubject:  "did:nft::_1",
-			expectedProducer: "did:nft::_2",
+			expectedSubject:  "did:nft:1:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_1",
+			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 		},
 		{
 			name:             "Status payload with no VIN",
-			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z","data":{"trigger":409,"prt":1,"signals":{"104":"0","105":"0","106":"0"}}}`),
+			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z", "vehicleTokenId":1, "deviceTokenId":2, "data":{"trigger":409,"prt":1,"signals":{"104":"0","105":"0","106":"0"}}}`),
 			expectError:      false,
 			length:           1,
-			expectedSubject:  "did:nft::_0",
-			expectedProducer: "did:nft::_0",
+			expectedSubject:  "did:nft:1:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_1",
+			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 		},
 		{
 			name:             "Location payload",
-			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z","data":{"location":[{"ts":1727712225,"lat":522784033,"lon":-9085750,"alt":1049,"dir":22390,"hdop":50},{"ts":1727712226,"lat":522783650,"lon":-9086150,"alt":1044,"dir":20100,"hdop":50}]}}`),
+			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z","vehicleTokenId":1, "deviceTokenId":2,"data":{"location":[{"ts":1727712225,"lat":522784033,"lon":-9085750,"alt":1049,"dir":22390,"hdop":50},{"ts":1727712226,"lat":522783650,"lon":-9086150,"alt":1044,"dir":20100,"hdop":50}]}}`),
 			expectError:      false,
 			length:           1,
-			expectedSubject:  "did:nft::_0",
-			expectedProducer: "did:nft::_0",
+			expectedSubject:  "did:nft:1:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_1",
+			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 		},
 		{
 			name:             "Dev status payload",
 			input:            []byte(`{"ds":"r/v0/dev","signature":"test","time":"2022-01-01T00:00:00Z","vehicleTokenId":1, "deviceTokenId":2,"data":{"sn":"869267077308554","battVolt":"12420","hwVersion":"FTX-04-12231","imei":"869267077308554","fwVersion":"00.06.56.45","sigStrength":"14","accessTech":"0","operator":"23415","locAreaCode":"13888","cellId":"29443"}}`),
 			expectError:      false,
 			length:           1,
-			expectedSubject:  "did:nft::_2",
-			expectedProducer: "did:nft::_2",
+			expectedSubject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 		},
 		{
 			name:        "Invalid time format",

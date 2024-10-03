@@ -32,9 +32,7 @@ type Module struct {
 	TokenGetter convert.TokenIDGetter
 	logger      *service.Logger
 
-	aftermarketContractAddr string
-	chainID                 string
-	vehicleContractAddr     string
+	cfg moduleConfig
 }
 
 // New creates a new Module.
@@ -49,27 +47,23 @@ func (m *Module) SetLogger(logger *service.Logger) {
 
 // SetConfig sets the configuration for the module.
 func (m *Module) SetConfig(config string) error {
-	var cfg moduleConfig
-	err := json.Unmarshal([]byte(config), &cfg)
+	err := json.Unmarshal([]byte(config), &m.cfg)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	if !common.IsHexAddress(cfg.AftermarketContractAddr) {
-		return fmt.Errorf("invalid aftermarket contract address: %s", cfg.AftermarketContractAddr)
+	if !common.IsHexAddress(m.cfg.AftermarketContractAddr) {
+		return fmt.Errorf("invalid aftermarket contract address: %s", m.cfg.AftermarketContractAddr)
 	}
 
-	if !common.IsHexAddress(cfg.VehicleContractAddr) {
-		return fmt.Errorf("invalid vehicle contract address: %s", cfg.VehicleContractAddr)
+	if !common.IsHexAddress(m.cfg.VehicleContractAddr) {
+		return fmt.Errorf("invalid vehicle contract address: %s", m.cfg.VehicleContractAddr)
 	}
 
-	if cfg.ChainID == "" {
+	if m.cfg.ChainID == "" {
 		return fmt.Errorf("chain_id not set")
 	}
 
-	m.chainID = cfg.ChainID
-	m.aftermarketContractAddr = cfg.AftermarketContractAddr
-	m.vehicleContractAddr = cfg.VehicleContractAddr
 	return nil
 }
 
@@ -89,7 +83,7 @@ func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte
 	}
 
 	// Construct the producer DID
-	producer := m.constructDID(m.aftermarketContractAddr, event.DeviceTokenID)
+	producer := m.constructDID(m.cfg.AftermarketContractAddr, event.DeviceTokenID)
 	subject, err := m.determineSubject(event, producer)
 	if err != nil {
 		return nil, err
@@ -125,7 +119,7 @@ func (m Module) determineSubject(event RuptelaEvent, producer string) (string, e
 	var subject string
 	switch event.DS {
 	case StatusEventDS, LocationEventDS:
-		subject = m.constructDID(m.vehicleContractAddr, event.VehicleTokenID)
+		subject = m.constructDID(m.cfg.VehicleContractAddr, event.VehicleTokenID)
 	case DevStatusDS:
 		subject = producer
 	default:
@@ -185,7 +179,7 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 
 // constructDID constructs a DID from the chain ID, contract address, and token ID.
 func (m Module) constructDID(contractAddress string, tokenID uint64) string {
-	return fmt.Sprintf("did:nft:%s:%s_%d", m.chainID, contractAddress, tokenID)
+	return fmt.Sprintf("did:nft:%s:%s_%d", m.cfg.ChainID, contractAddress, tokenID)
 }
 
 // checkVINPresenceInPayload checks if the VIN is present in the payload.
