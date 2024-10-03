@@ -64,7 +64,7 @@ func (m *Module) SetConfig(config string) error {
 	}
 
 	if cfg.ChainID == "" {
-		return fmt.Errorf("invalid chain ID: %s", cfg.ChainID)
+		return fmt.Errorf("chain_id not set")
 	}
 
 	m.chainID = cfg.ChainID
