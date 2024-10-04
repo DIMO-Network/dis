@@ -8,8 +8,9 @@ import (
 
 	"github.com/DIMO-Network/dis/internal/service/deviceapi"
 	"github.com/DIMO-Network/dis/internal/tokengetter"
+	"github.com/DIMO-Network/model-garage/pkg/convert"
+	"github.com/DIMO-Network/model-garage/pkg/nativestatus"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"golang.org/x/mod/semver"
 	"google.golang.org/grpc"
@@ -22,7 +23,7 @@ type moduleConfig struct {
 
 // MacaronModule is a module that converts macaron messages to signals.
 type MacaronModule struct {
-	TokenGetter convert.TokenIDGetter
+	TokenGetter nativestatus.TokenIDGetter
 	logger      *service.Logger
 }
 
@@ -56,12 +57,12 @@ func (m *MacaronModule) SetConfig(config string) error {
 
 // SignalConvert converts a message to signals.
 func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
-	schemaVersion := convert.GetSchemaVersion(msgBytes)
-	if semver.Compare(convert.StatusV1Converted, schemaVersion) == 0 {
+	schemaVersion := nativestatus.GetSchemaVersion(msgBytes)
+	if semver.Compare(nativestatus.StatusV1Converted, schemaVersion) == 0 {
 		// ignore v1.1 messages
 		return nil, nil
 	}
-	signals, err := convert.SignalsFromPayload(ctx, m.TokenGetter, msgBytes)
+	signals, err := nativestatus.SignalsFromPayload(ctx, m.TokenGetter, msgBytes)
 	if err == nil {
 		return signals, nil
 	}

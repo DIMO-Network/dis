@@ -5,14 +5,12 @@ import (
 	"errors"
 
 	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
 // Module is a module that converts ruptela messages to signals.
 type Module struct {
-	TokenGetter convert.TokenIDGetter
-	logger      *service.Logger
+	logger *service.Logger
 }
 
 // New creates a new Module.
