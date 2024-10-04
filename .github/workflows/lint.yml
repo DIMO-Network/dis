@@ -2,12 +2,9 @@ name: golangci-lint
 on:
   pull_request:
     branches: ["**"]
-env:
-  GOPRIVATE: github.com/DIMO-Network
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 jobs:
   golangci:
-    runs-on: [self-hosted]
+    runs-on: [ubuntu-latest]
 
     name: lint
     steps:
