@@ -6,4 +6,5 @@ metadata:
   labels:
 {{ include "dis.labels" . | indent 4 }}
 data:
-{{ tpl (.Files.Glob "files/**").AsConfig $ | indent 2 }}
+{{ tpl (.Files.Glob "files/*").AsConfig $ | indent 2 }}
+{{ tpl (.Files.Glob (printf "files/streams_%s/*"  .Values.env.ENVIRONMENT)).AsConfig $ | indent 2 }}

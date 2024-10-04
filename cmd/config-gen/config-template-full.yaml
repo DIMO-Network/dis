@@ -3,11 +3,11 @@ input:
   label: "ingest_server_input"
   http_server:
       address: 0.0.0.0:9443
-      path: /integration/{integration_id}/store
+      path: /integration/{connection_id}/store
       allowed_verbs:
         - POST
       timeout: 5s
-      rate_limit: "integration_rate_limit"
+      rate_limit: "connection_rate_limit"
       tls:
         enabled: true
         client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
@@ -23,10 +23,10 @@ pipeline:
   processors:
     - label: "cloudevent_switch"
       switch:
-          {{- range .Integrations }}
-          - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+          {{- range .Connections }}
+          - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
             processors:
-              - label: convert_cloudevent_{{ toLower .IntegrationName }}
+              - label: convert_cloudevent_{{ toLower .ConnectionName }}
                 dimo_cloudevent_convert:
                   module_name: {{ .ModuleName }}
                   module_config: {{ base64 .ModuleConfig }}
@@ -51,10 +51,10 @@ output:
             label: "clickhouse_signal_insert_file"
             switch:
               cases:
-                  {{- range .Integrations }}
-                  - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+                  {{- range .Connections }}
+                  - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
                     output:
-                      label: "clickhouse_signal_insert_{{ toLower .IntegrationName }}"
+                      label: "clickhouse_signal_insert_{{ toLower .ConnectionName }}"
                       sql_insert:
                         driver: clickhouse
                         dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
@@ -70,10 +70,10 @@ output:
             processors:
               - label: convert_signals_switch
                 switch:
-                  {{- range .Integrations }}
-                  - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+                  {{- range .Connections }}
+                  - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
                     processors:
-                      - label: convert_signals_{{ toLower .IntegrationName }}
+                      - label: convert_signals_{{ toLower .ConnectionName }}
                         dimo_signal_convert:
                           module_name: {{ .ModuleName }}
                           module_config: {{ base64 .ModuleConfig }}
@@ -94,11 +94,11 @@ output:
             label: "s3_object_insert"
             switch:
               cases:
-                  {{- range .Integrations }}
-                  - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
+                  {{- range .Connections }}
+                  - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
                     output:
                       file:
-                        path: '/tmp/s3_{{ toLower .IntegrationName }}${! counter(min: 1, max: 100) }.json'
+                        path: '/tmp/s3_{{ toLower .ConnectionName }}${! counter(min: 1, max: 100) }.json'
                         codec: all-bytes
                   {{- end }}
             processors:

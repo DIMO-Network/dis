@@ -1,0 +1,19 @@
+connections:
+  - connectionId: "ruptela_integration_id"
+    moduleName: "ruptela"
+    connectionName: "Ruptela"
+    moduleConfig: |
+      {
+        "chain_id": "137",
+        "aftermarket_contract_addr": "0x325b45949C833986bC98e98a49F3CA5C5c4643B5",
+        "vehicle_contract_addr": "0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8"
+      }
+
+    
+  - connectionId: "macaron_integration_id"
+    connectionName: "Macaron"
+    moduleName: "macaron"
+    moduleConfig: |
+      {
+        "device_api_url": "http://devices-api-dev:8086"
+      }
