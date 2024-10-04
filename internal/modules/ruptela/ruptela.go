@@ -73,8 +73,8 @@ func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
-	if event.Producer == event.Source {
-		// This is a status about the device itself skip for now.
+	if event.Producer == event.Source || event.Type != "status" {
+		// Skip device status messages and non status events.
 		return nil, nil
 	}
 	signals, err := ruptela.SignalsFromV1Payload(msgBytes)
