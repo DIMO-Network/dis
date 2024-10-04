@@ -1,11 +1,12 @@
 tests:
   - name: "Test S3 file output"
-    target_processors: "../charts/dis/files/streams/macaron-ingest.yaml#s3_object_insert_macaron"
+    target_processors: "../charts/dis/files/streams/external-ingest.yaml#s3_file_mapping"
     environment: {}
     input_batch:
       - file_content: "./content.yaml"
         metadata:
           example_key: example metadata value
+          http_server_request_path: "/integration/ruptela_integration_id/store"
     output_batches:
       - # Expected batch
         - json_equals:
@@ -15,13 +16,15 @@ tests:
               tokenId: "testToken123"
             metadata: 
               example_key: example metadata value
+              http_server_request_path: "/integration/ruptela_integration_id/store"
 
   - name: "Test Clickhouse file output"
-    target_processors: "../charts/dis/files/streams/macaron-ingest.yaml#clickhouse_signal_insert_macaron_file"
+    target_processors: "../charts/dis/files/streams/external-ingest.yaml#convert_signals_switch"
     environment: {}
     input_batch:
        - metadata:
-          example_key: example metadata value 
+          example_key: example metadata value
+          http_server_request_path: "/integration/macaron_integration_id/store"
          json_content:
           source: "dimo/integration/123"
           dataschema: "testschema/v2.0"
@@ -40,7 +43,5 @@ tests:
                   value: 107
     output_batches:
       - # Expected batch
-        - json_equals:
-            msg: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","dimo/integration/123",107,""]
-            metadata: 
-              example_key: example metadata value
+        - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","dimo/integration/123",107,""]
+         
