@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCloudEventConvert(t *testing.T) {
 	module := Module{}
-	module.SetConfig(`{"chain_id":"1","aftermarket_contract_addr":"0x06012c8cf97BEaD5deAe237070F9587f8E7A266d","vehicle_contract_addr":"0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"}`)
-
+	err := module.SetConfig(`{"chain_id":"1","aftermarket_contract_addr":"0x06012c8cf97BEaD5deAe237070F9587f8E7A266d","vehicle_contract_addr":"0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"}`)
+	require.NoError(t, err)
 	tests := []struct {
 		name             string
 		input            []byte
@@ -70,8 +71,8 @@ func TestCloudEventConvert(t *testing.T) {
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.length, len(events))
+				require.NoError(t, err)
+				require.Len(t, events, tt.length)
 
 				var cloudEvent CloudEvent[json.RawMessage]
 				err := json.Unmarshal(events[0], &cloudEvent)
