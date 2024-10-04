@@ -13,11 +13,11 @@ require (
 	github.com/DIMO-Network/nameindexer v0.0.7
 	github.com/docker/go-connections v0.5.0
 	github.com/ethereum/go-ethereum v1.14.9
-	github.com/google/uuid v1.6.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pressly/goose v2.7.0+incompatible
 	github.com/redpanda-data/benthos/v4 v4.38.0
 	github.com/redpanda-data/connect/v4 v4.36.0
+	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/mod v0.21.0
 	golang.org/x/time v0.6.0
@@ -124,6 +124,7 @@ require (
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/snappy v0.0.5-0.20220116011046-fa5810519dcb // indirect
 	github.com/google/flatbuffers v24.3.25+incompatible // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/handlers v1.5.2 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
@@ -195,7 +196,6 @@ require (
 	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
-	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.2 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect

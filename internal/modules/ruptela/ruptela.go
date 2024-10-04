@@ -12,8 +12,8 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/google/uuid"
 	"github.com/redpanda-data/benthos/v4/public/service"
+	"github.com/segmentio/ksuid"
 )
 
 const (
@@ -172,7 +172,7 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 		CloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 			CloudEventHeader: cloudevent.CloudEventHeader{
 				DataContentType: "application/json",
-				ID:              uuid.New().String(),
+				ID:              ksuid.New().String(),
 				Subject:         subject,
 				Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
 				SpecVersion:     "1.0",
