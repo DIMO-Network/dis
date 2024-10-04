@@ -5,19 +5,19 @@ import (
 	"sync"
 	"time"
 
-	"github.com/DIMO-Network/model-garage/pkg/vss/convert"
+	"github.com/DIMO-Network/model-garage/pkg/nativestatus"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"golang.org/x/time/rate"
 )
 
 type LimitedTokenGetter struct {
-	tokenGetter convert.TokenIDGetter
+	tokenGetter nativestatus.TokenIDGetter
 	limiters    map[string]*rate.Sometimes
 	mapMutex    sync.RWMutex
 	logger      *service.Logger
 }
 
-func NewLimitedTokenGetter(tokenGetter convert.TokenIDGetter, logger *service.Logger) *LimitedTokenGetter {
+func NewLimitedTokenGetter(tokenGetter nativestatus.TokenIDGetter, logger *service.Logger) *LimitedTokenGetter {
 	return &LimitedTokenGetter{
 		tokenGetter: tokenGetter,
 		limiters:    map[string]*rate.Sometimes{},
