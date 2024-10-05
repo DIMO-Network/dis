@@ -1,16 +1,21 @@
-package ruptela
+package ruptela_test
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 
+	"github.com/DIMO-Network/dis/internal/modules/ruptela"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCloudEventConvert(t *testing.T) {
-	module := Module{}
+	module := ruptela.Module{}
 	err := module.SetConfig(`{"chain_id":"1","aftermarket_contract_addr":"0x06012c8cf97BEaD5deAe237070F9587f8E7A266d","vehicle_contract_addr":"0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"}`)
 	require.NoError(t, err)
 	tests := []struct {
@@ -74,7 +79,7 @@ func TestCloudEventConvert(t *testing.T) {
 				require.NoError(t, err)
 				require.Len(t, events, tt.length)
 
-				var cloudEvent CloudEvent[json.RawMessage]
+				var cloudEvent ruptela.CloudEvent[json.RawMessage]
 				err := json.Unmarshal(events[0], &cloudEvent)
 				if err != nil {
 					t.Fatalf("Failed to unmarshal cloud event: %v", err)
@@ -82,6 +87,118 @@ func TestCloudEventConvert(t *testing.T) {
 
 				assert.Equal(t, tt.expectedSubject, cloudEvent.Subject)
 				assert.Equal(t, tt.expectedProducer, cloudEvent.Producer)
+			}
+		})
+	}
+}
+
+func TestSignalConvert(t *testing.T) {
+	ts := time.Unix(1727360340, 0).UTC()
+
+	// Signal payload data
+	signalData := `{
+		"signals": {
+			"96": "FF",
+			"97": "FF"
+		}
+	}`
+
+	// Location payload data
+	locationData := `{
+		"location": [
+			{
+				"alt": 1232,
+				"ts": 1727360340
+			},
+			{
+				"alt": 12,
+				"ts": 1727360341
+			}
+		]
+	}`
+
+	tests := []struct {
+		name            string
+		cloudEvent      cloudevent.CloudEvent[json.RawMessage]
+		expectedSignals []vss.Signal
+		expectedError   error
+	}{
+		{
+			name: "Valid Signal Payload",
+			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					DataVersion: ruptela.StatusEventDS,
+					Type:        "status",
+					Source:      "ruptela/TODO",
+					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
+					Time:        ts,
+				},
+				Data: json.RawMessage(signalData),
+			},
+			expectedSignals: []vss.Signal{
+				{TokenID: 33, Timestamp: ts, Name: vss.FieldExteriorAirTemperature, ValueNumber: 215, Source: "ruptela/TODO"},
+				{TokenID: 33, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineECT, ValueNumber: 215, Source: "ruptela/TODO"},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Valid Location Payload",
+			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					DataVersion: ruptela.LocationEventDS,
+					Type:        "status",
+					Source:      "ruptela/TODO",
+					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
+					Time:        ts,
+				},
+				Data: json.RawMessage(locationData),
+			},
+			expectedSignals: []vss.Signal{
+				{TokenID: 33, Timestamp: ts, Name: vss.FieldCurrentLocationAltitude, ValueNumber: 123.2, Source: "ruptela/TODO"},
+				{TokenID: 33, Timestamp: ts.Add(time.Second), Name: vss.FieldCurrentLocationAltitude, ValueNumber: 1.2, Source: "ruptela/TODO"},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Invalid Event DataVersion",
+			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					DataVersion: "unknownVersion",
+					Type:        "status",
+				},
+				Data: json.RawMessage(signalData),
+			},
+			expectedError: errors.New("unknown data version: unknownVersion"),
+		},
+		{
+			name: "Non-Status Event Type",
+			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					DataVersion: ruptela.StatusEventDS,
+					Type:        "fingerprint",
+				},
+				Data: json.RawMessage(signalData),
+			},
+			expectedError: nil, // Should skip non-status events without error
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Marshal CloudEvent to JSON
+			msgBytes, err := json.Marshal(tt.cloudEvent)
+			require.NoError(t, err)
+
+			// Call the SignalConvert function
+			module := ruptela.Module{}
+			signals, err := module.SignalConvert(context.Background(), msgBytes)
+
+			if tt.expectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedError.Error())
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expectedSignals, signals)
 			}
 		})
 	}
