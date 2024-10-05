@@ -67,12 +67,29 @@ func (m *Module) SetConfig(config string) error {
 }
 
 // SignalConvert converts a message to signals.
-func (m Module) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
-	signals, err := ruptela.SignalsFromV1Payload(msgBytes)
+func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
+	event := cloudevent.CloudEvent[struct{}]{}
+	err := json.Unmarshal(msgBytes, &event)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
+	}
+	if event.DataVersion == DevStatusDS || event.Type != "status" {
+		// Skip device status messages and non status events.
+		return nil, nil
+	}
+	var signals []vss.Signal
+	switch event.DataVersion {
+	case StatusEventDS:
+		signals, err = ruptela.SignalsFromV1Payload(msgBytes)
+	case LocationEventDS:
+		signals, err = ruptela.SignalsFromLocationPayload(msgBytes)
+	default:
+		return nil, fmt.Errorf("unknown data version: %s", event.DataVersion)
+	}
+
 	if err == nil {
 		return signals, nil
 	}
-
 	convertErr := convert.ConversionError{}
 	if !errors.As(err, &convertErr) {
 		// Add the error to the batch and continue to the next message.
@@ -178,12 +195,12 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 				SpecVersion:     "1.0",
 				Time:            timeValue,
 				Type:            eventType,
+				DataVersion:     event.DS,
+				Producer:        producer,
 			},
 			Data: event.Data,
 		},
-		DataVersion: "1.0.0",
-		Producer:    producer,
-		Signature:   event.Signature,
+		Signature: event.Signature,
 	}, nil
 }
 
