@@ -54,9 +54,18 @@ output:
                   {{- range .Integrations }}
                   - check: '@http_server_request_path == "/integration/{{ .IntegrationID }}/store"'
                     output:
-                      file:
-                        path: '/tmp/clickhouse_{{ toLower .IntegrationName }}${! counter(min: 1, max: 100) }.json'
-                        codec: all-bytes
+                      label: "clickhouse_signal_insert_{{ toLower .IntegrationName }}"
+                      sql_insert:
+                        driver: clickhouse
+                        dsn: clickhouse://${CLICKHOUSE_HOST:}:${CLICKHOUSE_PORT:}/${CLICKHOUSE_DATABASE:}?username=${CLICKHOUSE_USER:}&password=${CLICKHOUSE_PASSWORD:}&secure=true&dial_timeout=200ms&max_execution_time=300
+                        table: signal
+                        columns: []
+                        args_mapping: root = this
+                        batching:
+                          count: 10000
+                          byte_size: 0
+                          period: "200ms"
+                          check: ""
                   {{- end }}
             processors:
               - label: convert_signals_switch
@@ -78,10 +87,6 @@ output:
                         vehicleTokenId = this.tokenId.or(-1)
                         source = this.source.or("unknown")
                   - mapping: root = deleted()      
-              - label: "clickhouse_file_mapping"
-                mapping: |
-                  root.msg = this
-                  root.metadata = metadata()
       - label: "object_output_drop_on_error"
         drop_on:
           error: true
