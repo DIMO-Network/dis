@@ -7,7 +7,7 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.2
 	github.com/DIMO-Network/devices-api v1.29.16
-	github.com/DIMO-Network/model-garage v0.3.2-0.20241009013532-d118b0579541
+	github.com/DIMO-Network/model-garage v0.3.2-0.20241009124904-d59322096b3e
 	github.com/DIMO-Network/nameindexer v0.0.7
 	github.com/docker/go-connections v0.5.0
 	github.com/ethereum/go-ethereum v1.14.11
