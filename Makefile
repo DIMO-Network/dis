@@ -59,8 +59,10 @@ test: test-benthos ## Run all tests
 test-benthos: ## Run Benthos tests
 	dis test --log debug ./test-benthos/...
 
-lint-benthos: build ## Run Benthos linter
-	@dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
+
+lint-benthos:  ## Run Benthos linter
+	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_DATABASE="" CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
+	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
 
 lint: lint-benthos ## Run linter for benthos config and go code
 	golangci-lint version

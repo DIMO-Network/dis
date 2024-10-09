@@ -60,7 +60,7 @@ output:
                       label: "clickhouse_signal_insert_ruptela"
                       sql_insert:
                         driver: clickhouse
-                        dsn: clickhouse://${CLICKHOUSE_HOST:}:${CLICKHOUSE_PORT:}/${CLICKHOUSE_DATABASE:}?username=${CLICKHOUSE_USER:}&password=${CLICKHOUSE_PASSWORD:}&secure=true&dial_timeout=200ms&max_execution_time=300
+                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
                         table: signal
                         columns: []
                         args_mapping: root = this
@@ -74,7 +74,7 @@ output:
                       label: "clickhouse_signal_insert_macaron"
                       sql_insert:
                         driver: clickhouse
-                        dsn: clickhouse://${CLICKHOUSE_HOST:}:${CLICKHOUSE_PORT:}/${CLICKHOUSE_DATABASE:}?username=${CLICKHOUSE_USER:}&password=${CLICKHOUSE_PASSWORD:}&secure=true&dial_timeout=200ms&max_execution_time=300
+                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
                         table: signal
                         columns: []
                         args_mapping: root = this
