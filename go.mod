@@ -6,7 +6,7 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 
 require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.2
-	github.com/DIMO-Network/devices-api v1.29.16
+	github.com/DIMO-Network/devices-api v1.29.19
 	github.com/DIMO-Network/model-garage v0.3.2-0.20241009124904-d59322096b3e
 	github.com/DIMO-Network/nameindexer v0.0.7
 	github.com/docker/go-connections v0.5.0
@@ -14,12 +14,12 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pressly/goose v2.7.0+incompatible
 	github.com/redpanda-data/benthos/v4 v4.38.0
-	github.com/redpanda-data/connect/v4 v4.36.0
+	github.com/redpanda-data/connect/v4 v4.37.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/mod v0.21.0
-	golang.org/x/time v0.6.0
-	google.golang.org/grpc v1.66.2
+	golang.org/x/time v0.7.0
+	google.golang.org/grpc v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -240,7 +240,7 @@ require (
 	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/tools v0.25.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/dnsutils.v1 v1.0.1 // indirect
