@@ -98,8 +98,8 @@ func TestSignalConvert(t *testing.T) {
 	// Signal payload data
 	signalData := `{
 		"signals": {
-			"96": "FF",
-			"97": "FF"
+			"96": "8",
+			"97": "8"
 		}
 	}`
 
@@ -136,8 +136,8 @@ func TestSignalConvert(t *testing.T) {
 				Data: json.RawMessage(signalData),
 			},
 			expectedSignals: []vss.Signal{
-				{TokenID: 33, Timestamp: ts, Name: vss.FieldExteriorAirTemperature, ValueNumber: 215, Source: "ruptela/TODO"},
-				{TokenID: 33, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineECT, ValueNumber: 215, Source: "ruptela/TODO"},
+				{TokenID: 33, Timestamp: ts, Name: vss.FieldExteriorAirTemperature, ValueNumber: -32, Source: "ruptela/TODO"},
+				{TokenID: 33, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineECT, ValueNumber: -32, Source: "ruptela/TODO"},
 			},
 			expectedError: nil,
 		},
