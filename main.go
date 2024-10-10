@@ -24,6 +24,7 @@ import (
 	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
 	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventindex"
 	_ "github.com/DIMO-Network/dis/internal/processors/dbmigration"
+	_ "github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	_ "github.com/DIMO-Network/dis/internal/processors/signalconvert"
 )
 

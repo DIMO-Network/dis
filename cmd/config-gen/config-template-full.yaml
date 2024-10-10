@@ -24,7 +24,7 @@ pipeline:
     - label: "cloudevent_switch"
       switch:
           {{- range .Connections }}
-          - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
+          - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
             processors:
               - label: convert_cloudevent_{{ toLower .ConnectionName }}
                 dimo_cloudevent_convert:
@@ -52,7 +52,7 @@ output:
             switch:
               cases:
                   {{- range .Connections }}
-                  - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
+                  - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
                     output:
                       label: "clickhouse_signal_insert_{{ toLower .ConnectionName }}"
                       sql_insert:
@@ -74,7 +74,7 @@ output:
               - label: convert_signals_switch
                 switch:
                   {{- range .Connections }}
-                  - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
+                  - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
                     processors:
                       - label: convert_signals_{{ toLower .ConnectionName }}
                         dimo_signal_convert:
