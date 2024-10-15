@@ -23,7 +23,7 @@ ingress:
   tls: []
 
 certificate:
-  commonName: dis.prod.dimo.zone
+  commonName: dis.dimo.zone
   issuer: cas-prod-dimo-ca-issuer
   caConfigMap: cae-prod-dimo-ca-certs
 
