@@ -13,7 +13,7 @@ const (
 )
 
 var configSpec = service.NewConfigSpec().
-	Summary("Converts events into a list of signals").
+	Summary("Converts raw payloads into cloudevents").
 	Field(service.NewStringField(moduleConfigFieldName).Default("").Description("Optional Configuration that will be passed to the module")).
 	Field(service.NewStringField(moduleNameFieldName).Description("Name of the module to use for decoding."))
 

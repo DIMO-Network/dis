@@ -4,12 +4,10 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
-const (
-	processorName = "dimo_cloudevent_index"
-)
+const processorName = "dimo_cloudevent_index"
 
 var configSpec = service.NewConfigSpec().
-	Summary("Converts events into a list of signals")
+	Summary("Creates indexes for cloudevents")
 
 func init() {
 	err := service.RegisterBatchProcessor(processorName, configSpec, ctor)
@@ -18,7 +16,7 @@ func init() {
 	}
 }
 
-func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProcessor, error) {
+func ctor(_ *service.ParsedConfig, mgr *service.Resources) (service.BatchProcessor, error) {
 	return &eventIndexProcessor{
 		logger: mgr.Logger(),
 	}, nil
