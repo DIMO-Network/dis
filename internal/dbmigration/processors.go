@@ -42,9 +42,9 @@ func ctor(procName string) func(*service.ParsedConfig, *service.Resources) (serv
 		var registerFunc []func()
 		switch procName {
 		case indexMigrationProcName:
-			registerFunc = sigmigrations.RegisterFuncs()
-		case signalMigrationProcName:
 			registerFunc = indexmigrations.RegisterFuncs()
+		case signalMigrationProcName:
+			registerFunc = sigmigrations.RegisterFuncs()
 		}
 
 		if err := runMigration(migration, registerFunc); err != nil {
