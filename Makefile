@@ -57,6 +57,7 @@ test: test-benthos ## Run all tests
 	@go test ./...
 	
 test-benthos: build ## Run Benthos tests
+	S3_CLOUDEVENT_BUCKET="status" S3_CLOUDEVENT_TMP_BUCKET="status_tmp" \
 	dis test --log debug ./test-benthos/...
 
 

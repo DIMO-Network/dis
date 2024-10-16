@@ -119,7 +119,7 @@ output:
               outputs:
                 - label: "s3_cloudevent_insert"
                   aws_s3:
-                    bucket: ${! meta("dimo_cloudevent_index_type") == "full".if("${S3_CLOUDEVENT_BUCKET}", "${S3_CLOUDEVENT_TMP_BUCKET}") }  
+                    bucket: ${! meta("bucket_name")
                     path: ${!meta("dimo_cloudevent_index")}
                     content_type: application/json
                     region: us-east-2
@@ -146,3 +146,10 @@ output:
                   dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
               - label: "create_cloudevent_index"
                 dimo_cloudevent_index: {}
+              - label: "set_bucket_metadata"
+                bloblang: |
+                  meta bucket_name = if meta("dimo_cloudevent_index_type") == full {
+                    "${S3_CLOUDEVENT_BUCKET}"
+                  } else{
+                    "${S3_CLOUDEVENT_TMP_BUCKET}"
+                  } 
