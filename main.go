@@ -22,6 +22,7 @@ import (
 
 	// Add our custom plugin packages here.
 	_ "github.com/DIMO-Network/dis/internal/cloudeventconvert"
+	_ "github.com/DIMO-Network/dis/internal/cloudeventindex"
 	_ "github.com/DIMO-Network/dis/internal/dbmigration"
 	_ "github.com/DIMO-Network/dis/internal/signalconvert"
 )
