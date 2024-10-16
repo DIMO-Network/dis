@@ -57,7 +57,7 @@ output:
                       label: "clickhouse_signal_insert_{{ toLower .ConnectionName }}"
                       sql_insert:
                         driver: clickhouse
-                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
+                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
                         table: signal
                         columns: []
                         args_mapping: root = this
@@ -68,6 +68,9 @@ output:
                           check: ""
                   {{- end }}
             processors:
+              - label: signal_db_migration
+                dimo_signal_migration:
+                  dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
               - label: convert_signals_switch
                 switch:
                   {{- range .Connections }}
@@ -91,18 +94,35 @@ output:
         drop_on:
           error: true
           output:
-            label: "s3_object_insert"
-            switch:
-              cases:
-                  {{- range .Connections }}
-                  - check: '@http_server_request_path == "/integration/{{ .ConnectionID }}/store"'
-                    output:
-                      file:
-                        path: '/tmp/s3_{{ toLower .ConnectionName }}${! counter(min: 1, max: 100) }.json'
-                        codec: all-bytes
-                  {{- end }}
+            label: "object_output"
+            broker:
+              outputs:
+                - label: "s3_cloudevent_insert"
+                  aws_s3:
+                    bucket: ${! meta("dimo_cloudevent_index_type") == "full".if("${S3_CLOUDEVENT_BUCKET}", "${S3_CLOUDEVENT_TMP_BUCKET}") }  
+                    path: ${!meta("dimo_cloudevent_index")}
+                    content_type: application/json
+                    region: us-east-2
+                    max_in_flight: 250
+                    timeout: 30s
+                    credentials:
+                      id: ${S3_AWS_ACCESS_KEY_ID}
+                      secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                - label: "clickhouse_cloudevent_index_insert"
+                  sql_insert:
+                    driver: clickhouse
+                    dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+                    table: name_index
+                    columns: []
+                    args_mapping: root = metadata("dimo_cloudevent_index_values")
+                    batching:
+                      count: 10000
+                      byte_size: 0
+                      period: "200ms"
+                      check: ""
             processors:
-              - label: "s3_file_mapping"
-                mapping: |
-                  root.msg = this
-                  root.metadata = metadata()
+              - label: "file_index_db_migration"
+                dimo_file_index_migration:
+                  dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+              - label: "create_cloudevent_index"
+                dimo_cloudevent_index: {}

@@ -1,22 +1,55 @@
 tests:
   - name: "Test S3 file output"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#s3_file_mapping"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#object_output"
+    mocks:
+      file_index_db_migration:
+        mapping: 'root = this'
     environment: {}
     input_batch:
-      - file_content: "./content.yaml"
-        metadata:
+       - metadata:
           example_key: example metadata value
-          http_server_request_path: "/integration/ruptela_integration_id/store"
+          http_server_request_path: "/integration/macaron_integration_id/store"
+         json_content:
+            source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
+            dataversion: "testschema/v2.0"
+            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            type: dimo.status
+            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            time: "2024-04-18T17:20:46.436008782Z"
+            vehicleTokenId: 123
+            data:
+              timestamp: 1713460846435
+              device:
+                rpiUptimeSecs: 218
+                batteryVoltage: 12.28
+              vehicle:
+                signals:
+                  - timestamp: 1713460826633
+                    name: "coolantTemp"
+                    value: 107
     output_batches:
       - # Expected batch
         - json_equals:
-            msg: 
-              someOtherField: "someValue"
-              source: "testSource"
-              tokenId: "testToken123"
-            metadata: 
-              example_key: example metadata value
-              http_server_request_path: "/integration/ruptela_integration_id/store"
+            source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
+            dataversion: "testschema/v2.0"
+            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            type: dimo.status
+            time: "2024-04-18T17:20:46.436008782Z"
+            vehicleTokenId: 123
+            data:
+              timestamp: 1713460846435
+              device:
+                rpiUptimeSecs: 218
+                batteryVoltage: 12.28
+              vehicle:
+                signals:
+                  - timestamp: 1713460826633
+                    name: "coolantTemp"
+                    value: 107
+          metadata_equals:
+            dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MAdimo/integration/2lcaMFuCO0HJIUfdq8o780K!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
+          
 
   - name: "Test Clickhouse file output"
     target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals_switch"
@@ -26,9 +59,10 @@ tests:
           example_key: example metadata value
           http_server_request_path: "/integration/macaron_integration_id/store"
          json_content:
-          source: "dimo/integration/123"
+          source: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
           dataschema: "testschema/v2.0"
-          subject: "0x98D78d711C0ec544F6fb5d54fcf6559CF41546a9"
+          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
@@ -43,5 +77,5 @@ tests:
                   value: 107
     output_batches:
       - # Expected batch
-        - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","dimo/integration/123",107,""]
+        - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",107,""]
          

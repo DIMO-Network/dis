@@ -76,17 +76,17 @@ func main() {
 	// Generate YAML files for each integration config
 	err = generateYAMLFile(tmpl, *prodConfig, *outputDir)
 	if err != nil {
-		log.Printf("Failed to generate ingest YAML file: %v", err)
+		log.Printf("Failed to generate prod ingest YAML file: %v", err)
 	} else {
-		log.Printf("Successfully generated ingeset YAML file!")
+		log.Printf("Successfully generated prod ingeset YAML file!")
 	}
 
 	// Generate YAML files for each integration config
 	err = generateYAMLFile(tmpl, *devConfig, *outputDevDir)
 	if err != nil {
-		log.Printf("Failed to generate ingest YAML file: %v", err)
+		log.Printf("Failed to generate dev ingest YAML file: %v", err)
 	} else {
-		log.Printf("Successfully generated ingeset YAML file!")
+		log.Printf("Successfully generated dev ingeset YAML file!")
 	}
 }
 
