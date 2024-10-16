@@ -1,6 +1,6 @@
 tests:
   - name: "Test S3 file output"
-    target_processors: "../charts/dis/files/streams/external-ingest.yaml#s3_file_mapping"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#s3_file_mapping"
     environment: {}
     input_batch:
       - file_content: "./content.yaml"
@@ -19,7 +19,7 @@ tests:
               http_server_request_path: "/integration/ruptela_integration_id/store"
 
   - name: "Test Clickhouse file output"
-    target_processors: "../charts/dis/files/streams/external-ingest.yaml#convert_signals_switch"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals_switch"
     environment: {}
     input_batch:
        - metadata:
