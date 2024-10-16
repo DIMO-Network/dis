@@ -118,16 +118,34 @@ output:
             broker:
               outputs:
                 - label: "s3_cloudevent_insert"
-                  aws_s3:
-                    bucket: ${! meta("bucket_name")
-                    path: ${!meta("dimo_cloudevent_index")}
-                    content_type: application/json
-                    region: us-east-2
-                    max_in_flight: 250
-                    timeout: 30s
-                    credentials:
-                      id: ${S3_AWS_ACCESS_KEY_ID}
-                      secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                  switch:
+                    cases:
+                        - check: '@dimo_cloudevent_index_type == "full"'
+                          output:
+                            label: "s3_status_cloudevent_insert"
+                            aws_s3:
+                              bucket: ${S3_CLOUDEVENT_BUCKET}
+                              path: ${!meta("dimo_cloudevent_index")}
+                              content_type: application/json
+                              region: us-east-2
+                              max_in_flight: 250
+                              timeout: 30s
+                              credentials:
+                                id: ${S3_AWS_ACCESS_KEY_ID}
+                                secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                        - check: ''
+                          output:
+                            label: "s3_tmp_cloudevent_insert"
+                            aws_s3:
+                              bucket: ${S3_CLOUDEVENT_TMP_BUCKET}
+                              path: ${!meta("dimo_cloudevent_index")}
+                              content_type: application/json
+                              region: us-east-2
+                              max_in_flight: 250
+                              timeout: 30s
+                              credentials:
+                                id: ${S3_AWS_ACCESS_KEY_ID}
+                                secret: ${S3_AWS_SECRET_ACCESS_KEY}
                 - label: "clickhouse_cloudevent_index_insert"
                   sql_insert:
                     driver: clickhouse
@@ -146,10 +164,3 @@ output:
                   dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
               - label: "create_cloudevent_index"
                 dimo_cloudevent_index: {}
-              - label: "set_bucket_metadata"
-                bloblang: |
-                  meta bucket_name = if meta("dimo_cloudevent_index_type") == full {
-                    "${S3_CLOUDEVENT_BUCKET}"
-                  } else{
-                    "${S3_CLOUDEVENT_TMP_BUCKET}"
-                  } 

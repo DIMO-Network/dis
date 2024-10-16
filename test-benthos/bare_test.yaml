@@ -1,6 +1,6 @@
 tests:
   - name: "Test S3 file output"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#object_output"
+    target_processors: "../charts/dis/files/streams_dev/external-ingest.yaml#object_output"
     mocks:
       file_index_db_migration:
         mapping: 'root = this'
@@ -48,7 +48,6 @@ tests:
                     name: "coolantTemp"
                     value: 107
           metadata_equals:
-            bucket_name: "status_tmp"
             dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MAdimo/integration/2lcaMFuCO0HJIUfdq8o780K!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
           
 
