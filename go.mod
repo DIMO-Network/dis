@@ -5,9 +5,9 @@ go 1.22.8
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20240924193744-bbc4e3f59532
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.28.3
-	github.com/DIMO-Network/clickhouse-infra v0.0.2
-	github.com/DIMO-Network/devices-api v1.29.16
+	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
+	github.com/DIMO-Network/clickhouse-infra v0.0.3
+	github.com/DIMO-Network/devices-api v1.30.35
 	github.com/DIMO-Network/model-garage v0.3.2-0.20241009124904-d59322096b3e
 	github.com/DIMO-Network/nameindexer v0.0.7
 	github.com/docker/go-connections v0.5.0
@@ -15,12 +15,12 @@ require (
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pressly/goose v2.7.0+incompatible
 	github.com/redpanda-data/benthos/v4 v4.38.0
-	github.com/redpanda-data/connect/v4 v4.36.0
+	github.com/redpanda-data/connect/v4 v4.37.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/mod v0.21.0
-	golang.org/x/time v0.6.0
-	google.golang.org/grpc v1.66.2
+	golang.org/x/time v0.7.0
+	google.golang.org/grpc v1.67.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -95,7 +95,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/denisenkom/go-mssqldb v0.12.3 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/docker v27.2.0+incompatible // indirect
+	github.com/docker/docker v27.3.0+incompatible // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
@@ -202,7 +202,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/snowflakedb/gosnowflake v1.11.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.33.0 // indirect
-	github.com/testcontainers/testcontainers-go/modules/clickhouse v0.32.0 // indirect
+	github.com/testcontainers/testcontainers-go/modules/clickhouse v0.33.0 // indirect
 	github.com/tidwall/gjson v1.17.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
@@ -230,17 +230,17 @@ require (
 	go.opentelemetry.io/otel/metric v1.28.0 // indirect
 	go.opentelemetry.io/otel/trace v1.28.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.27.0 // indirect
+	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
-	golang.org/x/net v0.29.0 // indirect
+	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/oauth2 v0.22.0 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.25.0 // indirect
-	golang.org/x/term v0.24.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
-	golang.org/x/tools v0.25.0 // indirect
+	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/term v0.25.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
+	golang.org/x/tools v0.26.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240709173604-40e1e62336c5 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/dnsutils.v1 v1.0.1 // indirect
