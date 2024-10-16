@@ -73,7 +73,7 @@ func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, e
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
-	if event.DataVersion == DevStatusDS || event.Type != "status" {
+	if event.DataVersion == DevStatusDS || event.Type != cloudevent.TypeStatus {
 		// Skip device status messages and non status events.
 		return nil, nil
 	}
@@ -116,7 +116,7 @@ func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte
 		return nil, err
 	}
 
-	cloudEvent, err := createCloudEvent(event, producer, subject, "status")
+	cloudEvent, err := createCloudEvent(event, producer, subject, cloudevent.TypeStatus)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +166,7 @@ func createAdditionalEvents(event RuptelaEvent, producer, subject string) ([][]b
 		return nil, nil
 	}
 
-	cloudEventFingerprint, err := createCloudEvent(event, producer, subject, "fingerprint")
+	cloudEventFingerprint, err := createCloudEvent(event, producer, subject, cloudevent.TypeFingerprint)
 	if err != nil {
 		return nil, err
 	}
