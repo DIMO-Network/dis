@@ -62,7 +62,9 @@ test-benthos: ## Run Benthos tests
 
 lint-benthos: build  ## Run Benthos linter
 	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_DATABASE="" CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
-	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
+	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams_dev/*
+	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_DATABASE="" CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
+	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams_prod/*
 
 lint: lint-benthos ## Run linter for benthos config and go code
 	golangci-lint version
@@ -83,7 +85,7 @@ tools: tools-golangci-lint ## Install all tools
 
 
 config-gen: ## Generate Benthos config files
-	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev -output_dev=charts/$(BIN_NAME)/files/streams_dev
+	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev 
 
 generate: config-gen ## Run all generate commands
 	@go generate ./...

@@ -18,9 +18,9 @@ import (
 //go:embed config-template-full.yaml
 var templateContent string
 
-// ConnectionConfigs represents the input configuration structure
+// ConnectionConfigs represents the input configuration structure.
 type ConnectionConfigs struct {
-	Connections []ConnectionConfig `yaml:"integrations"`
+	Connections []ConnectionConfig `yaml:"connections"`
 }
 
 // ConnectionConfig represents the input configuration structure.
@@ -67,6 +67,12 @@ func main() {
 		log.Fatalf("Failed to create output directory: %v", err)
 	}
 
+	// Ensure dev output directory exists
+	err = os.MkdirAll(*outputDevDir, 0750)
+	if err != nil {
+		log.Fatalf("Failed to create output directory: %v", err)
+	}
+
 	// Generate YAML files for each integration config
 	err = generateYAMLFile(tmpl, *prodConfig, *outputDir)
 	if err != nil {
@@ -74,6 +80,7 @@ func main() {
 	} else {
 		log.Printf("Successfully generated ingeset YAML file!")
 	}
+
 	// Generate YAML files for each integration config
 	err = generateYAMLFile(tmpl, *devConfig, *outputDevDir)
 	if err != nil {
@@ -81,7 +88,6 @@ func main() {
 	} else {
 		log.Printf("Successfully generated ingeset YAML file!")
 	}
-
 }
 
 // loadConfig loads the list of integration configurations from a YAML/JSON file.
