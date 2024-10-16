@@ -1,4 +1,4 @@
-integrations:
+connections:
   - connectionId: "ruptela_integration_id"
     moduleName: "ruptela"
     connectionName: "Ruptela"
