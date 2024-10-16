@@ -5,6 +5,7 @@ go 1.22.8
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20240924193744-bbc4e3f59532
 
 require (
+	github.com/ClickHouse/clickhouse-go/v2 v2.28.3
 	github.com/DIMO-Network/clickhouse-infra v0.0.2
 	github.com/DIMO-Network/devices-api v1.29.16
 	github.com/DIMO-Network/model-garage v0.3.2-0.20241009124904-d59322096b3e
@@ -34,7 +35,6 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
-	github.com/ClickHouse/clickhouse-go/v2 v2.28.3 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
 	github.com/Jeffail/checkpoint v1.0.1 // indirect
 	github.com/Jeffail/gabs/v2 v2.7.0 // indirect
