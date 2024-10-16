@@ -15,7 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed config-template-bare.yaml
+//go:embed config-template-full.yaml
 var templateContent string
 
 // IntegrationConfigs represents the input configuration structure

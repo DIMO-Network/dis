@@ -60,7 +60,7 @@ test-benthos: ## Run Benthos tests
 	dis test --log debug ./test-benthos/...
 
 
-lint-benthos:  ## Run Benthos linter
+lint-benthos: build  ## Run Benthos linter
 	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_DATABASE="" CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
 	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
 

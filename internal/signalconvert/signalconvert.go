@@ -7,9 +7,7 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules"
-	"github.com/DIMO-Network/model-garage/pkg/migrations"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/pressly/goose"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
@@ -77,16 +75,4 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
-}
-
-func runMigration(dsn string) error {
-	db, err := goose.OpenDBWithDriver("clickhouse", dsn)
-	if err != nil {
-		return fmt.Errorf("failed to open db: %w", err)
-	}
-	err = migrations.RunGoose(context.Background(), []string{"up", "-v"}, db)
-	if err != nil {
-		return fmt.Errorf("failed to run migration: %w", err)
-	}
-	return nil
 }
