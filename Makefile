@@ -83,7 +83,7 @@ tools: tools-golangci-lint ## Install all tools
 
 
 config-gen: ## Generate Benthos config files
-	@go run ./cmd/config-gen -input=./integrations/integrations.yaml -output=charts/$(BIN_NAME)/files/streams
+	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev -output_dev=charts/$(BIN_NAME)/files/streams_dev
 
 generate: config-gen ## Run all generate commands
 	@go generate ./...

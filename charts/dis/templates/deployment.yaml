@@ -71,7 +71,7 @@ spec:
           resources:
 {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
-            {{- $files := .Files.Glob "files/streams/*" }}
+            {{- $files := .Files.Glob (printf "files/streams_%s/*"  .Values.env.ENVIRONMENT) }}
             {{- range $path, $_ := $files }}
             - name: {{ $path | base | replace "." "-" }}
               mountPath: /streams/{{ $path | base }}

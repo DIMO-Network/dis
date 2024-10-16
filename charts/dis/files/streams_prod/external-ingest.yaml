@@ -3,11 +3,11 @@ input:
   label: "ingest_server_input"
   http_server:
       address: 0.0.0.0:9443
-      path: /integration/{integration_id}/store
+      path: /integration/{connection_id}/store
       allowed_verbs:
         - POST
       timeout: 5s
-      rate_limit: "integration_rate_limit"
+      rate_limit: "connection_rate_limit"
       tls:
         enabled: true
         client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
@@ -34,7 +34,7 @@ pipeline:
               - label: convert_cloudevent_macaron
                 dimo_cloudevent_convert:
                   module_name: macaron
-                  module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktcHJvZDo4MDg2Igp9Cg==
+                  module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
     - catch:
         - label: "convert_cloudevent_errors"
           log:
@@ -97,7 +97,7 @@ output:
                       - label: convert_signals_macaron
                         dimo_signal_convert:
                           module_name: macaron
-                          module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktcHJvZDo4MDg2Igp9Cg==
+                          module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
               - catch:
                   - label: "log_convert_errors"
                     log:

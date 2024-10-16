@@ -18,29 +18,35 @@ import (
 //go:embed config-template-full.yaml
 var templateContent string
 
-// IntegrationConfigs represents the input configuration structure
-type IntegrationConfigs struct {
-	Integrations []IntegrationConfig `yaml:"integrations"`
+// ConnectionConfigs represents the input configuration structure
+type ConnectionConfigs struct {
+	Connections []ConnectionConfig `yaml:"integrations"`
 }
 
-// IntegrationConfig represents the input configuration structure
-type IntegrationConfig struct {
-	IntegrationID   string `yaml:"integrationId"`
-	IntegrationName string `yaml:"integrationName"`
-	ModuleName      string `yaml:"moduleName"`
-	ModuleConfig    string `yaml:"moduleConfig"`
+// ConnectionConfig represents the input configuration structure.
+type ConnectionConfig struct {
+	ConnectionID   string `yaml:"connectionId"`
+	ConnectionName string `yaml:"connectionName"`
+	ModuleName     string `yaml:"moduleName"`
+	ModuleConfig   string `yaml:"moduleConfig"`
 }
 
 func main() {
 	// Define command-line flags for input and output directories
-	inputFile := flag.String("input", "input-config.yaml", "Path to the input JSON/YAML config file")
-	outputDir := flag.String("output", "output-configs/", "Directory to write the generated YAML files")
+	inputFile := flag.String("input_prod", "input-config.yaml", "Path to the input JSON/YAML config file")
+	inputDevFile := flag.String("input_dev", "input-config.yaml", "Path to the input JSON/YAML config file")
+	outputDir := flag.String("output_prod", "output-configs/", "Directory to write the generated YAML files")
+	outputDevDir := flag.String("output_dev", "output-configs/", "Directory to write the generated YAML files")
 	flag.Parse()
 
 	// Load input configuration
-	configs, err := loadConfig(*inputFile)
+	prodConfig, err := loadConfig(*inputFile)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+	devConfig, err := loadConfig(*inputDevFile)
+	if err != nil {
+		log.Fatalf("Failed to load dev config: %v", err)
 	}
 
 	// Parse the template
@@ -62,22 +68,30 @@ func main() {
 	}
 
 	// Generate YAML files for each integration config
-	err = generateYAMLFile(tmpl, *configs, *outputDir)
+	err = generateYAMLFile(tmpl, *prodConfig, *outputDir)
 	if err != nil {
 		log.Printf("Failed to generate ingest YAML file: %v", err)
 	} else {
 		log.Printf("Successfully generated ingeset YAML file!")
 	}
+	// Generate YAML files for each integration config
+	err = generateYAMLFile(tmpl, *devConfig, *outputDevDir)
+	if err != nil {
+		log.Printf("Failed to generate ingest YAML file: %v", err)
+	} else {
+		log.Printf("Successfully generated ingeset YAML file!")
+	}
+
 }
 
 // loadConfig loads the list of integration configurations from a YAML/JSON file.
-func loadConfig(filePath string) (*IntegrationConfigs, error) {
+func loadConfig(filePath string) (*ConnectionConfigs, error) {
 	data, err := os.ReadFile(filepath.Clean(filePath))
 	if err != nil {
 		return nil, fmt.Errorf("error reading config file: %w", err)
 	}
 
-	var configs IntegrationConfigs
+	var configs ConnectionConfigs
 	err = yaml.Unmarshal(data, &configs)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshalling config: %w", err)
@@ -87,7 +101,7 @@ func loadConfig(filePath string) (*IntegrationConfigs, error) {
 }
 
 // generateYAMLFile generates a YAML file for a given integration config using the provided template.
-func generateYAMLFile(tmpl *template.Template, config IntegrationConfigs, outputDir string) error {
+func generateYAMLFile(tmpl *template.Template, config ConnectionConfigs, outputDir string) error {
 	// Execute the template with the integration data
 	var buffer bytes.Buffer
 	err := tmpl.Execute(&buffer, config)
