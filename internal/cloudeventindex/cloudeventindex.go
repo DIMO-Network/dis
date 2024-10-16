@@ -46,7 +46,7 @@ func (v *eventIndexProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 		index, err := getCloudEventIndexes(&cloudHeader)
 		if err != nil {
 			// if the cloud event headers do not match our specific format we will try to create a partial index
-			v.logger.Infof("creating partial index, failed to convert cloud event to cloud index: %w", err)
+			v.logger.Infof("creating partial index, failed to convert cloud event to cloud index: %v", err)
 			index = nameindexer.CloudEventToPartialIndex(&cloudHeader, "")
 			indexType = partialIndexValue
 		}

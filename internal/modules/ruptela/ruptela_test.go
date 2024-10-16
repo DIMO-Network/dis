@@ -128,7 +128,7 @@ func TestSignalConvert(t *testing.T) {
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
 					DataVersion: ruptela.StatusEventDS,
-					Type:        "status",
+					Type:        cloudevent.TypeStatus,
 					Source:      "ruptela/TODO",
 					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
 					Time:        ts,
@@ -146,7 +146,7 @@ func TestSignalConvert(t *testing.T) {
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
 					DataVersion: ruptela.LocationEventDS,
-					Type:        "status",
+					Type:        cloudevent.TypeStatus,
 					Source:      "ruptela/TODO",
 					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
 					Time:        ts,
@@ -164,7 +164,7 @@ func TestSignalConvert(t *testing.T) {
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
 					DataVersion: "unknownVersion",
-					Type:        "status",
+					Type:        cloudevent.TypeStatus,
 				},
 				Data: json.RawMessage(signalData),
 			},
