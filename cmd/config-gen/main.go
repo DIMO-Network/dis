@@ -44,8 +44,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
-	devConfig := &ConnectionConfigs{}
-	devConfig, err = loadConfig(*inputDevFile)
+	devConfig, err := loadConfig(*inputDevFile)
 	if err != nil {
 		log.Fatalf("Failed to load dev config: %v", err)
 	}
