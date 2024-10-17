@@ -67,14 +67,14 @@ func (m *Module) SetConfig(config string) error {
 }
 
 // SignalConvert converts a message to signals.
-func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
+func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
 	event := cloudevent.CloudEvent[struct{}]{}
 	err := json.Unmarshal(msgBytes, &event)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
 	if event.DataVersion == DevStatusDS || event.Type != cloudevent.TypeStatus {
-		// Skip device status messages and non status events.
+		m.logger.Infof("skipping vehic non-status type: %s, dataVersion: %s", event.DataVersion, event.Type)
 		return nil, nil
 	}
 	var signals []vss.Signal
