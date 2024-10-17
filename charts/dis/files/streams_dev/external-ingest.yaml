@@ -81,9 +81,8 @@ output:
                           byte_size: 0
                           period: "200ms"
                           check: ""
-          - label: "clickhouse_signal_stdout"
-            stdout:
-              codec: lines
+          - label: "clickhouse_fallback"
+            drop: {}
         processors:
           - label: signal_db_migration
             dimo_signal_migration:
@@ -157,9 +156,8 @@ output:
                       byte_size: 0
                       period: "200ms"
                       check: ""
-          - label: "s3_drop_on_error"
-            stdout:
-              codec: lines
+          - label: "object_output_fallback"
+            drop: {}
         processors:
           - label: "file_index_db_migration"
             dimo_file_index_migration:

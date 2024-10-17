@@ -74,7 +74,6 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
 	if event.DataVersion == DevStatusDS || event.Type != cloudevent.TypeStatus {
-		m.logger.Infof("skipping vehic non-status type: %s, dataVersion: %s", event.DataVersion, event.Type)
 		return nil, nil
 	}
 	var signals []vss.Signal

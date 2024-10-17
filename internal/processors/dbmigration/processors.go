@@ -63,10 +63,14 @@ func runMigration(dsn string, registeredFuncs []func()) error {
 		return fmt.Errorf("failed to parse dsn: %w", err)
 	}
 	db := clickhouse.OpenDB(dbOptions)
-	defer db.Close()
 	err = migrate.RunGoose(context.Background(), []string{"up", "-v"}, registeredFuncs, db)
 	if err != nil {
+		_ = db.Close()
 		return fmt.Errorf("failed to run migration: %w", err)
+	}
+	err = db.Close()
+	if err != nil {
+		return fmt.Errorf("failed to close db: %w", err)
 	}
 	return nil
 }
