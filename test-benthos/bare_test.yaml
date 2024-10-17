@@ -57,7 +57,7 @@ tests:
     input_batch:
        - metadata:
           example_key: example metadata value
-          http_server_request_path: "/integration/macaron_integration_id/store"
+          dimo_http_server_connection_id: "macaron_integration_id"
          json_content:
           source: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
           dataschema: "testschema/v2.0"
