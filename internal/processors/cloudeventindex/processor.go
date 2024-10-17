@@ -1,6 +1,9 @@
 package cloudeventconvert
 
 import (
+	"time"
+
+	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
@@ -18,6 +21,6 @@ func init() {
 
 func ctor(_ *service.ParsedConfig, mgr *service.Resources) (service.BatchProcessor, error) {
 	return &eventIndexProcessor{
-		logger: mgr.Logger(),
+		logger: ratedlogger.New(mgr.Logger(), time.Minute*10),
 	}, nil
 }

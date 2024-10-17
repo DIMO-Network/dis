@@ -21,10 +21,10 @@ import (
 	_ "github.com/redpanda-data/connect/v4/public/components/prometheus"
 
 	// Add our custom plugin packages here.
-	_ "github.com/DIMO-Network/dis/internal/cloudeventconvert"
-	_ "github.com/DIMO-Network/dis/internal/cloudeventindex"
-	_ "github.com/DIMO-Network/dis/internal/dbmigration"
-	_ "github.com/DIMO-Network/dis/internal/signalconvert"
+	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
+	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventindex"
+	_ "github.com/DIMO-Network/dis/internal/processors/dbmigration"
+	_ "github.com/DIMO-Network/dis/internal/processors/signalconvert"
 )
 
 func main() {

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer"
 	chindexer "github.com/DIMO-Network/nameindexer/pkg/clickhouse"
@@ -20,7 +21,7 @@ const (
 )
 
 type eventIndexProcessor struct {
-	logger *service.Logger
+	logger *ratedlogger.Logger
 }
 
 // Close to fulfill the service.Processor interface.
