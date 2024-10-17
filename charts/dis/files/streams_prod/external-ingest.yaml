@@ -49,10 +49,8 @@ output:
     pattern: fan_out
     outputs:
       - label: "clickhouse_signal_drop_on_error"
-        drop_on:
-          error: true
-          output:
-            label: "clickhouse_signal_insert_file"
+        fallback:
+          - label: "clickhouse_signal_insert_file"
             switch:
               cases:
                   - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
@@ -83,6 +81,9 @@ output:
                           byte_size: 0
                           period: "200ms"
                           check: ""
+          - label: "clickhouse_signal_stdout"
+            stdout:
+              codec: lines
             processors:
               - label: signal_db_migration
                 dimo_signal_migration:
@@ -111,10 +112,8 @@ output:
                         source = this.source.or("unknown")
                   - mapping: root = deleted()      
       - label: "object_output_drop_on_error"
-        drop_on:
-          error: true
-          output:
-            label: "object_output"
+        fallback:
+          - label: "object_output"
             broker:
               outputs:
                 - label: "s3_cloudevent_insert"
@@ -158,6 +157,9 @@ output:
                       byte_size: 0
                       period: "200ms"
                       check: ""
+          - label: "s3_drop_on_error"
+            stdout:
+              codec: lines
             processors:
               - label: "file_index_db_migration"
                 dimo_file_index_migration:
