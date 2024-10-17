@@ -3,7 +3,7 @@ input:
   label: "ingest_server_input"
   http_server:
       address: 0.0.0.0:9443
-      path: /integration/{connection_id}/store
+      path: /
       allowed_verbs:
         - POST
       timeout: 5s
@@ -23,13 +23,13 @@ pipeline:
   processors:
     - label: "cloudevent_switch"
       switch:
-          - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
+          - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
             processors:
               - label: convert_cloudevent_ruptela
                 dimo_cloudevent_convert:
                   module_name: ruptela
                   module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
-          - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+          - check: '@dimo_http_server_connection_id == "macaron_integration_id"'
             processors:
               - label: convert_cloudevent_macaron
                 dimo_cloudevent_convert:
@@ -55,7 +55,7 @@ output:
             label: "clickhouse_signal_insert_file"
             switch:
               cases:
-                  - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
+                  - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
                     output:
                       label: "clickhouse_signal_insert_ruptela"
                       sql_insert:
@@ -69,7 +69,7 @@ output:
                           byte_size: 0
                           period: "200ms"
                           check: ""
-                  - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+                  - check: '@dimo_http_server_connection_id == "macaron_integration_id"'
                     output:
                       label: "clickhouse_signal_insert_macaron"
                       sql_insert:
@@ -89,13 +89,13 @@ output:
                   dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
               - label: convert_signals_switch
                 switch:
-                  - check: '@http_server_request_path == "/integration/ruptela_integration_id/store"'
+                  - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
                     processors:
                       - label: convert_signals_ruptela
                         dimo_signal_convert:
                           module_name: ruptela
                           module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
-                  - check: '@http_server_request_path == "/integration/macaron_integration_id/store"'
+                  - check: '@dimo_http_server_connection_id == "macaron_integration_id"'
                     processors:
                       - label: convert_signals_macaron
                         dimo_signal_convert:
