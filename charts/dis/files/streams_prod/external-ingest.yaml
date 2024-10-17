@@ -3,7 +3,7 @@ input:
   label: "ingest_server_input"
   http_server:
       address: 0.0.0.0:9443
-      path: /integration/{connection_id}/store
+      path: /
       allowed_verbs:
         - POST
       timeout: 5s
