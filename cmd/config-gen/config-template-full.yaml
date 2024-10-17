@@ -68,29 +68,29 @@ output:
           - label: "clickhouse_signal_stdout"
             stdout:
               codec: lines
-            processors:
-              - label: signal_db_migration
-                dimo_signal_migration:
-                  dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
-              - label: convert_signals_switch
-                switch:
-                  {{- range .Connections }}
-                  - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
-                    processors:
-                      - label: convert_signals_{{ toLower .ConnectionName }}
-                        dimo_signal_convert:
-                          module_name: {{ .ModuleName }}
-                          module_config: {{ base64 .ModuleConfig }}
-                  {{- end }}
-              - catch:
-                  - label: "log_convert_errors"
-                    log:
-                      level: WARN
-                      message: "status processing failed: ${!error()}"
-                      fields_mapping: |
-                        vehicleTokenId = this.tokenId.or(-1)
-                        source = this.source.or("unknown")
-                  - mapping: root = deleted()      
+        processors:
+          - label: signal_db_migration
+            dimo_signal_migration:
+              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+          - label: convert_signals_switch
+            switch:
+              {{- range .Connections }}
+              - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
+                processors:
+                  - label: convert_signals_{{ toLower .ConnectionName }}
+                    dimo_signal_convert:
+                      module_name: {{ .ModuleName }}
+                      module_config: {{ base64 .ModuleConfig }}
+              {{- end }}
+          - catch:
+              - label: "log_convert_errors"
+                log:
+                  level: WARN
+                  message: "status processing failed: ${!error()}"
+                  fields_mapping: |
+                    vehicleTokenId = this.tokenId.or(-1)
+                    source = this.source.or("unknown")
+              - mapping: root = deleted()      
       - label: "object_output_drop_on_error"
         fallback:
           - label: "object_output"
@@ -140,9 +140,9 @@ output:
           - label: "s3_drop_on_error"
             stdout:
               codec: lines
-            processors:
-              - label: "file_index_db_migration"
-                dimo_file_index_migration:
-                  dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
-              - label: "create_cloudevent_index"
-                dimo_cloudevent_index: {}
+        processors:
+          - label: "file_index_db_migration"
+            dimo_file_index_migration:
+              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+          - label: "create_cloudevent_index"
+            dimo_cloudevent_index: {}
