@@ -34,26 +34,23 @@ func Register(procName string) {
 }
 
 func ctor(procName string) func(*service.ParsedConfig, *service.Resources) (service.BatchProcessor, error) {
+	var registerFunc []func()
+	switch procName {
+	case indexMigrationProcName:
+		registerFunc = indexmigrations.RegisterFuncs()
+	case signalMigrationProcName:
+		registerFunc = sigmigrations.RegisterFuncs()
+	}
 	return func(cfg *service.ParsedConfig, _ *service.Resources) (service.BatchProcessor, error) {
 		migration, err := cfg.FieldString("dsn")
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse migration field: %w", err)
+			return nil, fmt.Errorf("failed to get dsn field: %w", err)
 		}
-		var registerFunc []func()
-		switch procName {
-		case indexMigrationProcName:
-			registerFunc = indexmigrations.RegisterFuncs()
-		case signalMigrationProcName:
-			registerFunc = sigmigrations.RegisterFuncs()
-		}
-
 		if err := runMigration(migration, registerFunc); err != nil {
-			return nil, fmt.Errorf("failed to run migration: %w", err)
+			return nil, fmt.Errorf("failed %s: %w", procName, err)
 		}
 
-		return noop{
-			procName: procName,
-		}, nil
+		return noop{}, nil
 	}
 }
 
@@ -76,7 +73,6 @@ func runMigration(dsn string, registeredFuncs []func()) error {
 }
 
 type noop struct {
-	procName string
 }
 
 // Close to fulfill the service.Processor interface.
