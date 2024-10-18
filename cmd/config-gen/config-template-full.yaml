@@ -70,7 +70,7 @@ output:
         processors:
           - label: signal_db_migration
             dimo_signal_migration:
-              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
           - label: convert_signals_switch
             switch:
               {{- range .Connections }}
@@ -127,8 +127,7 @@ output:
                 - label: "clickhouse_cloudevent_index_insert"
                   sql_insert:
                     driver: clickhouse
-                    dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
-                    table: name_index
+                    dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
                     columns: []
                     args_mapping: root = metadata("dimo_cloudevent_index_values")
                     batching:
