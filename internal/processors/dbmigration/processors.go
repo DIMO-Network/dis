@@ -3,6 +3,7 @@ package dbmigration
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/clickhouse-infra/pkg/migrate"
@@ -41,14 +42,17 @@ func ctor(procName string) func(*service.ParsedConfig, *service.Resources) (serv
 	case signalMigrationProcName:
 		registerFunc = sigmigrations.RegisterFuncs()
 	}
-	return func(cfg *service.ParsedConfig, _ *service.Resources) (service.BatchProcessor, error) {
+	return func(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProcessor, error) {
 		migration, err := cfg.FieldString("dsn")
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dsn field: %w", err)
 		}
+		mgr.Logger().Infof("Running migration for %s", procName)
+		start := time.Now()
 		if err := runMigration(migration, registerFunc); err != nil {
 			return nil, fmt.Errorf("failed %s: %w", procName, err)
 		}
+		mgr.Logger().Infof("Migration for %s completed after %s", procName, time.Since(start))
 
 		return noop{}, nil
 	}
