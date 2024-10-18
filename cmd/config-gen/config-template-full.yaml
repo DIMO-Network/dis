@@ -68,9 +68,9 @@ output:
           - label: "clickhouse_fallback"
             drop: {}
         processors:
-          # - label: signal_db_migration
-          #   dimo_signal_migration:
-          #     dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
+          - label: signal_db_migration
+            dimo_signal_migration:
+              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
           - label: convert_signals_switch
             switch:
               {{- range .Connections }}
@@ -139,8 +139,8 @@ output:
           - label: "object_output_fallback"
             drop: {}
         processors:
-          # - label: "file_index_db_migration"
-          #   dimo_file_index_migration:
-          #     dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
+          - label: "file_index_db_migration"
+            dimo_file_index_migration:
+              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
           - label: "create_cloudevent_index"
             dimo_cloudevent_index: {}
