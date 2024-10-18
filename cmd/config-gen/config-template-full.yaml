@@ -115,7 +115,7 @@ output:
                           output:
                             label: "s3_tmp_cloudevent_insert"
                             aws_s3:
-                              bucket: ${S3_CLOUDEVENT_TMP_BUCKET}
+                              bucket: ${S3_EPHEMERAL_BUCKET}
                               path: ${!meta("dimo_cloudevent_index")}
                               content_type: application/json
                               region: us-east-2

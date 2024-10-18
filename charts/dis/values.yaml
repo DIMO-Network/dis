@@ -35,8 +35,8 @@ env:
   CLICKHOUSE_PORT: 9440
   CLICKHOUSE_SIGNAL_DATABASE: dimo
   CLICKHOUSE_INDEX_DATABASE: file_index
-  S3_CLOUDEVENT_BUCKET: dimo-network-status-dev
-  S3_CLOUDEVENT_TMP_BUCKET: dimo-network-status-dev
+  S3_CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-dev
+  S3_EPHEMERAL_BUCKET: dimo-ingest-ephemeral-dev
   DEVICES_APIGRPC_ADDR: devices-api-dev:8086
   LOG_LEVEL: INFO
 service:
