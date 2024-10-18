@@ -9,17 +9,13 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted]
-    strategy:
-      matrix:
-        go-version: ["1.23"]
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: 'go.mod'
 
       - name: modVerify
         run: go mod verify
