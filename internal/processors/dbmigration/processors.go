@@ -3,7 +3,6 @@ package dbmigration
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
@@ -17,8 +16,6 @@ const (
 	indexMigrationProcName  = "dimo_file_index_migration"
 	signalMigrationProcName = "dimo_signal_migration"
 )
-
-var migrationLock sync.Mutex
 
 var configSpec = service.NewConfigSpec().
 	Summary("Converts events into a list of signals").
@@ -62,8 +59,6 @@ func ctor(procName string) func(*service.ParsedConfig, *service.Resources) (serv
 }
 
 func runMigration(dsn string, registeredFuncs []func()) error {
-	migrationLock.Lock()
-	defer migrationLock.Unlock()
 	dbOptions, err := clickhouse.ParseDSN(dsn)
 	if err != nil {
 		return fmt.Errorf("failed to parse dsn: %w", err)
