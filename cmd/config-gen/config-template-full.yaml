@@ -45,28 +45,28 @@ output:
     pattern: fan_out
     outputs:
       - label: "clickhouse_signal_drop_on_error"
-        fallback:
-          - label: "clickhouse_signal_insert_file"
+        drop_on:
+          error: true
+          output:
+            label: "clickhouse_signal_insert_file"
             switch:
               cases:
-                  {{- range .Connections }}
-                  - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
-                    output:
-                      label: "clickhouse_signal_insert_{{ toLower .ConnectionName }}"
-                      sql_insert:
-                        driver: clickhouse
-                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
-                        table: signal
-                        columns: []
-                        args_mapping: root = this
-                        batching:
-                          count: 10000
-                          byte_size: 0
-                          period: "200ms"
-                          check: ""
-                  {{- end }}
-          - label: "clickhouse_fallback"
-            drop: {}
+                {{- range .Connections }}
+                - check: '@dimo_http_server_connection_id == "{{ .ConnectionID }}"'
+                  output:
+                    label: "clickhouse_signal_insert_{{ toLower .ConnectionName }}"
+                    sql_insert:
+                      driver: clickhouse
+                      dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
+                      table: signal
+                      columns: []
+                      args_mapping: root = this
+                      batching:
+                        count: 10000
+                        byte_size: 0
+                        period: "200ms"
+                        check: ""
+                {{- end }}
         processors:
           - label: signal_db_migration
             dimo_signal_migration:
@@ -91,8 +91,10 @@ output:
                     source = this.source.or("unknown")
               - mapping: root = deleted()      
       - label: "object_output_drop_on_error"
-        fallback:
-          - label: "object_output"
+        drop_on:
+          error: true
+          output:
+            label: "object_output"
             broker:
               outputs:
                 - label: "s3_cloudevent_insert"
@@ -136,8 +138,6 @@ output:
                       byte_size: 0
                       period: "200ms"
                       check: ""
-          - label: "object_output_fallback"
-            drop: {}
         processors:
           - label: "file_index_db_migration"
             dimo_file_index_migration:
