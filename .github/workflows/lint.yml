@@ -8,13 +8,8 @@ jobs:
 
     name: lint
     steps:
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.23
-
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
 
       - name: install golangci-lint
         run: make tools-golangci-lint
