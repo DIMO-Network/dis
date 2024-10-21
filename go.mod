@@ -8,7 +8,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/devices-api v1.30.35
-	github.com/DIMO-Network/model-garage v0.3.2
+	github.com/DIMO-Network/model-garage v0.3.3-0.20241021134525-e6526dbb1ba4
 	github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -173,7 +173,7 @@ require (
 	github.com/sijms/go-ora/v2 v2.8.19 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/snowflakedb/gosnowflake v1.11.0 // indirect
-	github.com/tidwall/gjson v1.17.3 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tilinna/z85 v1.0.0 // indirect

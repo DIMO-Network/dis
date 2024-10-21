@@ -40,8 +40,8 @@ github.com/DIMO-Network/clickhouse-infra v0.0.3 h1:B6/4IY9IxLcyydET14IjHUT+A5SDE
 github.com/DIMO-Network/clickhouse-infra v0.0.3/go.mod h1:NtpQ1btkPzebDvpYYygeqiiBmJ/q5oJb/T/JWzUVRlk=
 github.com/DIMO-Network/devices-api v1.30.35 h1:PggCLq3pX/o9+WaTB+9YEmqfmR23LCqF3mgmXnpEZNo=
 github.com/DIMO-Network/devices-api v1.30.35/go.mod h1:06PP1QwYLogA8lrwsDcfRlE141N2VfvovPzcrHexXTg=
-github.com/DIMO-Network/model-garage v0.3.2 h1:v6BLyip7UW0ABWkPkmScFjBGyDDoQcVXJEJdVu5vI3Q=
-github.com/DIMO-Network/model-garage v0.3.2/go.mod h1:0wRJbAtwF66RZE/+6WUOPOVL3cSO9eozzuE+bQ4JWs8=
+github.com/DIMO-Network/model-garage v0.3.3-0.20241021134525-e6526dbb1ba4 h1:AO9qHqTDVNS4Lv6/a/LZZsp6wS2E8NUY2LfMT5Kv7Zc=
+github.com/DIMO-Network/model-garage v0.3.3-0.20241021134525-e6526dbb1ba4/go.mod h1:TKajLKnkYw7n6cUuay6CBS15b81jVHRsQshW2WHeXzM=
 github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf h1:3vA2VFfG6BeJ1M1BAJO7lAl+pq9XGi9EYr6Iu7AdrTk=
 github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf/go.mod h1:+X3K7NN7/DTwkwex5G0e+cqyUaGoCqqk8otOyjDxN+s=
 github.com/IBM/sarama v1.43.3 h1:Yj6L2IaNvb2mRBop39N7mmJAHBVY3dTPncr3qGVkxPA=
@@ -547,8 +547,8 @@ github.com/testcontainers/testcontainers-go v0.33.0 h1:zJS9PfXYT5O0ZFXM2xxXfk4J5
 github.com/testcontainers/testcontainers-go v0.33.0/go.mod h1:W80YpTa8D5C3Yy16icheD01UTDu+LmXIA2Keo+jWtT8=
 github.com/testcontainers/testcontainers-go/modules/clickhouse v0.33.0 h1:YbB5DBkpgY+GlGPFqTSV1hzWPm3ZHirEyooZrj+ZXK0=
 github.com/testcontainers/testcontainers-go/modules/clickhouse v0.33.0/go.mod h1:qJuMPl9yWIWasmdBILM2uDk1Ny1kdeigcKMJ6A8PZz0=
-github.com/tidwall/gjson v1.17.3 h1:bwWLZU7icoKRG+C+0PNwIKC6FCJO/Q3p2pZvuP0jN94=
-github.com/tidwall/gjson v1.17.3/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
+github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=
+github.com/tidwall/gjson v1.18.0/go.mod h1:/wbyibRr2FHMks5tjHJ5F8dMZh3AcwJEMf5vlfC0lxk=
 github.com/tidwall/match v1.1.1 h1:+Ho715JplO36QYgwN9PGYNhgZvoUSc9X2c80KVTi+GA=
 github.com/tidwall/match v1.1.1/go.mod h1:eRSPERbgtNPcGhD8UCthc6PmLEQXEWd3PRB5JTxsfmM=
 github.com/tidwall/pretty v1.0.0/go.mod h1:XNkn88O1ChpSDQmQeStsy+sBenx6DDtFZJxhVysOjyk=
