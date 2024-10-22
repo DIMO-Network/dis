@@ -78,4 +78,46 @@ tests:
     output_batches:
       - # Expected batch
         - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",107,""]
-         
+
+
+  - name: "Test CloudConvert"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#cloudevent_switch"
+    environment: {}
+    input_batch:
+      - metadata:
+          example_key: example metadata value
+          dimo_http_server_connection_id: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
+        json_content:
+          ds: "r/v0/s"
+          signature: "abc123signature"
+          time: "2024-10-22T15:30:00Z"
+          data: {
+            "speed": 65.5,
+            "location": {
+              "lat": 54.6872,
+              "lng": 25.2797
+            },
+            "status": "active"
+          }
+          vehicleTokenId: 12
+          deviceTokenId: 392
+    output_batches:
+      - # Expected batch
+        - json_contains:
+            datacontenttype: "application/json"
+            subject: "did:nft:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_12"  # Replace with actual subject
+            source: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
+            specversion: "1.0"
+            time: "2024-10-22T15:30:00Z"
+            type: "dimo.status"  # Replace with actual event type
+            dataversion: "r/v0/s"
+            producer: "did:nft:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA_392"  # Replace with actual producer
+            data: {
+              "speed": 65.5,
+              "location": {
+                "lat": 54.6872,
+                "lng": 25.2797
+              },
+              "status": "active"
+            }
+            signature: "abc123signature"
