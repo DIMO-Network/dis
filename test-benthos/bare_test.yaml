@@ -1,6 +1,6 @@
 tests:
   - name: "Test S3 file output"
-    target_processors: "../charts/dis/files/streams_dev/external-ingest.yaml#object_output"
+    target_processors: "../charts/dis/files/streams_dev/external-ingest.yaml#object_output_drop_on_error"
     mocks:
       file_index_db_migration:
         mapping: 'root = this'
