@@ -21,4 +21,4 @@ jobs:
         run: go mod verify
 
       - name: Run Tests
-        run: go test -v ./...
+        run: make test

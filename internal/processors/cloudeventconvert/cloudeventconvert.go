@@ -7,7 +7,10 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules"
+	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/redpanda-data/benthos/v4/public/service"
+	"github.com/tidwall/sjson"
 )
 
 type CloudEventModule interface {
@@ -45,30 +48,49 @@ func (v *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
 		var retBatch service.MessageBatch
-		errMsg := msg.Copy()
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
 			// Add the error to the batch and continue to the next message.
-			errMsg.SetError(fmt.Errorf("failed to get msg bytes: %w", err))
-			retBatches = append(retBatches, service.MessageBatch{errMsg})
+			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get msg bytes: %w", err))
 			continue
 		}
 
 		events, err := v.cloudEventModule.CloudEventConvert(ctx, msgBytes)
 		if err != nil {
+			// Try to unmarshal convert errors
+			errMsg := msg.Copy()
 			errMsg.SetError(err)
-			data, err := json.Marshal(err)
-			if err == nil {
+			data, marshalErr := json.Marshal(err)
+			if marshalErr == nil {
 				errMsg.SetBytes(data)
 			}
 			retBatch = append(retBatch, errMsg)
 		}
 		for _, event := range events {
 			msgCpy := msg.Copy()
+			source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
+			if !ok {
+				retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get source from connection id"))
+				break
+			}
+			var err error
+			event, err = setSource(event, source)
+			if err != nil {
+				retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to set source: %w", err))
+				continue
+			}
 			msgCpy.SetBytes(event)
 			retBatch = append(retBatch, msgCpy)
 		}
 		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
+}
+
+func setSource(event []byte, source string) ([]byte, error) {
+	newEvent, err := sjson.SetBytes(event, "source", source)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set source: %w", err)
+	}
+	return newEvent, nil
 }

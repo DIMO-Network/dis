@@ -16,6 +16,7 @@ require (
 	github.com/redpanda-data/connect/v4 v4.37.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
+	github.com/tidwall/sjson v1.2.5
 	golang.org/x/mod v0.21.0
 	golang.org/x/time v0.7.0
 	google.golang.org/grpc v1.67.1

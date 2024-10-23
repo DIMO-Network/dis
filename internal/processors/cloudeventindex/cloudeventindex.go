@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer"
@@ -34,13 +35,13 @@ func (v *eventIndexProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 	for _, msg := range msgs {
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
-			retBatches = appendError(retBatches, msg, fmt.Errorf("failed to get msg bytes: %w", err))
+			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get msg bytes: %w", err))
 			continue
 		}
 		var cloudHeader cloudevent.CloudEventHeader
 		err = json.Unmarshal(msgBytes, &cloudHeader)
 		if err != nil {
-			retBatches = appendError(retBatches, msg, fmt.Errorf("failed to unmarshal cloud event header: %w", err))
+			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to unmarshal cloud event header: %w", err))
 			continue
 		}
 		indexType := fullIndexValue
@@ -55,7 +56,7 @@ func (v *eventIndexProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 		// Encode the index
 		encodedIndex, err := nameindexer.EncodeIndex(&index)
 		if err != nil {
-			retBatches = appendError(retBatches, msg, fmt.Errorf("failed to encode index: %w", err))
+			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to encode index: %w", err))
 			continue
 		}
 
@@ -71,12 +72,6 @@ func (v *eventIndexProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 		retBatches = append(retBatches, service.MessageBatch{msg})
 	}
 	return retBatches, nil
-}
-
-func appendError(batches []service.MessageBatch, msg *service.Message, err error) []service.MessageBatch {
-	errMsg := msg.Copy()
-	errMsg.SetError(err)
-	return append(batches, service.MessageBatch{errMsg})
 }
 
 func getCloudEventIndexes(cloudEventHeader *cloudevent.CloudEventHeader) (nameindexer.Index, error) {
