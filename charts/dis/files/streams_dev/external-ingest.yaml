@@ -28,7 +28,7 @@ pipeline:
             - label: convert_cloudevent_ruptela
               dimo_cloudevent_convert:
                 module_name: ruptela
-                module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDMyNWI0NTk0OUM4MzM5ODZiQzk4ZTk4YTQ5RjNDQTVDNWM0NjQzQjUiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHg0NWZiQ0QzZWY3MzYxZDE1NmU4YjE2RjU1MzhBRTM2REVkZjYxRGE4Igp9Cg==
         - check: 'metadata("dimo_http_server_connection_id") == "macaron_integration_id"'
           processors:
             - label: convert_cloudevent_macaron
@@ -83,7 +83,7 @@ output:
                   - label: convert_signals_ruptela
                     dimo_signal_convert:
                       module_name: ruptela
-                      module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
+                      module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDMyNWI0NTk0OUM4MzM5ODZiQzk4ZTk4YTQ5RjNDQTVDNWM0NjQzQjUiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHg0NWZiQ0QzZWY3MzYxZDE1NmU4YjE2RjU1MzhBRTM2REVkZjYxRGE4Igp9Cg==
               - check: 'metadata("dimo_http_server_connection_id") == "macaron_integration_id"'
                 processors:
                   - label: convert_signals_macaron

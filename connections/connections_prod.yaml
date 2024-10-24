@@ -4,7 +4,7 @@ connections:
     connectionName: "Ruptela"
     moduleConfig: |
       {
-        "chain_id": "137",
+        "chain_id": 137,
         "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
         "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
       }
