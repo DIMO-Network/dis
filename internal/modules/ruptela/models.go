@@ -2,8 +2,6 @@ package ruptela
 
 import (
 	"encoding/json"
-
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 )
 
 type RuptelaEvent struct {
@@ -11,13 +9,8 @@ type RuptelaEvent struct {
 	Signature      string          `json:"signature"`
 	Time           string          `json:"time"`
 	Data           json.RawMessage `json:"data"`
-	VehicleTokenID uint64          `json:"vehicleTokenId"`
-	DeviceTokenID  uint64          `json:"deviceTokenId"`
-}
-
-type CloudEvent[A any] struct {
-	cloudevent.CloudEvent[A]
-	Signature string `json:"signature,omitempty"`
+	VehicleTokenID *uint64         `json:"vehicleTokenId"`
+	DeviceTokenID  *uint32         `json:"deviceTokenId"`
 }
 
 type DataContent struct {

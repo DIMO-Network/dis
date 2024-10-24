@@ -5,12 +5,24 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/nameindexer"
+	chindexer "github.com/DIMO-Network/nameindexer/pkg/clickhouse"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"github.com/tidwall/sjson"
+	"github.com/segmentio/ksuid"
+)
+
+const (
+	cloudEventIndexKey       = "dimo_cloudevent_index"
+	cloudEventIndexValuesKey = "dimo_cloudevent_index_values"
+	cloudeventValidKey       = "dimo_cloudevent_valid"
+	fullIndexValue           = "full"
+	partialIndexValue        = "partial"
 )
 
 type CloudEventModule interface {
@@ -18,6 +30,7 @@ type CloudEventModule interface {
 }
 type cloudeventProcessor struct {
 	cloudEventModule CloudEventModule
+	logger           *service.Logger
 }
 
 // Close to fulfill the service.Processor interface.
@@ -41,10 +54,11 @@ func newCloudConvertProcessor(lgr *service.Logger, moduleName, moduleConfig stri
 	}
 	return &cloudeventProcessor{
 		cloudEventModule: cloudEventModule,
+		logger:           lgr,
 	}, nil
 }
 
-func (v *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
+func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
 		var retBatch service.MessageBatch
@@ -55,7 +69,7 @@ func (v *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			continue
 		}
 
-		events, err := v.cloudEventModule.CloudEventConvert(ctx, msgBytes)
+		events, err := c.cloudEventModule.CloudEventConvert(ctx, msgBytes)
 		if err != nil {
 			// Try to unmarshal convert errors
 			errMsg := msg.Copy()
@@ -66,31 +80,89 @@ func (v *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			}
 			retBatch = append(retBatch, errMsg)
 		}
-		for _, event := range events {
-			msgCpy := msg.Copy()
-			source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
-			if !ok {
-				retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get source from connection id"))
-				break
-			}
-			var err error
-			event, err = setSource(event, source)
+
+		source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
+		if !ok {
+			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get source from connection id"))
+			continue
+		}
+
+		for _, eventData := range events {
+			newMsg, err := c.createNewEventMsg(msg, source, eventData)
 			if err != nil {
-				retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to set source: %w", err))
+				retBatches = processors.AppendError(retBatches, msg, err)
 				continue
 			}
-			msgCpy.SetBytes(event)
-			retBatch = append(retBatch, msgCpy)
+			retBatch = append(retBatch, newMsg)
 		}
 		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
 }
 
-func setSource(event []byte, source string) ([]byte, error) {
-	newEvent, err := sjson.SetBytes(event, "source", source)
+func (c *cloudeventProcessor) createNewEventMsg(origMsg *service.Message, source string, eventData []byte) (*service.Message, error) {
+	msgCpy := origMsg.Copy()
+	event, err := setDefaults(eventData, source)
 	if err != nil {
-		return nil, fmt.Errorf("failed to set source: %w", err)
+		return nil, err
 	}
-	return newEvent, nil
+	err = c.SetIndex(&event.CloudEventHeader, msgCpy)
+	if err != nil {
+		return nil, err
+	}
+	newEventData, err := json.Marshal(event)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal new event: %w", err)
+	}
+	msgCpy.SetBytes(newEventData)
+	return msgCpy, nil
+}
+
+func setDefaults(eventData []byte, source string) (*cloudevent.CloudEvent[json.RawMessage], error) {
+	event := cloudevent.CloudEvent[json.RawMessage]{}
+	err := json.Unmarshal(eventData, &event)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal new event to a cloudEvent: %w", err)
+	}
+	event.Source = source
+	if event.Time.IsZero() {
+		event.Time = time.Now().UTC()
+	}
+	if event.ID == "" {
+		event.ID = ksuid.New().String()
+	}
+	return &event, nil
+}
+
+func (c *cloudeventProcessor) SetIndex(eventHeader *cloudevent.CloudEventHeader, msg *service.Message) error {
+	index, valid := c.getCloudEventIndexes(eventHeader)
+
+	// Encode the index
+	encodedIndex, err := nameindexer.EncodeIndex(&index)
+	if err != nil {
+		return fmt.Errorf("failed to encode index: %w", err)
+	}
+	indexValues, err := chindexer.IndexToSlice(&index)
+	if err != nil {
+		return fmt.Errorf("failed to convert index to slice: %w", err)
+	}
+
+	// Set the encoded index and values in the message metadata
+	msg.MetaSetMut(cloudEventIndexKey, encodedIndex)
+	msg.MetaSetMut(cloudeventValidKey, valid)
+	msg.MetaSetMut(cloudEventIndexValuesKey, indexValues)
+
+	return nil
+}
+
+// getCloudEventIndexes attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index
+func (c *cloudeventProcessor) getCloudEventIndexes(eventHdr *cloudevent.CloudEventHeader) (index nameindexer.Index, valid bool) {
+	cloudIndex, err := nameindexer.CloudEventToCloudIndex(eventHdr, nameindexer.DefaultSecondaryFiller)
+	if err != nil {
+		// if the cloud event headers do not match our specific format we will try to create a partial index
+		c.logger.Infof("creating partial index, failed to convert cloud event to cloud index: %v", err)
+		return nameindexer.CloudEventToPartialIndex(eventHdr, ""), false
+	}
+	index, _ = cloudIndex.ToIndex()
+	return index, true
 }

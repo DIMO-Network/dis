@@ -16,7 +16,7 @@ import (
 
 func TestCloudEventConvert(t *testing.T) {
 	module := ruptela.Module{}
-	err := module.SetConfig(`{"chain_id":"1","aftermarket_contract_addr":"0x06012c8cf97BEaD5deAe237070F9587f8E7A266d","vehicle_contract_addr":"0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"}`)
+	err := module.SetConfig(`{"chain_id":1,"aftermarket_contract_addr":"0x06012c8cf97BEaD5deAe237070F9587f8E7A266d","vehicle_contract_addr":"0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"}`)
 	require.NoError(t, err)
 	tests := []struct {
 		name             string
@@ -41,6 +41,20 @@ func TestCloudEventConvert(t *testing.T) {
 			length:           1,
 			expectedSubject:  "did:nft:1:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_1",
 			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+		},
+		{
+			name:             "Status payload with no vehicleTokenId",
+			input:            []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z", "deviceTokenId":2, "data":{"trigger":409,"prt":1,"signals":{"104":"0","105":"0","106":"0"}}}`),
+			expectError:      false,
+			length:           1,
+			expectedSubject:  "",
+			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+		},
+		{
+			name:        "Status payload with no deviceTokenId",
+			input:       []byte(`{"ds":"r/v0/s","signature":"test","time":"2022-01-01T00:00:00Z", "data":{"trigger":409,"prt":1,"signals":{"104":"0","105":"0","106":"0"}}}`),
+			expectError: true,
+			length:      1,
 		},
 		{
 			name:             "Location payload",
@@ -79,7 +93,7 @@ func TestCloudEventConvert(t *testing.T) {
 				require.NoError(t, err)
 				require.Len(t, events, tt.length)
 
-				var cloudEvent ruptela.CloudEvent[json.RawMessage]
+				var cloudEvent cloudevent.CloudEvent[json.RawMessage]
 				err := json.Unmarshal(events[0], &cloudEvent)
 				if err != nil {
 					t.Fatalf("Failed to unmarshal cloud event: %v", err)

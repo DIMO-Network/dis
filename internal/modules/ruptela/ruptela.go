@@ -23,7 +23,7 @@ const (
 )
 
 type moduleConfig struct {
-	ChainID                 string `json:"chain_id"`
+	ChainID                 uint64 `json:"chain_id"`
 	AftermarketContractAddr string `json:"aftermarket_contract_addr"`
 	VehicleContractAddr     string `json:"vehicle_contract_addr"`
 }
@@ -59,7 +59,7 @@ func (m *Module) SetConfig(config string) error {
 		return fmt.Errorf("invalid vehicle contract address: %s", m.cfg.VehicleContractAddr)
 	}
 
-	if m.cfg.ChainID == "" {
+	if m.cfg.ChainID == 0 {
 		return fmt.Errorf("chain_id not set")
 	}
 
@@ -107,9 +107,16 @@ func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal record data: %w", err)
 	}
+	if event.DeviceTokenID == nil {
+		return nil, fmt.Errorf("device token id is missing")
+	}
 
 	// Construct the producer DID
-	producer := m.constructDID(m.cfg.AftermarketContractAddr, event.DeviceTokenID)
+	producer := cloudevent.NFTDID{
+		ChainID:         m.cfg.ChainID,
+		ContractAddress: common.HexToAddress(m.cfg.AftermarketContractAddr),
+		TokenID:         uint32(*event.DeviceTokenID),
+	}.String()
 	subject, err := m.determineSubject(event, producer)
 	if err != nil {
 		return nil, err
@@ -145,7 +152,13 @@ func (m Module) determineSubject(event RuptelaEvent, producer string) (string, e
 	var subject string
 	switch event.DS {
 	case StatusEventDS, LocationEventDS:
-		subject = m.constructDID(m.cfg.VehicleContractAddr, event.VehicleTokenID)
+		if event.VehicleTokenID != nil {
+			subject = cloudevent.NFTDID{
+				ChainID:         m.cfg.ChainID,
+				ContractAddress: common.HexToAddress(m.cfg.VehicleContractAddr),
+				TokenID:         uint32(*event.VehicleTokenID),
+			}.String()
+		}
 	case DevStatusDS:
 		subject = producer
 	default:
@@ -179,33 +192,28 @@ func createAdditionalEvents(event RuptelaEvent, producer, subject string) ([][]b
 }
 
 // createCloudEvent creates a cloud event from a ruptela event.
-func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (CloudEvent[json.RawMessage], error) {
+func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (cloudevent.CloudEvent[json.RawMessage], error) {
 	timeValue, err := time.Parse(time.RFC3339, event.Time)
 	if err != nil {
-		return CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
+		return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
 	}
-	return CloudEvent[json.RawMessage]{
-		CloudEvent: cloudevent.CloudEvent[json.RawMessage]{
-			CloudEventHeader: cloudevent.CloudEventHeader{
-				DataContentType: "application/json",
-				ID:              ksuid.New().String(),
-				Subject:         subject,
-				Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
-				SpecVersion:     "1.0",
-				Time:            timeValue,
-				Type:            eventType,
-				DataVersion:     event.DS,
-				Producer:        producer,
+	return cloudevent.CloudEvent[json.RawMessage]{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			DataContentType: "application/json",
+			ID:              ksuid.New().String(),
+			Subject:         subject,
+			Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
+			SpecVersion:     "1.0",
+			Time:            timeValue,
+			Type:            eventType,
+			DataVersion:     event.DS,
+			Producer:        producer,
+			Extras: map[string]any{
+				"signature": event.Signature,
 			},
-			Data: event.Data,
 		},
-		Signature: event.Signature,
+		Data: event.Data,
 	}, nil
-}
-
-// constructDID constructs a DID from the chain ID, contract address, and token ID.
-func (m Module) constructDID(contractAddress string, tokenID uint64) string {
-	return fmt.Sprintf("did:nft:%s:%s_%d", m.cfg.ChainID, contractAddress, tokenID)
 }
 
 // checkVINPresenceInPayload checks if the VIN is present in the payload.
@@ -228,7 +236,7 @@ func checkVINPresenceInPayload(eventData json.RawMessage) (bool, error) {
 	return true, nil
 }
 
-func marshalCloudEvent(cloudEvent CloudEvent[json.RawMessage]) ([]byte, error) {
+func marshalCloudEvent(cloudEvent cloudevent.CloudEvent[json.RawMessage]) ([]byte, error) {
 	cloudEventBytes, err := json.Marshal(cloudEvent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal cloudEvent: %w", err)

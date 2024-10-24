@@ -8,7 +8,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/devices-api v1.30.35
-	github.com/DIMO-Network/model-garage v0.3.3
+	github.com/DIMO-Network/model-garage v0.3.4-0.20241024140003-bb241584a5a9
 	github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -16,7 +16,6 @@ require (
 	github.com/redpanda-data/connect/v4 v4.37.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
-	github.com/tidwall/sjson v1.2.5
 	golang.org/x/mod v0.21.0
 	golang.org/x/time v0.7.0
 	google.golang.org/grpc v1.67.1
@@ -177,6 +176,7 @@ require (
 	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/tilinna/z85 v1.0.0 // indirect
 	github.com/trinodb/trino-go-client v0.315.0 // indirect
 	github.com/twmb/franz-go v1.17.1 // indirect

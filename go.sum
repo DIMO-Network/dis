@@ -40,8 +40,8 @@ github.com/DIMO-Network/clickhouse-infra v0.0.3 h1:B6/4IY9IxLcyydET14IjHUT+A5SDE
 github.com/DIMO-Network/clickhouse-infra v0.0.3/go.mod h1:NtpQ1btkPzebDvpYYygeqiiBmJ/q5oJb/T/JWzUVRlk=
 github.com/DIMO-Network/devices-api v1.30.35 h1:PggCLq3pX/o9+WaTB+9YEmqfmR23LCqF3mgmXnpEZNo=
 github.com/DIMO-Network/devices-api v1.30.35/go.mod h1:06PP1QwYLogA8lrwsDcfRlE141N2VfvovPzcrHexXTg=
-github.com/DIMO-Network/model-garage v0.3.3 h1:Mb6wz1siYiZC20aoQwoSawzjXQqIvBhIsY4kKP63RSg=
-github.com/DIMO-Network/model-garage v0.3.3/go.mod h1:TKajLKnkYw7n6cUuay6CBS15b81jVHRsQshW2WHeXzM=
+github.com/DIMO-Network/model-garage v0.3.4-0.20241024140003-bb241584a5a9 h1:1dY7oOTbU16/5GPa1hVOtH01r6YjfmD+NK2GHf2aMso=
+github.com/DIMO-Network/model-garage v0.3.4-0.20241024140003-bb241584a5a9/go.mod h1:w8TaTi9XJ33R4wh/AYfbKUJBBVYy5E+Ayc4CmDfPcYA=
 github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf h1:3vA2VFfG6BeJ1M1BAJO7lAl+pq9XGi9EYr6Iu7AdrTk=
 github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf/go.mod h1:+X3K7NN7/DTwkwex5G0e+cqyUaGoCqqk8otOyjDxN+s=
 github.com/IBM/sarama v1.43.3 h1:Yj6L2IaNvb2mRBop39N7mmJAHBVY3dTPncr3qGVkxPA=
