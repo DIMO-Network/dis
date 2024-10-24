@@ -79,7 +79,7 @@ func TestCloudEventConvert(t *testing.T) {
 				require.NoError(t, err)
 				require.Len(t, events, tt.length)
 
-				var cloudEvent ruptela.CloudEvent[json.RawMessage]
+				var cloudEvent cloudevent.CloudEvent[json.RawMessage]
 				err := json.Unmarshal(events[0], &cloudEvent)
 				if err != nil {
 					t.Fatalf("Failed to unmarshal cloud event: %v", err)

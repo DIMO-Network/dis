@@ -179,27 +179,27 @@ func createAdditionalEvents(event RuptelaEvent, producer, subject string) ([][]b
 }
 
 // createCloudEvent creates a cloud event from a ruptela event.
-func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (CloudEvent[json.RawMessage], error) {
+func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (cloudevent.CloudEvent[json.RawMessage], error) {
 	timeValue, err := time.Parse(time.RFC3339, event.Time)
 	if err != nil {
-		return CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
+		return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
 	}
-	return CloudEvent[json.RawMessage]{
-		CloudEvent: cloudevent.CloudEvent[json.RawMessage]{
-			CloudEventHeader: cloudevent.CloudEventHeader{
-				DataContentType: "application/json",
-				ID:              ksuid.New().String(),
-				Subject:         subject,
-				Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
-				SpecVersion:     "1.0",
-				Time:            timeValue,
-				Type:            eventType,
-				DataVersion:     event.DS,
-				Producer:        producer,
+	return cloudevent.CloudEvent[json.RawMessage]{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			DataContentType: "application/json",
+			ID:              ksuid.New().String(),
+			Subject:         subject,
+			Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
+			SpecVersion:     "1.0",
+			Time:            timeValue,
+			Type:            eventType,
+			DataVersion:     event.DS,
+			Producer:        producer,
+			Extras: map[string]any{
+				"signature": event.Signature,
 			},
-			Data: event.Data,
 		},
-		Signature: event.Signature,
+		Data: event.Data,
 	}, nil
 }
 
@@ -228,7 +228,7 @@ func checkVINPresenceInPayload(eventData json.RawMessage) (bool, error) {
 	return true, nil
 }
 
-func marshalCloudEvent(cloudEvent CloudEvent[json.RawMessage]) ([]byte, error) {
+func marshalCloudEvent(cloudEvent cloudevent.CloudEvent[json.RawMessage]) ([]byte, error) {
 	cloudEventBytes, err := json.Marshal(cloudEvent)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal cloudEvent: %w", err)
