@@ -4,7 +4,6 @@ tests:
     mocks:
       file_index_db_migration:
         mapping: 'root = this'
-    environment: {}
     input_batch:
        - metadata:
           example_key: example metadata value
@@ -51,73 +50,75 @@ tests:
             dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!!macaron_integration_id!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
           
 
-  # - name: "Test Clickhouse file output"
-  #   target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals_switch"
-  #   environment: {}
-  #   input_batch:
-  #      - metadata:
-  #         example_key: example metadata value
-  #         dimo_http_server_connection_id: "macaron_integration_id"
-  #        json_content:
-  #         source: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
-  #         dataschema: "testschema/v2.0"
-  #         subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-  #         producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-  #         time: "2024-04-18T17:20:46.436008782Z"
-  #         vehicleTokenId: 123
-  #         data:
-  #           timestamp: 1713460846435
-  #           device:
-  #             rpiUptimeSecs: 218
-  #             batteryVoltage: 12.28
-  #           vehicle:
-  #             signals:
-  #               - timestamp: 1713460826633
-  #                 name: "coolantTemp"
-  #                 value: 107
-  #   output_batches:
-  #     - # Expected batch
-  #       - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",107,""]
+  - name: "Test Clickhouse file output"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#clickhouse_signal_drop_on_error"
+    mocks:
+      signal_db_migration:
+        mapping: 'root = this'
+    input_batch:
+       - metadata:
+          dimo_cloudevent_valid: true
+          dimo_http_server_connection_id: "macaron_integration_id"
+         json_content:
+          source: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+          dataschema: "testschema/v2.0"
+          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          time: "2024-04-18T17:20:46.436008782Z"
+          vehicleTokenId: 123
+          data:
+            timestamp: 1713460846435
+            device:
+              rpiUptimeSecs: 218
+              batteryVoltage: 12.28
+            vehicle:
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  value: 107
+    output_batches:
+      - # Expected batch
+        - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",107,""]
 
 
-  # - name: "Test CloudConvert"
-  #   target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#cloudevent_switch"
-  #   environment: {}
-  #   input_batch:
-  #     - metadata:
-  #         example_key: example metadata value
-  #         dimo_http_server_connection_id: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
-  #       json_content:
-  #         ds: "r/v0/s"
-  #         signature: "abc123signature"
-  #         time: "2024-10-22T15:30:00Z"
-  #         data: {
-  #           "speed": 65.5,
-  #           "location": {
-  #             "lat": 54.6872,
-  #             "lng": 25.2797
-  #           },
-  #           "status": "active"
-  #         }
-  #         vehicleTokenId: 12
-  #         deviceTokenId: 392
-  #   output_batches:
-  #     - # Expected batch
-  #       - json_contains:
-  #           datacontenttype: "application/json"
-  #           subject: "did:nft:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_12"  
-  #           source: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
-  #           specversion: "1.0"
-  #           time: "2024-10-22T15:30:00Z"
-  #           type: "dimo.status"  
-  #           dataversion: "r/v0/s"
-  #           producer: "did:nft:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA_392"  
-  #           data: {
-  #             "speed": 65.5,
-  #             "location": {
-  #               "lat": 54.6872,
-  #               "lng": 25.2797
-  #             },
-  #             "status": "active"
-  #           }
-  #           signature: "abc123signature"
+  - name: "Test CloudConvert"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#cloudevent_switch"
+    environment: {}
+    input_batch:
+      - metadata:
+          example_key: example metadata value
+          dimo_http_server_connection_id: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
+        json_content:
+          ds: "r/v0/s"
+          signature: "abc123signature"
+          time: "2024-10-22T15:30:00Z"
+          data: {
+            "speed": 65.5,
+            "location": {
+              "lat": 54.6872,
+              "lng": 25.2797
+            },
+            "status": "active"
+          }
+          vehicleTokenId: 12
+          deviceTokenId: 392
+    output_batches:
+      - # Expected batch
+        - json_contains:
+            datacontenttype: "application/json"
+            subject: "did:nft:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_12"  
+            source: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
+            specversion: "1.0"
+            time: "2024-10-22T15:30:00Z"
+            type: "dimo.status"  
+            dataversion: "r/v0/s"
+            producer: "did:nft:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA_392"  
+            data: {
+              "speed": 65.5,
+              "location": {
+                "lat": 54.6872,
+                "lng": 25.2797
+              },
+              "status": "active"
+            }
+            signature: "abc123signature"

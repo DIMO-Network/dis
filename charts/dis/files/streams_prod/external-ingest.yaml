@@ -23,25 +23,29 @@ pipeline:
   processors:
     - label: "cloudevent_switch"
       switch:
-          - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
-            processors:
-              - label: convert_cloudevent_ruptela
-                dimo_cloudevent_convert:
-                  module_name: ruptela
-                  module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
-          - check: '@dimo_http_server_connection_id == "macaron_integration_id"'
-            processors:
-              - label: convert_cloudevent_macaron
-                dimo_cloudevent_convert:
-                  module_name: macaron
-                  module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+        - check: 'metadata("dimo_http_server_connection_id") == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
+          processors:
+            - label: convert_cloudevent_ruptela
+              dimo_cloudevent_convert:
+                module_name: ruptela
+                module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
+        - check: 'metadata("dimo_http_server_connection_id") == "macaron_integration_id"'
+          processors:
+            - label: convert_cloudevent_macaron
+              dimo_cloudevent_convert:
+                module_name: macaron
+                module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+        - check: ''
+          processors:
+            - label: "drop_unknown_connections"  
+              mapping: root = deleted()
     - catch:
         - label: "convert_cloudevent_errors"
           log:
             level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
-               source = "@http_server_request_path"
+               source = metadata("dimo_http_server_connection_id")
         - mapping: root = deleted()
 output:
   label: "all_output_broker"
@@ -52,50 +56,35 @@ output:
         drop_on:
           error: true
           output:
-            label: "clickhouse_signal_insert_file"
-            switch:
-              cases:
-                - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
-                  output:
-                    label: "clickhouse_signal_insert_ruptela"
-                    sql_insert:
-                      driver: clickhouse
-                      dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
-                      table: signal
-                      columns: []
-                      args_mapping: root = this
-                      batching:
-                        count: 10000
-                        byte_size: 0
-                        period: "200ms"
-                        check: ""
-                - check: '@dimo_http_server_connection_id == "macaron_integration_id"'
-                  output:
-                    label: "clickhouse_signal_insert_macaron"
-                    sql_insert:
-                      driver: clickhouse
-                      dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
-                      table: signal
-                      columns: []
-                      args_mapping: root = this
-                      batching:
-                        count: 10000
-                        byte_size: 0
-                        period: "200ms"
-                        check: ""
+            label: "clickhouse_signal_insert"
+            sql_insert:
+              driver: clickhouse
+              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
+              table: signal
+              columns: []
+              args_mapping: root = this
+              batching:
+                count: 10000
+                byte_size: 0
+                period: "200ms"
+                check: ""
         processors:
           - label: signal_db_migration
             dimo_signal_migration:
               dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
           - label: convert_signals_switch
             switch:
-              - check: '@dimo_http_server_connection_id == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
+              - check: '!metadata("dimo_cloudevent_valid").or(false)'
+                processors:
+                  - label: "drop_invalid_cloudevents"
+                    mapping: root = deleted()
+              - check: 'metadata("dimo_http_server_connection_id") == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
                 processors:
                   - label: convert_signals_ruptela
                     dimo_signal_convert:
                       module_name: ruptela
                       module_config: ewogICJjaGFpbl9pZCI6ICIxMzciLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4OWM5NEMzOTVjQmNCRGU2NjIyMzVFMEE5ZDNiQjg3QWQ3MDg1NjFCQSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
-              - check: '@dimo_http_server_connection_id == "macaron_integration_id"'
+              - check: 'metadata("dimo_http_server_connection_id") == "macaron_integration_id"'
                 processors:
                   - label: convert_signals_macaron
                     dimo_signal_convert:
@@ -120,7 +109,7 @@ output:
                 - label: "s3_cloudevent_insert"
                   switch:
                     cases:
-                        - check: '@dimo_cloudevent_index_type == "full"'
+                        - check: 'metadata("dimo_cloudevent_valid")'
                           output:
                             label: "s3_status_cloudevent_insert"
                             aws_s3:
@@ -162,5 +151,4 @@ output:
           - label: "file_index_db_migration"
             dimo_file_index_migration:
               dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
-          - label: "create_cloudevent_index"
-            dimo_cloudevent_index: {}
+          
