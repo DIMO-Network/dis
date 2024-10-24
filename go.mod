@@ -5,15 +5,15 @@ go 1.23
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20241010163233-f8fb6c2e5db5
 
 require (
-	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
+	github.com/ClickHouse/clickhouse-go/v2 v2.30.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
-	github.com/DIMO-Network/devices-api v1.30.35
+	github.com/DIMO-Network/devices-api v1.30.47
 	github.com/DIMO-Network/model-garage v0.3.4-0.20241024140003-bb241584a5a9
-	github.com/DIMO-Network/nameindexer v0.0.8-0.20241016183209-4c27240585bf
+	github.com/DIMO-Network/nameindexer v0.0.8
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/redpanda-data/benthos/v4 v4.38.0
-	github.com/redpanda-data/connect/v4 v4.37.0
+	github.com/redpanda-data/benthos/v4 v4.39.0
+	github.com/redpanda-data/connect/v4 v4.38.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/mod v0.21.0
@@ -29,7 +29,7 @@ require (
 	github.com/99designs/keyring v1.2.2 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.14.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.1 // indirect
 	github.com/ClickHouse/ch-go v0.61.5 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
 	github.com/Jeffail/checkpoint v1.0.1 // indirect
@@ -39,20 +39,20 @@ require (
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
+	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/aws/aws-lambda-go v1.47.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.32.2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.6 // indirect
-	github.com/aws/aws-sdk-go-v2/config v1.27.27 // indirect
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.27 // indirect
+	github.com/aws/aws-sdk-go-v2/config v1.27.29 // indirect
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.29 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.14.10 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.32 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.11 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.12 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.10 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.21 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.21 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.21 // indirect
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.40.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.34.4 // indirect
@@ -68,9 +68,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.65.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.31.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.34.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.22.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.22.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.30.5 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btnguyen2k/consu/checksum v1.1.0 // indirect
@@ -156,7 +156,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pressly/goose/v3 v3.22.1 // indirect
-	github.com/prometheus/client_golang v1.19.1 // indirect
+	github.com/prometheus/client_golang v1.20.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
@@ -206,7 +206,7 @@ require (
 	golang.org/x/term v0.25.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
-	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
+	golang.org/x/xerrors v0.0.0-20240716161551-93cc26a95ae9 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
