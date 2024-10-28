@@ -8,7 +8,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/devices-api v1.30.35
-	github.com/DIMO-Network/model-garage v0.3.4-0.20241024140003-bb241584a5a9
+	github.com/DIMO-Network/model-garage v0.3.4-0.20241028142254-81cdc970790a
 	github.com/DIMO-Network/nameindexer v0.0.9-0.20241025195034-ce051ef8bd73
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/patrickmn/go-cache v2.1.0+incompatible
