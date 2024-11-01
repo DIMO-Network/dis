@@ -9,7 +9,7 @@ import (
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/convert"
-	"github.com/DIMO-Network/model-garage/pkg/ruptela"
+	"github.com/DIMO-Network/model-garage/pkg/ruptela/status"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -68,7 +68,7 @@ func (m *Module) SetConfig(config string) error {
 
 // SignalConvert converts a message to signals.
 func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
-	event := cloudevent.CloudEvent[struct{}]{}
+	event := cloudevent.CloudEventHeader{}
 	err := json.Unmarshal(msgBytes, &event)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
@@ -76,16 +76,7 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 	if event.DataVersion == DevStatusDS || event.Type != cloudevent.TypeStatus {
 		return nil, nil
 	}
-	var signals []vss.Signal
-	switch event.DataVersion {
-	case StatusEventDS:
-		signals, err = ruptela.SignalsFromV1Payload(msgBytes)
-	case LocationEventDS:
-		signals, err = ruptela.SignalsFromLocationPayload(msgBytes)
-	default:
-		return nil, fmt.Errorf("unknown data version: %s", event.DataVersion)
-	}
-
+	signals, err := status.DecodeStatusSignals(msgBytes)
 	if err == nil {
 		return signals, nil
 	}
