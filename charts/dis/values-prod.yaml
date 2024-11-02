@@ -40,4 +40,4 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 image:
   pullPolicy: IfNotPresent
-  tag: 0.0.7
+  tag: 0.0.8
