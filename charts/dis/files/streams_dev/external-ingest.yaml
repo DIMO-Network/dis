@@ -35,6 +35,12 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: macaron
                 module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+        - check: 'metadata("dimo_http_server_connection_id") == "tesla_integration_id"'
+          processors:
+            - label: convert_cloudevent_tesla
+              dimo_cloudevent_convert:
+                module_name: tesla
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAic3ludGhldGljX2NvbnRyYWN0X2FkZHIiOiAiMHg3ODUxM2M4Q0I0RDZCNjA3OWY4MTM4NTAzNzZiYzljN2ZjOGFFNjdmIiwKICAidmVoaWNsZV9jb250cmFjdF9hZGRyIjogIjB4NDVmYkNEM2VmNzM2MWQxNTZlOGIxNkY1NTM4QUUzNkRFZGY2MURhOCIKfQo=
         - check: ''
           processors:
             - label: "drop_unknown_connections"  
@@ -90,6 +96,12 @@ output:
                     dimo_signal_convert:
                       module_name: macaron
                       module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+              - check: 'metadata("dimo_http_server_connection_id") == "tesla_integration_id"'
+                processors:
+                  - label: convert_signals_tesla
+                    dimo_signal_convert:
+                      module_name: tesla
+                      module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAic3ludGhldGljX2NvbnRyYWN0X2FkZHIiOiAiMHg3ODUxM2M4Q0I0RDZCNjA3OWY4MTM4NTAzNzZiYzljN2ZjOGFFNjdmIiwKICAidmVoaWNsZV9jb250cmFjdF9hZGRyIjogIjB4NDVmYkNEM2VmNzM2MWQxNTZlOGIxNkY1NTM4QUUzNkRFZGY2MURhOCIKfQo=
           - catch:
               - label: "log_convert_errors"
                 log:
