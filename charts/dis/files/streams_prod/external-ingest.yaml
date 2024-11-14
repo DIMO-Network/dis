@@ -143,10 +143,8 @@ output:
       - check: 'metadata("dimo_valid_cloudevent").or(false)'
         output:
           label: "insert_valid_cloudevent"
-          drop_on:
-            error: true
-            output:
-              broker:
+          fallback:
+            - broker:
                 pattern: fan_out_sequential_fail_fast
                 outputs:
                   - fallback:
@@ -193,6 +191,7 @@ output:
                             meta dimo_component = "insert_valid_cloudevent_clickhouse"
                             meta response_message = "failed to store converted cloudevent, please try again later"
                         - resource: "handle_db_error"
+            - drop: {}
 
       # Output for partial cloudevents
       - check: '!metadata("dimo_valid_cloudevent").or(true)'

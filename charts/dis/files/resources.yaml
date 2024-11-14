@@ -37,6 +37,10 @@ processor_resources:
 
   - label: "handle_db_error"
     processors:
+      - group_by_value:
+          value: ${! metadata("cloudevent_id").or("") } ${! metadata("cloudevent_source").or("") }
+      - select_parts:
+          parts: [0]
       - label: "log_db_error"
         log:
           level: WARN
