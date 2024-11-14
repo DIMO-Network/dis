@@ -2,7 +2,7 @@ module github.com/DIMO-Network/dis
 
 go 1.23
 
-replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20241010163233-f8fb6c2e5db5
+replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20241114162018-a6d7d6d4a681
 
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.29.0

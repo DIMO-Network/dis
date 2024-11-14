@@ -16,15 +16,23 @@ input:
             key_file: /etc/ssl/certs/dis/tls.key
         require_mutual_tls: true
       sync_response:
-        status: "200"
+        last_message_only: true
+        status: ${!meta("response_status").or(200)}
         headers:
           Content-Type: application/octet-stream
+
 pipeline:
   processors:
-    - label: "cloudevent_switch"
+    - label: "file_index_migration"
+      dimo_file_index_migration:
+        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
+    - label: signal_db_migration
+      dimo_signal_migration:
+        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
+    - label: "convert_cloudevent"
       switch:
         {{- range .Connections }}
-        - check: 'metadata("dimo_http_server_connection_id") == "{{ .ConnectionID }}"'
+        - check: 'metadata("dimo_cloudevent_source") == "{{ .ConnectionID }}"'
           processors:
             - label: convert_cloudevent_{{ toLower .ConnectionName }}
               dimo_cloudevent_convert:
@@ -33,114 +41,202 @@ pipeline:
         {{- end }}
         - check: ''
           processors:
-            - label: "drop_unknown_connections"  
-              mapping: root = deleted()
+            - set_error:
+                message: 'unknown connection ${! meta("dimo_cloudevent_source") }'
     - catch:
         - label: "convert_cloudevent_errors"
           log:
             level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
-               source = metadata("dimo_http_server_connection_id")
+               source = metadata("dimo_cloudevent_source")
+               producer = this.producer.or("unknown")
+               subject = this.subject.or("unknown")
+               type = this.type.or("unknown")
+               id = this.id.or("unknown")
+        # mutate message for http response and metrics
+        -  mutation: |
+              meta dimo_component = "dimo_cloudevent_convert"
+              meta response_message = "failed to convert to cloudevent: " + error()
+        # Update error count metric
+        - resource: "dimo_error_count"
+        # Send bad request response
+        - resource: "dimo_bad_request_sync_response"
+        # Drop the message
         - mapping: root = deleted()
+    - label: "convert_signals"
+      switch:
+        - check: '!metadata("dimo_valid_cloudevent").or(true)'
+          processors:
+            - resource: "dimo_partial_index_count"
+        {{- range .Connections }}
+        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "{{ .ConnectionID }}"'
+          processors:
+            - label: convert_signals_{{ toLower .ConnectionName }}
+              dimo_signal_convert:
+                module_name: {{ .ModuleName }}
+                module_config: {{ base64 .ModuleConfig }}
+        {{- end }}
+    - catch:
+      -  mutation: |
+            meta dimo_component = "dimo_signal_convert"
+            meta response_message = "failed to convert to cloudevent to signals: " + error()
+      - label: "log_convert_errors"
+        log:
+          level: WARN
+          message: "failed to convert cloudevent to signals"
+          fields_mapping: |
+            cloudevent_source = metadata("dimo_cloudevent_source").or("unknown")
+            cloudevent_producer = metadata("dimo_cloudevent_producer").or("unknown")
+            cloudevent_subject = metadata("dimo_cloudevent_subject").or("unknown")
+            cloudevent_type = metadata("dimo_cloudevent_type").or("unknown")
+            cloudevent_id = metadata("dimo_cloudevent_id").or("unknown")
+            component = metadata("dimo_component").or("unknown")
+            error = metadata("error").or("unknown")
+      # Update error count metric
+      - resource: "dimo_error_count"
+      # Send bad request response
+      - resource: "dimo_bad_request_sync_response"
+      # Drop the message
+      - mapping: root = deleted()
+
 output:
-  label: "all_output_broker"
-  broker:
-    pattern: fan_out
-    outputs:
-      - label: "clickhouse_signal_drop_on_error"
-        drop_on:
-          error: true
-          output:
-            label: "clickhouse_signal_insert"
-            sql_insert:
-              driver: clickhouse
-              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
-              table: signal
-              columns: []
-              args_mapping: root = this
-              batching:
-                count: 10000
-                byte_size: 0
-                period: "200ms"
-                check: ""
-        processors:
-          - label: signal_db_migration
-            dimo_signal_migration:
-              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
-          - label: convert_signals_switch
-            switch:
-              - check: '!metadata("dimo_cloudevent_valid").or(false)'
-                processors:
-                  - label: "drop_invalid_cloudevents"
-                    mapping: root = deleted()
-              {{- range .Connections }}
-              - check: 'metadata("dimo_http_server_connection_id") == "{{ .ConnectionID }}"'
-                processors:
-                  - label: convert_signals_{{ toLower .ConnectionName }}
-                    dimo_signal_convert:
-                      module_name: {{ .ModuleName }}
-                      module_config: {{ base64 .ModuleConfig }}
-              {{- end }}
-          - catch:
-              - label: "log_convert_errors"
-                log:
-                  level: WARN
-                  message: "status processing failed: ${!error()}"
-                  fields_mapping: |
-                    vehicleTokenId = this.tokenId.or(-1)
-                    source = this.source.or("unknown")
-              - mapping: root = deleted()      
-      - label: "object_output_drop_on_error"
-        drop_on:
-          error: true
-          output:
-            label: "object_output"
-            broker:
-              outputs:
-                - label: "s3_cloudevent_insert"
-                  switch:
-                    cases:
-                        - check: 'metadata("dimo_cloudevent_valid")'
-                          output:
-                            label: "s3_status_cloudevent_insert"
-                            aws_s3:
-                              bucket: ${S3_CLOUDEVENT_BUCKET}
-                              path: ${!meta("dimo_cloudevent_index")}
-                              content_type: application/json
-                              region: us-east-2
-                              max_in_flight: 250
-                              timeout: 30s
-                              credentials:
-                                id: ${S3_AWS_ACCESS_KEY_ID}
-                                secret: ${S3_AWS_SECRET_ACCESS_KEY}
-                        - check: ''
-                          output:
-                            label: "s3_tmp_cloudevent_insert"
-                            aws_s3:
-                              bucket: ${S3_EPHEMERAL_BUCKET}
-                              path: ${!meta("dimo_cloudevent_index")}
-                              content_type: application/json
-                              region: us-east-2
-                              max_in_flight: 250
-                              timeout: 30s
-                              credentials:
-                                id: ${S3_AWS_ACCESS_KEY_ID}
-                                secret: ${S3_AWS_SECRET_ACCESS_KEY}
-                - label: "clickhouse_cloudevent_index_insert"
-                  sql_insert:
-                    driver: clickhouse
-                    dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
-                    table: name_index
-                    columns: []
-                    args_mapping: root = metadata("dimo_cloudevent_index_values")
-                    batching:
-                      count: 10000
-                      byte_size: 0
-                      period: "200ms"
-                      check: ""
-        processors:
-          - label: "file_index_db_migration"
-            dimo_file_index_migration:
-              dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
-          
+  label: "all_outputs"
+  switch:
+    retry_until_success: true
+    strict_mode: true
+    cases:
+      # Output for valid signals
+      - check: 'metadata("dimo_valid_signal").or(false)'
+        output:
+          label: "insert_signal"
+          fallback:
+            - label: "insert_signal_clichouse"
+              sql_insert:
+                driver: clickhouse
+                dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
+                table: signal
+                columns: []
+                args_mapping: root = this
+                batching:
+                  count: 10000
+                  byte_size: 0
+                  period: "10ms"
+                  check: ""
+            # Drop the message, log, record metrics and send 500 response
+            - label: "insert_signal_clickhouse_failure"
+              drop: {}
+              processors:
+                -  mutation: |
+                    meta dimo_component = "insert_signal_clickhouse"
+                    meta response_message = "failed to store converted signals, please try again later"
+                - resource: "handle_db_error"
+      # Output for valid cloudevents
+      - check: 'metadata("dimo_valid_cloudevent").or(false)'
+        output:
+          label: "insert_valid_cloudevent"
+          drop_on:
+            error: true
+            output:
+              broker:
+                pattern: fan_out_sequential_fail_fast
+                outputs:
+                  - fallback:
+                    - label: "insert_valid_cloudevent_s3"
+                      aws_s3:
+                        bucket: ${S3_CLOUDEVENT_BUCKET}
+                        path: ${!meta("dimo_cloudevent_index")}
+                        content_type: application/json
+                        region: us-east-2
+                        max_in_flight: 250
+                        timeout: 30s
+                        credentials:
+                          id: ${S3_AWS_ACCESS_KEY_ID}
+                          secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                    # reject the message, log, record metrics and send 500 response
+                    # reject instead of drop to avoid attempting CH index insert with no backing obj
+                    - label: 'insert_valid_cloudevent_s3_failure'
+                      reject: '${!metadata("fallback_error").or("failed to store converted cloudevent")}'
+                      processors:
+                        -  mutation: |
+                            meta dimo_component = "insert_valid_cloudevent_s3"
+                            meta response_message = "failed to store converted cloudevent, please try again later"
+                        - resource: "handle_db_error"
+
+                  - fallback:
+                    - label: "insert_valid_cloudevent_clickhouse"
+                      sql_insert:
+                        driver: clickhouse
+                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+                        table: name_index
+                        columns: []
+                        args_mapping: root = metadata("dimo_cloudevent_index_values")
+                        batching:
+                          count: 10000
+                          byte_size: 0
+                          period: "10ms"
+                          check: ""
+
+                    # Drop the message, log, record metrics and send 500 response
+                    - label: 'insert_valid_cloudevent_clickhouse_failure'
+                      drop: {}
+                      processors:
+                        -  mutation: |
+                            meta dimo_component = "insert_valid_cloudevent_clickhouse"
+                            meta response_message = "failed to store converted cloudevent, please try again later"
+                        - resource: "handle_db_error"
+
+      # Output for partial cloudevents
+      - check: '!metadata("dimo_valid_cloudevent").or(true)'
+        output:
+          label: "insert_partial_cloudevent"
+          drop_on:
+            error: true
+            output:
+              broker:
+                pattern: fan_out_sequential_fail_fast
+                outputs:
+                  - fallback:
+                    - label: "insert_partial_cloudevent_s3"
+                      aws_s3:
+                        bucket: ${S3_CLOUDEVENT_BUCKET}
+                        path: ${!meta("dimo_cloudevent_index")}
+                        content_type: application/json
+                        region: us-east-2
+                        max_in_flight: 250
+                        timeout: 30s
+                        credentials:
+                          id: ${S3_AWS_ACCESS_KEY_ID}
+                          secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                    # reject the message, log, record metrics and send 500 response
+                    # reject instead of drop to avoid attempting CH index insert with no backing obj
+                    - label: 'insert_partial_cloudevent_s3_failure'
+                      reject: '${!metadata("fallback_error").or("failed to store converted cloudevent")}'
+                      processors:
+                        -  mutation: |
+                            meta dimo_component = "insert_partial_cloudevent_s3"
+                            meta response_message = "failed to store converted cloudevent"
+                        - resource: "handle_db_error"
+
+                  - fallback:
+                    - label: "insert_partial_cloudevent_clickhouse"
+                      sql_insert:
+                        driver: clickhouse
+                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
+                        table: name_index
+                        columns: []
+                        args_mapping: root = metadata("dimo_cloudevent_index_values")
+                        batching:
+                          count: 10000
+                          byte_size: 0
+                          period: "10ms"
+                          check: ""
+
+                    # Drop the message, log, record metrics and send 500 response
+                    - label: 'insert_partial_cloudevent_clickhouse_failure'
+                      drop: {}
+                      processors:
+                        -  mutation: |
+                            meta dimo_component = "insert_partial_cloudevent_clickhouse"
+                            meta response_message = "failed to store converted cloudevent"
+                        - resource: "handle_db_error"

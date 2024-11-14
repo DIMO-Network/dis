@@ -1,13 +1,10 @@
 tests:
   - name: "Test convert indexing"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#cloudevent_switch"
-    mocks:
-      file_index_db_migration:
-        mapping: 'root = this'
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
     input_batch:
        - metadata:
           example_key: example metadata value
-          dimo_http_server_connection_id: "macaron_integration_id"
+          dimo_cloudevent_source: "macaron_integration_id"
          json_content:
             source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
             dataversion: "testschema/v2.0"
@@ -50,15 +47,13 @@ tests:
             dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!!macaron_integration_id!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
           
 
-  - name: "Test Clickhouse file output"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#clickhouse_signal_drop_on_error"
-    mocks:
-      signal_db_migration:
-        mapping: 'root = this'
+  - name: "Test Signal convert"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals"
     input_batch:
        - metadata:
-          dimo_cloudevent_valid: true
-          dimo_http_server_connection_id: "macaron_integration_id"
+          dimo_valid_cloudevent: true
+          dimo_cloudevent_source: "macaron_integration_id"
+          dimo_cloudevent_type: "dimo.status"
          json_content:
           source: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
           dataschema: "testschema/v2.0"
@@ -78,16 +73,17 @@ tests:
                   value: 107
     output_batches:
       - # Expected batch
+        - {} # replay of original message
         - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",107,""]
 
 
   - name: "Test CloudConvert"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#cloudevent_switch"
+    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
     environment: {}
     input_batch:
       - metadata:
           example_key: example metadata value
-          dimo_http_server_connection_id: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
+          dimo_cloudevent_source: "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"
         json_content:
           ds: "r/v0/s"
           signature: "abc123signature"

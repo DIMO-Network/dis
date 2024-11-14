@@ -58,7 +58,7 @@ test: test-benthos ## Run all tests
 	
 test-benthos: build ## Run Benthos tests
 	S3_CLOUDEVENT_BUCKET="status" S3_EPHEMERAL_BUCKET="status_tmp" \
-	dis test --log debug ./test-benthos/...
+	dis test --log debug -r ./charts/dis/files/resources.yaml ./test-benthos/...
 
 
 lint-benthos: build  ## Run Benthos linter
