@@ -6,7 +6,7 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/components/io"
 )
 
-const DIMOConnectionIdKey = "dimo_http_server_connection_id"
+const DIMOConnectionIdKey = "dimo_cloudevent_source"
 
 func init() {
 	io.RegisterCustomHTTPServerInput("dimo_http_server", CertRoutingMiddlewarefunc)
