@@ -104,11 +104,12 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 }
 
 func (c *cloudeventProcessor) createNewEventMsg(origMsg *service.Message, source string, eventData []byte) (*service.Message, error) {
+	newMsg := origMsg.Copy()
 	event, err := setDefaults(eventData, source)
 	if err != nil {
 		return nil, err
 	}
-	err = c.SetMetaData(&event.CloudEventHeader, origMsg)
+	err = c.SetMetaData(&event.CloudEventHeader, newMsg)
 	if err != nil {
 		return nil, err
 	}
@@ -116,8 +117,8 @@ func (c *cloudeventProcessor) createNewEventMsg(origMsg *service.Message, source
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal new event: %w", err)
 	}
-	origMsg.SetBytes(newEventData)
-	return origMsg, nil
+	newMsg.SetBytes(newEventData)
+	return newMsg, nil
 }
 
 func setDefaults(eventData []byte, source string) (*cloudevent.CloudEvent[json.RawMessage], error) {
