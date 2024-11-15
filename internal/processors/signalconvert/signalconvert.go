@@ -7,8 +7,13 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules"
+	"github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
+)
+
+const (
+	signalValidKey = "dimo_valid_signal"
 )
 
 type SignalModule interface {
@@ -47,7 +52,8 @@ func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vss
 func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
-		var retBatch service.MessageBatch
+		// keep the original message and add any new signal messages to the batch
+		retBatch := service.MessageBatch{msg}
 		errMsg := msg.Copy()
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
@@ -70,6 +76,9 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 			sigVals := vss.SignalToSlice(signals[i])
 			msgCpy := msg.Copy()
 			msgCpy.SetStructured(sigVals)
+			msgCpy.MetaSetMut(signalValidKey, "true")
+			// this new is not a cloudevent, so remove the cloudevent key
+			msgCpy.MetaDelete(cloudeventconvert.CloudEventValidKey)
 			retBatch = append(retBatch, msgCpy)
 		}
 		retBatches = append(retBatches, retBatch)
