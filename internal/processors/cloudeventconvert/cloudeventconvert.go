@@ -166,7 +166,6 @@ func (c *cloudeventProcessor) getCloudEventIndexes(eventHdr *cloudevent.CloudEve
 	cloudIndex, err := nameindexer.CloudEventToCloudIndex(eventHdr, nameindexer.DefaultSecondaryFiller)
 	if err != nil {
 		// if the cloud event headers do not match our specific format we will try to create a partial index
-		c.logger.Infof("creating partial index, failed to convert cloud event to cloud index: %v", err)
 		return nameindexer.CloudEventToPartialIndex(eventHdr, ""), false
 	}
 	// this does not error due to the above check
