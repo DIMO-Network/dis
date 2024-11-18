@@ -79,7 +79,7 @@ func LoadCloudEventModule(name string, opts Options) (CloudEventModule, error) {
 	// Load signal modules from the given path.
 	moduleCtor, ok := cloudEventModules[name]
 	if !ok {
-		return nil, NotFoundError(fmt.Sprintf("signal module '%s' not found", name))
+		return nil, NotFoundError(fmt.Sprintf("cloud event module '%s' not found", name))
 	}
 	module, err := moduleCtor()
 	if err != nil {
