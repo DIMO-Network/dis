@@ -15,3 +15,9 @@ connections:
       {
         "device_api_url": "http://devices-api-dev:8086"
       }
+  - connectionId: "0xFFEE022fAb46610EAFe98b87377B42e366364a71"
+    connectionName: "Tesla"
+    moduleName: "tesla"
+    moduleConfig: |
+      {
+      }
