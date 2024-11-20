@@ -43,6 +43,12 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: macaron
                 module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+        - check: 'metadata("dimo_cloudevent_source") == "0xFFEE022fAb46610EAFe98b87377B42e366364a71"'
+          processors:
+            - label: convert_cloudevent_tesla
+              dimo_cloudevent_convert:
+                module_name: tesla
+                module_config: ewp9Cg==
         - check: ''
           processors:
             - set_error:
@@ -85,6 +91,12 @@ pipeline:
               dimo_signal_convert:
                 module_name: macaron
                 module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xFFEE022fAb46610EAFe98b87377B42e366364a71"'
+          processors:
+            - label: convert_signals_tesla
+              dimo_signal_convert:
+                module_name: tesla
+                module_config: ewp9Cg==
     - catch:
       -  mutation: |
             meta dimo_component = "dimo_signal_convert"
