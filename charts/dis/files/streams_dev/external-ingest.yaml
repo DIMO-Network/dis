@@ -53,9 +53,9 @@ pipeline:
           processors:
             - set_error:
                 message: 'unknown connection ${! meta("dimo_cloudevent_source") }'
-    - catch:
-        - label: "convert_cloudevent_errors"
-          log:
+    - label: "convert_cloudevent_errors"
+      catch:
+         - log:
             level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
@@ -97,12 +97,12 @@ pipeline:
               dimo_signal_convert:
                 module_name: tesla
                 module_config: ewp9Cg==
-    - catch:
+    - label: "convert_signal_errors"
+      catch:
       -  mutation: |
             meta dimo_component = "dimo_signal_convert"
             meta response_message = "failed to convert to cloudevent to signals: " + error()
-      - label: "log_convert_errors"
-        log:
+      - log:
           level: WARN
           message: "failed to convert cloudevent to signals"
           fields_mapping: |
