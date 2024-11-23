@@ -55,17 +55,17 @@ pipeline:
                 message: 'unknown connection ${! meta("dimo_cloudevent_source") }'
     - label: "convert_cloudevent_errors"
       catch:
-         - log:
+        - log:
             level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
-               source = metadata("dimo_cloudevent_source")
-               producer = this.producer.or("unknown")
-               subject = this.subject.or("unknown")
-               type = this.type.or("unknown")
-               id = this.id.or("unknown")
+                source = metadata("dimo_cloudevent_source")
+                producer = this.producer.or("unknown")
+                subject = this.subject.or("unknown")
+                type = this.type.or("unknown")
+                id = this.id.or("unknown")
         # mutate message for http response and metrics
-        -  mutation: |
+        - mutation: |
               meta dimo_component = "dimo_cloudevent_convert"
               meta response_message = "failed to convert to cloudevent: " + error()
         # Update error count metric
@@ -131,10 +131,10 @@ output:
         output:
           label: "insert_signal"
           fallback:
-            - label: "insert_signal_clichouse"
+            - label: "insert_signal_clickhouse"
               sql_insert:
                 driver: clickhouse
-                dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=200ms&max_execution_time=300
+                dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&max_execution_time=600
                 table: signal
                 columns: []
                 args_mapping: root = this
