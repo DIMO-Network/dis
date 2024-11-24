@@ -28,10 +28,10 @@ certificate:
 resources:
   limits:
     cpu: 2000m
-    memory: 256Mi
+    memory: 384Mi
   requests:
     cpu: 1000m
-    memory: 128Mi
+    memory: 256Mi
 autoscaling:
   enabled: false
   minReplicas: 1
