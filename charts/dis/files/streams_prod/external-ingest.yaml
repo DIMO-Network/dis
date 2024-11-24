@@ -171,6 +171,11 @@ output:
                         credentials:
                           id: ${S3_AWS_ACCESS_KEY_ID}
                           secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                        batching:
+                          count: 1000
+                          byte_size: 0
+                          period: "20ms"
+                          check: ""
                     # reject the message, log, record metrics and send 500 response
                     # reject instead of drop to avoid attempting CH index insert with no backing obj
                     - label: 'insert_valid_cloudevent_s3_failure'
@@ -190,9 +195,9 @@ output:
                         columns: []
                         args_mapping: root = metadata("dimo_cloudevent_index_values")
                         batching:
-                          count: 10000
+                          count: 100000
                           byte_size: 0
-                          period: "10ms"
+                          period: "1s"
                           check: ""
 
                     # Drop the message, log, record metrics and send 500 response
@@ -227,6 +232,11 @@ output:
                         credentials:
                           id: ${S3_AWS_ACCESS_KEY_ID}
                           secret: ${S3_AWS_SECRET_ACCESS_KEY}
+                        batching:
+                          count: 1000
+                          byte_size: 0
+                          period: "20ms"
+                          check: ""
                     # reject the message, log, record metrics and send 500 response
                     # reject instead of drop to avoid attempting CH index insert with no backing obj
                     - label: 'insert_partial_cloudevent_s3_failure'
@@ -246,9 +256,9 @@ output:
                         columns: []
                         args_mapping: root = metadata("dimo_cloudevent_index_values")
                         batching:
-                          count: 10000
+                          count: 100000
                           byte_size: 0
-                          period: "10ms"
+                          period: "1s"
                           check: ""
 
                     # Drop the message, log, record metrics and send 500 response
