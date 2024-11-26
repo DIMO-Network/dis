@@ -30,7 +30,7 @@ resources:
     cpu: 3000m
     memory: 384Mi
   requests:
-    cpu: 2000m
+    cpu: 2500m
     memory: 256Mi
 autoscaling:
   enabled: false
