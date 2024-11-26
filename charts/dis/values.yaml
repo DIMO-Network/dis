@@ -20,8 +20,7 @@ serviceAccount:
   create: true
   annotations: {}
   name: ''
-podAnnotations:
-  config.linkerd.io/proxy-cpu-request: 300m
+podAnnotations: {}
 podSecurityContext:
   runAsNonRoot: true
   runAsUser: 10001
