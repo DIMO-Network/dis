@@ -11,10 +11,11 @@ Based on the client certificate CN, the server will determine the provider and t
 ## Provider Configuration
 
 Each provider should be added to the `connections/` files(dev and prod).
-
 **connectionID** is the CN of the client certificate that the provider will use to authenticate with the server and at the same time it is 0x address of the provider.
 
-**chain_id** is the chain id of the provider. It is the same for all providers.
+### Aftermarket Provider
+
+**chain_id** is the chain id of the provider. This is the chain id of the blockchain that the provider is using.
 
 **aftermarket_contract_addr** and **vehicle_contract_addr** should be the same for all aftermarket devices.
 
