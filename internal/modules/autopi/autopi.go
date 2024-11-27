@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/DIMO-Network/model-garage/pkg/autopi/status"
+
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/convert"
-	"github.com/DIMO-Network/model-garage/pkg/ruptela/status"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -19,6 +20,7 @@ import (
 const (
 	StatusEventType      = "com.dimo.device.status.v2"
 	FingerprintEventType = "zone.dimo.aftermarket.device.fingerprint"
+	DataVersion          = "v2"
 )
 
 type moduleConfig struct {
@@ -27,7 +29,7 @@ type moduleConfig struct {
 	VehicleContractAddr     string `json:"vehicle_contract_addr"`
 }
 
-// Module is a module that converts ruptela messages to signals.
+// Module is a module that converts autopi messages to signals.
 type Module struct {
 	logger *service.Logger
 	cfg    moduleConfig
@@ -67,16 +69,15 @@ func (m *Module) SetConfig(config string) error {
 
 // SignalConvert converts a message to signals.
 func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
-	// TODO: Implement the SignalConvert function.
 	event := cloudevent.CloudEventHeader{}
 	err := json.Unmarshal(msgBytes, &event)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
-	//if event.DataVersion == DevStatusDS || event.Type != cloudevent.TypeStatus {
-	//	return nil, nil
-	//}
-	signals, err := status.DecodeStatusSignals(msgBytes)
+	if event.Type != cloudevent.TypeStatus || event.Producer == event.Subject {
+		return nil, nil
+	}
+	signals, err := status.SignalsFromV2Payload(msgBytes)
 	if err == nil {
 		return signals, nil
 	}
@@ -180,7 +181,7 @@ func createCloudEvent(event AutopiEvent, producer, subject, eventType string) (c
 			SpecVersion:     "1.0",
 			Time:            timeValue,
 			Type:            eventType,
-			DataVersion:     "todo",
+			DataVersion:     DataVersion,
 			Producer:        producer,
 			Extras: map[string]any{
 				"signature": event.Signature,

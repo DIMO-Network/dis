@@ -4,6 +4,8 @@ go 1.23
 
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20241114162018-a6d7d6d4a681
 
+replace github.com/DIMO-Network/model-garage => github.com/DIMO-Network/model-garage v0.4.3-0.20241127163004-cb92f6a11e12
+
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
