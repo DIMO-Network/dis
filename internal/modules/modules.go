@@ -30,12 +30,14 @@ type CloudEventModule interface {
 }
 
 var signalModules = map[string]func() (SignalModule, error){
+	"autopi":  func() (SignalModule, error) { return macaron.New() },
 	"macaron": func() (SignalModule, error) { return macaron.New() },
 	"ruptela": func() (SignalModule, error) { return ruptela.New() },
 	"tesla":   func() (SignalModule, error) { return tesla.New() },
 }
 
 var cloudEventModules = map[string]func() (CloudEventModule, error){
+	"autopi":  func() (CloudEventModule, error) { return macaron.New() },
 	"macaron": func() (CloudEventModule, error) { return macaron.New() },
 	"ruptela": func() (CloudEventModule, error) { return ruptela.New() },
 	"tesla":   func() (CloudEventModule, error) { return tesla.New() },
