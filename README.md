@@ -2,8 +2,6 @@
 
 dis (DIMO Ingest Server) is a server that recieves data from data providers and stores the various data.
 
-TODO add more info here about certs routing and cloud event conversion and signals conversion
-
 ## Provider Authentication
 
 External providers must authenticate with the server using TLS client certificates. 
