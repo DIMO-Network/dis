@@ -5,8 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"time"
-
+	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/autopi/status"
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
@@ -14,13 +13,6 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"github.com/segmentio/ksuid"
-)
-
-const (
-	StatusEventType      = "com.dimo.device.status.v2"
-	FingerprintEventType = "zone.dimo.aftermarket.device.fingerprint"
-	DataVersion          = "v2"
 )
 
 type moduleConfig struct {
@@ -92,101 +84,5 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 
 // CloudEventConvert converts a message to cloud events.
 func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([][]byte, error) {
-	var result [][]byte
-
-	var event AutopiEvent
-	err := json.Unmarshal(msgData, &event)
-	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal record data: %w", err)
-	}
-	if event.DeviceTokenID == nil {
-		return nil, fmt.Errorf("device token id is missing")
-	}
-
-	// handle both status and fingerprint events
-	var eventType string
-	if event.Type == StatusEventType {
-		eventType = cloudevent.TypeStatus
-	} else if event.Type == FingerprintEventType {
-		eventType = cloudevent.TypeFingerprint
-	} else {
-		return nil, fmt.Errorf("unknown event type: %s", event.Type)
-	}
-
-	// Construct the producer DID
-	producer := cloudevent.NFTDID{
-		ChainID:         m.cfg.ChainID,
-		ContractAddress: common.HexToAddress(m.cfg.AftermarketContractAddr),
-		TokenID:         *event.DeviceTokenID,
-	}.String()
-
-	// Construct the subject
-	var subject string
-	if event.VehicleTokenID != nil {
-		subject = cloudevent.NFTDID{
-			ChainID:         m.cfg.ChainID,
-			ContractAddress: common.HexToAddress(m.cfg.VehicleContractAddr),
-			TokenID:         uint32(*event.VehicleTokenID),
-		}.String()
-	}
-
-	cloudEvent, err := convertToCloudEvent(event, producer, subject, eventType)
-	if err != nil {
-		return nil, err
-	}
-	// Append the status event to the result
-	result = append(result, cloudEvent)
-
-	// Each AP payload has device information, so we need to create separate status event where subject == producer
-	cloudEventDevice, err := convertToCloudEvent(event, producer, producer, cloudevent.TypeStatus)
-	if err != nil {
-		return nil, err
-	}
-
-	// Append the status event to the result
-	result = append(result, cloudEventDevice)
-
-	return result, nil
-}
-
-// convertToCloudEvent wraps an AutopiEvent into a CloudEvent.
-// Returns:
-//   - A byte slice containing the JSON representation of the CloudEvent.
-//   - An error if the CloudEvent creation or marshaling fails.
-func convertToCloudEvent(event AutopiEvent, producer, subject, eventType string) ([]byte, error) {
-	cloudEvent, err := createCloudEvent(event, producer, subject, eventType)
-	if err != nil {
-		return nil, err
-	}
-
-	cloudEventBytes, err := json.Marshal(cloudEvent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal cloudEvent: %w", err)
-	}
-	return cloudEventBytes, nil
-}
-
-// createCloudEvent creates a cloud event from autopi event.
-func createCloudEvent(event AutopiEvent, producer, subject, eventType string) (cloudevent.CloudEvent[json.RawMessage], error) {
-	timeValue, err := time.Parse(time.RFC3339, event.Time)
-	if err != nil {
-		return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
-	}
-	return cloudevent.CloudEvent[json.RawMessage]{
-		CloudEventHeader: cloudevent.CloudEventHeader{
-			DataContentType: "application/json",
-			ID:              ksuid.New().String(),
-			Subject:         subject,
-			Source:          "dimo/integration/27qftVRWQYpVDcO5DltO5Ojbjxk",
-			SpecVersion:     "1.0",
-			Time:            timeValue,
-			Type:            eventType,
-			DataVersion:     DataVersion,
-			Producer:        producer,
-			Extras: map[string]any{
-				"signature": event.Signature,
-			},
-		},
-		Data: event.Data,
-	}, nil
+	return autopi.ConvertToCloudEvents(msgData, m.cfg.ChainID, m.cfg.AftermarketContractAddr, m.cfg.VehicleContractAddr)
 }
