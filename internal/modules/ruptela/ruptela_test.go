@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -86,19 +87,18 @@ func TestCloudEventConvert(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			events, err := module.CloudEventConvert(context.Background(), tt.input)
+			event, err := module.CloudEventConvert(context.Background(), tt.input)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Len(t, events, tt.length)
 
 				var cloudEvent cloudevent.CloudEvent[json.RawMessage]
-				err := json.Unmarshal(events[0], &cloudEvent)
+				err := json.Unmarshal(event, &cloudEvent)
 				if err != nil {
 					t.Fatalf("Failed to unmarshal cloud event: %v", err)
 				}
-
+				assert.Len(t, strings.Split(cloudEvent.Type, ","), tt.length)
 				assert.Equal(t, tt.expectedSubject, cloudEvent.Subject)
 				assert.Equal(t, tt.expectedProducer, cloudEvent.Producer)
 			}

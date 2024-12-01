@@ -33,6 +33,6 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 
 // CloudEventConvert converts an input message to Cloud Events. In the Tesla case
 // there is no conversion to perform.
-func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([][]byte, error) {
-	return [][]byte{msgData}, nil
+func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]byte, error) {
+	return msgData, nil
 }

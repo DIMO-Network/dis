@@ -40,10 +40,10 @@ func (m *MockCloudEventModule) EXPECT() *MockCloudEventModuleMockRecorder {
 }
 
 // CloudEventConvert mocks base method.
-func (m *MockCloudEventModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
+func (m *MockCloudEventModule) CloudEventConvert(ctx context.Context, msgData []byte) ([]byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CloudEventConvert", ctx, msgData)
-	ret0, _ := ret[0].([][]byte)
+	ret0, _ := ret[0].([]byte)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

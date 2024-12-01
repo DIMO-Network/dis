@@ -83,6 +83,6 @@ func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vs
 }
 
 // CloudEventConvert converts a macaron message to cloud events.
-func (MacaronModule) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
-	return [][]byte{msgData}, nil
+func (MacaronModule) CloudEventConvert(ctx context.Context, msgData []byte) ([]byte, error) {
+	return msgData, nil
 }

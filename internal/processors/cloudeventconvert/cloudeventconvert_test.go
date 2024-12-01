@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,6 +25,7 @@ func TestProcessBatch(t *testing.T) {
 		name          string
 		sourceID      string
 		inputData     []byte
+		msgLen        int
 		expectedError bool
 	}{
 		{
@@ -33,7 +35,7 @@ func TestProcessBatch(t *testing.T) {
 			setupMock: func(m *MockCloudEventModule) {
 				event := cloudevent.CloudEvent[json.RawMessage]{
 					CloudEventHeader: cloudevent.CloudEventHeader{
-						Type:     "test.event",
+						Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
 						Producer: "test-producer",
 						Subject:  "test-subject",
 						Source:   "test-source",
@@ -42,11 +44,12 @@ func TestProcessBatch(t *testing.T) {
 					Data: json.RawMessage(`{"key": "value"}`),
 				}
 				eventBytes, _ := json.Marshal(event)
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([][]byte{eventBytes}, nil)
+				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(eventBytes, nil)
 			},
+			msgLen:        3,
 			expectedError: false,
 			expectedMeta: map[string]string{
-				cloudEventTypeKey:     "test.event",
+				cloudEventTypeKey:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
 				cloudEventProducerKey: "test-producer",
 				cloudEventSubjectKey:  "test-subject",
 				CloudEventValidKey:    "false",
@@ -59,6 +62,7 @@ func TestProcessBatch(t *testing.T) {
 			setupMock: func(m *MockCloudEventModule) {
 				// No mock expectations since it should fail before conversion
 			},
+			msgLen:        1,
 			expectedError: true,
 			expectedMeta:  nil,
 		},
@@ -69,6 +73,7 @@ func TestProcessBatch(t *testing.T) {
 			setupMock: func(m *MockCloudEventModule) {
 				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(nil, errors.New("conversion failed"))
 			},
+			msgLen:        1,
 			expectedError: true,
 			expectedMeta:  nil,
 		},
@@ -77,8 +82,9 @@ func TestProcessBatch(t *testing.T) {
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "test-source",
 			setupMock: func(m *MockCloudEventModule) {
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([][]byte{[]byte(`invalid json`)}, nil)
+				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]byte(`invalid json`), nil)
 			},
+			msgLen:        1,
 			expectedError: true,
 			expectedMeta:  nil,
 		},
@@ -107,7 +113,7 @@ func TestProcessBatch(t *testing.T) {
 
 			require.NotNil(t, result)
 			require.Len(t, result, 1, "processor should always return 1 batch")
-			require.Len(t, result[0], 1, "processor should always return 1 message")
+			require.Len(t, result[0], tt.msgLen, "unexpected number of messages in batch")
 
 			outMsg := result[0][0]
 			if tt.expectedError {

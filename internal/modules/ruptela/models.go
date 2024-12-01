@@ -9,7 +9,7 @@ type RuptelaEvent struct {
 	Signature      string          `json:"signature"`
 	Time           string          `json:"time"`
 	Data           json.RawMessage `json:"data"`
-	VehicleTokenID *uint64         `json:"vehicleTokenId"`
+	VehicleTokenID *uint32         `json:"vehicleTokenId"`
 	DeviceTokenID  *uint32         `json:"deviceTokenId"`
 }
 

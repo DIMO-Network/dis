@@ -20,17 +20,17 @@ import (
 
 const (
 	// CloudEventValidKey is a key used to store whether the message is a valid cloud event.
-	CloudEventValidKey       = "dimo_valid_cloudevent"
-	cloudEventTypeKey        = "dimo_cloudevent_type"
-	cloudEventProducerKey    = "dimo_cloudevent_producer"
-	cloudEventSubjectKey     = "dimo_cloudevent_subject"
-	cloudEventIDKey          = "dimo_cloudevent_id"
-	cloudEventIndexKey       = "dimo_cloudevent_index"
-	cloudEventIndexValuesKey = "dimo_cloudevent_index_values"
+	CloudEventValidKey    = "dimo_valid_cloudevent"
+	CloudEventValidIndex  = "dimo_valid_index_values"
+	cloudEventTypeKey     = "dimo_cloudevent_type"
+	cloudEventProducerKey = "dimo_cloudevent_producer"
+	cloudEventSubjectKey  = "dimo_cloudevent_subject"
+	cloudEventIDKey       = "dimo_cloudevent_id"
+	cloudEventIndexKey    = "dimo_cloudevent_index"
 )
 
 type CloudEventModule interface {
-	CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error)
+	CloudEventConvert(ctx context.Context, msgData []byte) ([]byte, error)
 }
 type cloudeventProcessor struct {
 	cloudEventModule CloudEventModule
@@ -79,7 +79,7 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			continue
 		}
 
-		events, err := c.cloudEventModule.CloudEventConvert(ctx, msgBytes)
+		event, err := c.cloudEventModule.CloudEventConvert(ctx, msgBytes)
 		if err != nil {
 			// Try to unmarshal convert errors
 			data, marshalErr := json.Marshal(err)
@@ -90,38 +90,64 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			continue
 		}
 
-		for _, eventData := range events {
-			newMsg, err := c.createNewEventMsg(msg, source, eventData)
-			if err != nil {
-				msgCpy := msg.Copy()
-				retBatches = processors.AppendError(retBatches, msgCpy, err)
-				continue
-			}
-			retBatch = append(retBatch, newMsg)
+		err = updateEventMsg(msg, source, event)
+		if err != nil {
+			msgCpy := msg.Copy()
+			retBatches = processors.AppendError(retBatches, msgCpy, err)
+			continue
 		}
-		if len(retBatch) != 0 {
-			retBatches = append(retBatches, retBatch)
+		retBatch = append(retBatch, msg)
+		idxValueMsgs, err := createIndexValueMsgs(msg)
+		if err != nil {
+			retBatches = processors.AppendError(retBatches, msg, err)
+			continue
 		}
+		retBatch = append(retBatch, idxValueMsgs...)
+		retBatches = append(retBatches, retBatch)
+
 	}
 	return retBatches, nil
 }
 
-func (c *cloudeventProcessor) createNewEventMsg(origMsg *service.Message, source string, eventData []byte) (*service.Message, error) {
-	newMsg := origMsg.Copy()
+func updateEventMsg(origMsg *service.Message, source string, eventData []byte) error {
 	event, err := setDefaults(eventData, source)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	err = c.SetMetaData(&event.CloudEventHeader, newMsg)
+	err = SetMetaData(&event.CloudEventHeader, origMsg)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	newEventData, err := json.Marshal(event)
+	origMsg.SetStructuredMut(event)
+	return nil
+}
+
+func createIndexValueMsgs(eventMsg *service.Message) ([]*service.Message, error) {
+	eventAny, err := eventMsg.AsStructured()
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal new event: %w", err)
+		return nil, fmt.Errorf("failed to get event from message: %w", err)
 	}
-	newMsg.SetBytes(newEventData)
-	return newMsg, nil
+	event, ok := eventAny.(*cloudevent.CloudEvent[json.RawMessage])
+	if !ok {
+		return nil, fmt.Errorf("failed to convert event to cloud event")
+	}
+	encodedIndex, ok := eventMsg.MetaGet(cloudEventIndexKey)
+	allTypes := strings.Split(event.Type, ",")
+	retMsgs := make([]*service.Message, len(allTypes))
+	hdrCpy := event.CloudEventHeader
+	for i, eventType := range allTypes {
+		hdrCpy.Type = eventType
+		index, _ := getCloudEventIndex(&hdrCpy)
+		idxValues := chindexer.IndexToSliceWithKey(&index, encodedIndex)
+
+		newMsg := eventMsg.Copy()
+		// This new message is not a cloud event
+		newMsg.MetaDelete(CloudEventValidKey)
+		newMsg.MetaSetMut(CloudEventValidIndex, true)
+		newMsg.SetStructuredMut(idxValues)
+		retMsgs[i] = newMsg
+	}
+	return retMsgs, nil
 }
 
 func setDefaults(eventData []byte, source string) (*cloudevent.CloudEvent[json.RawMessage], error) {
@@ -140,15 +166,15 @@ func setDefaults(eventData []byte, source string) (*cloudevent.CloudEvent[json.R
 	return &event, nil
 }
 
-func (c *cloudeventProcessor) SetMetaData(eventHeader *cloudevent.CloudEventHeader, msg *service.Message) error {
+func SetMetaData(eventHeader *cloudevent.CloudEventHeader, msg *service.Message) error {
 	allTypes := strings.Split(eventHeader.Type, ",")
 	allValues := make([][]any, len(allTypes))
 	hdrCpy := *eventHeader
 
 	// get index value of the first message
-	eventType := allTypes[0]
+	eventType := strings.Split(eventHeader.Type, ",")[0]
 	hdrCpy.Type = eventType
-	index, valid := c.getCloudEventIndexe(&hdrCpy)
+	index, valid := getCloudEventIndex(&hdrCpy)
 
 	// Encode the index
 	encodedIndex, err := nameindexer.EncodeIndex(&index)
@@ -158,14 +184,13 @@ func (c *cloudeventProcessor) SetMetaData(eventHeader *cloudevent.CloudEventHead
 
 	for i, eventType := range allTypes {
 		hdrCpy.Type = eventType
-		index, _ = c.getCloudEventIndexe(&hdrCpy)
+		index, _ = getCloudEventIndex(&hdrCpy)
 		allValues[i] = chindexer.IndexToSliceWithKey(&index, encodedIndex)
 	}
 
 	// Set the encoded index and values in the message metadata
 	msg.MetaSetMut(cloudEventIndexKey, encodedIndex)
 	msg.MetaSetMut(CloudEventValidKey, valid)
-	msg.MetaSetMut(cloudEventIndexValuesKey, allValues)
 	msg.MetaSetMut(cloudEventTypeKey, eventHeader.Type)
 	msg.MetaSetMut(cloudEventProducerKey, eventHeader.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, eventHeader.Subject)
@@ -175,7 +200,7 @@ func (c *cloudeventProcessor) SetMetaData(eventHeader *cloudevent.CloudEventHead
 }
 
 // getCloudEventIndexe attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index
-func (c *cloudeventProcessor) getCloudEventIndexe(eventHdr *cloudevent.CloudEventHeader) (nameindexer.Index, bool) {
+func getCloudEventIndex(eventHdr *cloudevent.CloudEventHeader) (nameindexer.Index, bool) {
 	index, err := nameindexer.CloudEventToIndex(eventHdr)
 	if err != nil {
 		// if the cloud event headers do not match our specific format we will try to create a partial index

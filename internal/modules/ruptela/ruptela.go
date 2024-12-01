@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
@@ -67,7 +68,7 @@ func (m *Module) SetConfig(config string) error {
 }
 
 // SignalConvert converts a message to signals.
-func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
+func (*Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
 	event := cloudevent.CloudEventHeader{}
 	err := json.Unmarshal(msgBytes, &event)
 	if err != nil {
@@ -90,9 +91,7 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 }
 
 // CloudEventConvert converts a message to cloud events.
-func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error) {
-	var result [][]byte
-
+func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]byte, error) {
 	var event RuptelaEvent
 	err := json.Unmarshal(msgData, &event)
 	if err != nil {
@@ -106,14 +105,25 @@ func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte
 	producer := cloudevent.NFTDID{
 		ChainID:         m.cfg.ChainID,
 		ContractAddress: common.HexToAddress(m.cfg.AftermarketContractAddr),
-		TokenID:         uint32(*event.DeviceTokenID),
+		TokenID:         *event.DeviceTokenID,
 	}.String()
-	subject, err := m.determineSubject(event, producer)
+	subject, err := m.determineSubject(&event, producer)
 	if err != nil {
 		return nil, err
 	}
 
-	cloudEvent, err := createCloudEvent(event, producer, subject, cloudevent.TypeStatus)
+	eventType := []string{cloudevent.TypeStatus}
+
+	isVinPresent, err := checkVINPresenceInPayload(&event)
+	if err != nil {
+		return nil, err
+	}
+
+	if isVinPresent {
+		eventType = append(eventType, cloudevent.TypeFingerprint)
+	}
+
+	cloudEvent, err := createCloudEvent(&event, producer, subject, strings.Join(eventType, ", "))
 	if err != nil {
 		return nil, err
 	}
@@ -123,23 +133,11 @@ func (m Module) CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte
 		return nil, err
 	}
 
-	// Append the status event to the result
-	result = append(result, cloudEventBytes)
-
-	// If the VIN is present in the payload, create a fingerprint event
-	if event.DS == StatusEventDS {
-		additionalEvents, err := createAdditionalEvents(event, producer, subject)
-		if err != nil {
-			return nil, fmt.Errorf("failed making the additional events: %w", err)
-		}
-		result = append(result, additionalEvents...)
-	}
-
-	return result, nil
+	return cloudEventBytes, nil
 }
 
 // determineSubject determines the subject of the cloud event based on the DS type.
-func (m Module) determineSubject(event RuptelaEvent, producer string) (string, error) {
+func (m Module) determineSubject(event *RuptelaEvent, producer string) (string, error) {
 	var subject string
 	switch event.DS {
 	case StatusEventDS, LocationEventDS:
@@ -147,7 +145,7 @@ func (m Module) determineSubject(event RuptelaEvent, producer string) (string, e
 			subject = cloudevent.NFTDID{
 				ChainID:         m.cfg.ChainID,
 				ContractAddress: common.HexToAddress(m.cfg.VehicleContractAddr),
-				TokenID:         uint32(*event.VehicleTokenID),
+				TokenID:         *event.VehicleTokenID,
 			}.String()
 		}
 	case DevStatusDS:
@@ -158,32 +156,8 @@ func (m Module) determineSubject(event RuptelaEvent, producer string) (string, e
 	return subject, nil
 }
 
-// createAdditionalEvents add fingerprint event to the result if the VIN is present in the payload.
-func createAdditionalEvents(event RuptelaEvent, producer, subject string) ([][]byte, error) {
-	isVinPresent, err := checkVINPresenceInPayload(event.Data)
-	if err != nil {
-		return nil, err
-	}
-
-	if !isVinPresent {
-		return nil, nil
-	}
-
-	cloudEventFingerprint, err := createCloudEvent(event, producer, subject, cloudevent.TypeFingerprint)
-	if err != nil {
-		return nil, err
-	}
-
-	cloudEventFingerprintBytes, err := marshalCloudEvent(cloudEventFingerprint)
-	if err != nil {
-		return nil, err
-	}
-
-	return [][]byte{cloudEventFingerprintBytes}, nil
-}
-
 // createCloudEvent creates a cloud event from a ruptela event.
-func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (cloudevent.CloudEvent[json.RawMessage], error) {
+func createCloudEvent(event *RuptelaEvent, producer, subject, eventType string) (cloudevent.CloudEvent[json.RawMessage], error) {
 	timeValue, err := time.Parse(time.RFC3339, event.Time)
 	if err != nil {
 		return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
@@ -208,9 +182,13 @@ func createCloudEvent(event RuptelaEvent, producer, subject, eventType string) (
 }
 
 // checkVINPresenceInPayload checks if the VIN is present in the payload.
-func checkVINPresenceInPayload(eventData json.RawMessage) (bool, error) {
+func checkVINPresenceInPayload(event *RuptelaEvent) (bool, error) {
+	if event.DS != StatusEventDS {
+		return false, nil
+	}
+
 	var dataContent DataContent
-	err := json.Unmarshal(eventData, &dataContent)
+	err := json.Unmarshal(event.Data, &dataContent)
 	if err != nil {
 		return false, fmt.Errorf("failed to unmarshal data: %w", err)
 	}

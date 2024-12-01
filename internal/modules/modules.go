@@ -27,7 +27,7 @@ type SignalModule interface {
 // CloudEventModule is an interface for converting messages to cloud events.
 type CloudEventModule interface {
 	Module
-	CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error)
+	CloudEventConvert(ctx context.Context, msgData []byte) ([]byte, error)
 }
 
 var signalModules = map[string]func() (SignalModule, error){
