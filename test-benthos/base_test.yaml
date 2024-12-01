@@ -45,13 +45,13 @@ tests:
                     value: 107
           metadata_equals:
             dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!!macaron_integration_id!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
-          
+        - json_contains: []
 
   - name: "Test Signal convert"
     target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals"
     input_batch:
        - metadata:
-          dimo_valid_cloudevent: true
+          dimo_message_content: 'dimo_valid_cloudevent'
           dimo_cloudevent_source: "macaron_integration_id"
           dimo_cloudevent_type: "dimo.status"
          json_content:
@@ -118,3 +118,4 @@ tests:
               "status": "active"
             }
             signature: "abc123signature"
+        - json_contains: []

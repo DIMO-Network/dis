@@ -19,14 +19,15 @@ import (
 )
 
 const (
-	// CloudEventValidKey is a key used to store whether the message is a valid cloud event.
-	CloudEventValidKey    = "dimo_valid_cloudevent"
-	CloudEventValidIndex  = "dimo_valid_index_values"
 	cloudEventTypeKey     = "dimo_cloudevent_type"
 	cloudEventProducerKey = "dimo_cloudevent_producer"
 	cloudEventSubjectKey  = "dimo_cloudevent_subject"
 	cloudEventIDKey       = "dimo_cloudevent_id"
 	cloudEventIndexKey    = "dimo_cloudevent_index"
+
+	cloudEventValidContentType   = "dimo_valid_cloudevent"
+	cloudEventPartialContentType = "dimo_valid_cloudevent"
+	cloudEventIndexContentType   = "dimo_valid_index_values"
 )
 
 type CloudEventModule interface {
@@ -141,9 +142,7 @@ func createIndexValueMsgs(eventMsg *service.Message) ([]*service.Message, error)
 		idxValues := chindexer.IndexToSliceWithKey(&index, encodedIndex)
 
 		newMsg := eventMsg.Copy()
-		// This new message is not a cloud event
-		newMsg.MetaDelete(CloudEventValidKey)
-		newMsg.MetaSetMut(CloudEventValidIndex, true)
+		newMsg.MetaSetMut(processors.MessageContentKey, cloudEventIndexContentType)
 		newMsg.SetStructuredMut(idxValues)
 		retMsgs[i] = newMsg
 	}
@@ -190,7 +189,11 @@ func SetMetaData(eventHeader *cloudevent.CloudEventHeader, msg *service.Message)
 
 	// Set the encoded index and values in the message metadata
 	msg.MetaSetMut(cloudEventIndexKey, encodedIndex)
-	msg.MetaSetMut(CloudEventValidKey, valid)
+	contentType := cloudEventValidContentType
+	if !valid {
+		contentType = cloudEventPartialContentType
+	}
+	msg.MetaSetMut(processors.MessageContentKey, contentType)
 	msg.MetaSetMut(cloudEventTypeKey, eventHeader.Type)
 	msg.MetaSetMut(cloudEventProducerKey, eventHeader.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, eventHeader.Subject)

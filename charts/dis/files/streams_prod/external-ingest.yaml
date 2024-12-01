@@ -82,28 +82,28 @@ pipeline:
         - mapping: root = deleted()
     - label: "convert_signals"
       switch:
-        - check: '!metadata("dimo_valid_cloudevent").or(true)'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
           processors:
             - resource: "dimo_partial_index_count"
-        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
           processors:
             - label: convert_signals_ruptela
               dimo_signal_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
-        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xAff1B580F05F2ee577162B39851b79f84F82f46A"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xAff1B580F05F2ee577162B39851b79f84F82f46A"'
           processors:
             - label: convert_signals_autopi
               dimo_signal_convert:
                 module_name: autopi
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
-        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "macaron_integration_id"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "macaron_integration_id"'
           processors:
             - label: convert_signals_macaron
               dimo_signal_convert:
                 module_name: macaron
                 module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
-        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xFFEE022fAb46610EAFe98b87377B42e366364a71"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xFFEE022fAb46610EAFe98b87377B42e366364a71"'
           processors:
             - label: convert_signals_tesla
               dimo_signal_convert:
@@ -164,7 +164,7 @@ output:
                     meta response_message = "failed to store converted signals, please try again later"
                 - resource: "handle_db_error"
       # Output for valid cloudevents
-      - check: 'metadata("dimo_valid_cloudevent").or(false)'
+      - check: metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
         output:
           label: "insert_valid_cloudevent"
           fallback:
@@ -218,7 +218,7 @@ output:
             - drop: {}
 
       # Output for partial cloudevents
-      - check: '!metadata("dimo_valid_cloudevent").or(true)'
+      - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
         output:
           label: "insert_partial_cloudevent"
           drop_on:

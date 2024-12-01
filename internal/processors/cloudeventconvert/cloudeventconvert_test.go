@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -49,10 +50,10 @@ func TestProcessBatch(t *testing.T) {
 			msgLen:        3,
 			expectedError: false,
 			expectedMeta: map[string]string{
-				cloudEventTypeKey:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
-				cloudEventProducerKey: "test-producer",
-				cloudEventSubjectKey:  "test-subject",
-				CloudEventValidKey:    "false",
+				cloudEventTypeKey:            fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
+				cloudEventProducerKey:        "test-producer",
+				cloudEventSubjectKey:         "test-subject",
+				processors.MessageContentKey: "dimo_valid_cloudevent",
 			},
 		},
 		{
