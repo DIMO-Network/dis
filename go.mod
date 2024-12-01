@@ -4,18 +4,21 @@ go 1.23
 
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20241114162018-a6d7d6d4a681
 
+replace github.com/DIMO-Network/nameindexer => ../nameindexer
+
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.29.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/devices-api v1.30.35
 	github.com/DIMO-Network/model-garage v0.4.4
-	github.com/DIMO-Network/nameindexer v0.0.10-0.20241031131836-425572ba4fe9
+	github.com/DIMO-Network/nameindexer v0.0.12-0.20241128014811-8c18848b8736
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redpanda-data/benthos/v4 v4.38.0
 	github.com/redpanda-data/connect/v4 v4.37.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
+	go.uber.org/mock v0.4.0
 	golang.org/x/mod v0.22.0
 	golang.org/x/time v0.7.0
 	google.golang.org/grpc v1.67.1

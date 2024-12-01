@@ -42,8 +42,6 @@ github.com/DIMO-Network/devices-api v1.30.35 h1:PggCLq3pX/o9+WaTB+9YEmqfmR23LCqF
 github.com/DIMO-Network/devices-api v1.30.35/go.mod h1:06PP1QwYLogA8lrwsDcfRlE141N2VfvovPzcrHexXTg=
 github.com/DIMO-Network/model-garage v0.4.4 h1:zky4YPsF+SzdgdIRaWf1TSMxsIY7gXEgpwega2gMTI8=
 github.com/DIMO-Network/model-garage v0.4.4/go.mod h1:1HGhUrH+daRiydKF317epjEf8BMtmuYyhZaxN/vaUrE=
-github.com/DIMO-Network/nameindexer v0.0.10-0.20241031131836-425572ba4fe9 h1:EjmGhmuPDxWCYOJSFFASdNBXxfedTSwfaZIBAdA0PW8=
-github.com/DIMO-Network/nameindexer v0.0.10-0.20241031131836-425572ba4fe9/go.mod h1:+X3K7NN7/DTwkwex5G0e+cqyUaGoCqqk8otOyjDxN+s=
 github.com/IBM/sarama v1.43.3 h1:Yj6L2IaNvb2mRBop39N7mmJAHBVY3dTPncr3qGVkxPA=
 github.com/IBM/sarama v1.43.3/go.mod h1:FVIRaLrhK3Cla/9FfRF5X9Zua2KpS3SYIXxhac1H+FQ=
 github.com/Jeffail/checkpoint v1.0.1 h1:kE7cXqRxpYJrGjVR4Sg9gLm9XmhEqX5hLK9hCVRoKpI=
@@ -636,6 +634,8 @@ go.opentelemetry.io/otel/metric v1.28.0 h1:f0HGvSl1KRAU1DLgLGFjrwVyismPlnuU6JD6b
 go.opentelemetry.io/otel/metric v1.28.0/go.mod h1:Fb1eVBFZmLVTMb6PPohq3TO9IIhUisDsbJoL/+uQW4s=
 go.opentelemetry.io/otel/trace v1.28.0 h1:GhQ9cUuQGmNDd5BTCP2dAvv75RdMxEfTmYejp+lkx9g=
 go.opentelemetry.io/otel/trace v1.28.0/go.mod h1:jPyXzNPg6da9+38HEwElrQiHlVMTnVfM3/yv2OlIHaI=
+go.uber.org/mock v0.4.0 h1:VcM4ZOtdbR4f6VXfiOpwpVJDL6lCReaZ6mw31wqh7KU=
+go.uber.org/mock v0.4.0/go.mod h1:a6FSlNadKUHUa9IP5Vyt1zh4fC7uAwxMutEAscFbkZc=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=

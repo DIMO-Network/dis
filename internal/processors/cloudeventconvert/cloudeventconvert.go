@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
@@ -72,33 +73,35 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			continue
 		}
 
-		events, err := c.cloudEventModule.CloudEventConvert(ctx, msgBytes)
-		if err != nil {
-			// Try to unmarshal convert errors
-			errMsg := msg.Copy()
-			errMsg.SetError(err)
-			data, marshalErr := json.Marshal(err)
-			if marshalErr == nil {
-				errMsg.SetBytes(data)
-			}
-			retBatch = append(retBatch, errMsg)
-		}
-
 		source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
 		if !ok {
 			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get source from connection id"))
 			continue
 		}
 
+		events, err := c.cloudEventModule.CloudEventConvert(ctx, msgBytes)
+		if err != nil {
+			// Try to unmarshal convert errors
+			data, marshalErr := json.Marshal(err)
+			if marshalErr == nil {
+				msg.SetBytes(data)
+			}
+			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to convert to cloud event: %w", err))
+			continue
+		}
+
 		for _, eventData := range events {
 			newMsg, err := c.createNewEventMsg(msg, source, eventData)
 			if err != nil {
-				retBatches = processors.AppendError(retBatches, msg, err)
+				msgCpy := msg.Copy()
+				retBatches = processors.AppendError(retBatches, msgCpy, err)
 				continue
 			}
 			retBatch = append(retBatch, newMsg)
 		}
-		retBatches = append(retBatches, retBatch)
+		if len(retBatch) != 0 {
+			retBatches = append(retBatches, retBatch)
+		}
 	}
 	return retBatches, nil
 }
@@ -138,22 +141,31 @@ func setDefaults(eventData []byte, source string) (*cloudevent.CloudEvent[json.R
 }
 
 func (c *cloudeventProcessor) SetMetaData(eventHeader *cloudevent.CloudEventHeader, msg *service.Message) error {
-	index, valid := c.getCloudEventIndexes(eventHeader)
+	allTypes := strings.Split(eventHeader.Type, ",")
+	allValues := make([][]any, len(allTypes))
+	hdrCpy := *eventHeader
+
+	// get index value of the first message
+	eventType := allTypes[0]
+	hdrCpy.Type = eventType
+	index, valid := c.getCloudEventIndexe(&hdrCpy)
 
 	// Encode the index
 	encodedIndex, err := nameindexer.EncodeIndex(&index)
 	if err != nil {
 		return fmt.Errorf("failed to encode index: %w", err)
 	}
-	indexValues, err := chindexer.IndexToSlice(&index)
-	if err != nil {
-		return fmt.Errorf("failed to convert index to slice: %w", err)
+
+	for i, eventType := range allTypes {
+		hdrCpy.Type = eventType
+		index, _ = c.getCloudEventIndexe(&hdrCpy)
+		allValues[i] = chindexer.IndexToSliceWithKey(&index, encodedIndex)
 	}
 
 	// Set the encoded index and values in the message metadata
 	msg.MetaSetMut(cloudEventIndexKey, encodedIndex)
 	msg.MetaSetMut(CloudEventValidKey, valid)
-	msg.MetaSetMut(cloudEventIndexValuesKey, indexValues)
+	msg.MetaSetMut(cloudEventIndexValuesKey, allValues)
 	msg.MetaSetMut(cloudEventTypeKey, eventHeader.Type)
 	msg.MetaSetMut(cloudEventProducerKey, eventHeader.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, eventHeader.Subject)
@@ -162,14 +174,13 @@ func (c *cloudeventProcessor) SetMetaData(eventHeader *cloudevent.CloudEventHead
 	return nil
 }
 
-// getCloudEventIndexes attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index
-func (c *cloudeventProcessor) getCloudEventIndexes(eventHdr *cloudevent.CloudEventHeader) (nameindexer.Index, bool) {
-	cloudIndex, err := nameindexer.CloudEventToCloudIndex(eventHdr, nameindexer.DefaultSecondaryFiller)
+// getCloudEventIndexe attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index
+func (c *cloudeventProcessor) getCloudEventIndexe(eventHdr *cloudevent.CloudEventHeader) (nameindexer.Index, bool) {
+	index, err := nameindexer.CloudEventToIndex(eventHdr)
 	if err != nil {
 		// if the cloud event headers do not match our specific format we will try to create a partial index
-		return nameindexer.CloudEventToPartialIndex(eventHdr, ""), false
+		return nameindexer.CloudEventToPartialIndex(eventHdr), false
 	}
-	// this does not error due to the above check
-	index, _ := cloudIndex.ToIndex()
+
 	return index, true
 }
