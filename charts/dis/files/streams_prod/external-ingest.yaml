@@ -183,11 +183,6 @@ output:
                         credentials:
                           id: ${S3_AWS_ACCESS_KEY_ID}
                           secret: ${S3_AWS_SECRET_ACCESS_KEY}
-                        batching:
-                          count: 1000
-                          byte_size: 0
-                          period: "20ms"
-                          check: ""
                     # reject the message, log, record metrics and send 500 response
                     # reject instead of drop to avoid attempting CH index insert with no backing obj
                     - label: 'insert_valid_cloudevent_s3_failure'
@@ -244,11 +239,6 @@ output:
                         credentials:
                           id: ${S3_AWS_ACCESS_KEY_ID}
                           secret: ${S3_AWS_SECRET_ACCESS_KEY}
-                        batching:
-                          count: 1000
-                          byte_size: 0
-                          period: "20ms"
-                          check: ""
                     # reject the message, log, record metrics and send 500 response
                     # reject instead of drop to avoid attempting CH index insert with no backing obj
                     - label: 'insert_partial_cloudevent_s3_failure'
