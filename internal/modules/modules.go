@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules/autopi"
-
 	"github.com/DIMO-Network/dis/internal/modules/macaron"
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/dis/internal/modules/tesla"
