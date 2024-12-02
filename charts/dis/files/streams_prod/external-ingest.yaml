@@ -37,6 +37,12 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
+        - check: 'metadata("dimo_cloudevent_source") == "0xAff1B580F05F2ee577162B39851b79f84F82f46A"'
+          processors:
+            - label: convert_cloudevent_autopi
+              dimo_cloudevent_convert:
+                module_name: autopi
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
         - check: 'metadata("dimo_cloudevent_source") == "macaron_integration_id"'
           processors:
             - label: convert_cloudevent_macaron
@@ -84,6 +90,12 @@ pipeline:
             - label: convert_signals_ruptela
               dimo_signal_convert:
                 module_name: ruptela
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
+        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xAff1B580F05F2ee577162B39851b79f84F82f46A"'
+          processors:
+            - label: convert_signals_autopi
+              dimo_signal_convert:
+                module_name: autopi
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
         - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "macaron_integration_id"'
           processors:
