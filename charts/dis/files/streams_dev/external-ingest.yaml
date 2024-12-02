@@ -31,7 +31,7 @@ pipeline:
         dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
     - label: "convert_cloudevent"
       switch:
-        - check: 'metadata("dimo_cloudevent_source") == "0x4Dc84a226102c08e911A5159e165e616e3A877A8"'
+        - check: 'metadata("dimo_cloudevent_source") == "0xf34215C3aC0eA07195a0424cC19e2deA61A97097"'
           processors:
             - label: convert_cloudevent_ruptela
               dimo_cloudevent_convert:
@@ -79,7 +79,7 @@ pipeline:
         - check: '!metadata("dimo_valid_cloudevent").or(true)'
           processors:
             - resource: "dimo_partial_index_count"
-        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x4Dc84a226102c08e911A5159e165e616e3A877A8"'
+        - check: 'metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xf34215C3aC0eA07195a0424cC19e2deA61A97097"'
           processors:
             - label: convert_signals_ruptela
               dimo_signal_convert:
