@@ -11,7 +11,7 @@ require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/devices-api v1.30.35
 	github.com/DIMO-Network/model-garage v0.4.4
-	github.com/DIMO-Network/nameindexer v0.0.12-0.20241128014811-8c18848b8736
+	github.com/DIMO-Network/nameindexer v0.0.12
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redpanda-data/benthos/v4 v4.38.0
