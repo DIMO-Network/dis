@@ -11,6 +11,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,9 +21,10 @@ import (
 //go:generate mockgen -source=./cloudeventconvert.go -destination=./cloudeventconvert_mock_test.go -package=cloudeventconvert
 
 func TestProcessBatch(t *testing.T) {
+	timestamp := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
 		setupMock     func(*MockCloudEventModule)
-		expectedMeta  map[string]string
+		expectedMeta  map[string]any
 		name          string
 		sourceID      string
 		inputData     []byte
@@ -32,14 +34,13 @@ func TestProcessBatch(t *testing.T) {
 		{
 			name:      "successful event conversion",
 			inputData: []byte(`{"test": "data"}`),
-			sourceID:  "test-source",
+			sourceID:  common.HexToAddress("0x").String(),
 			setupMock: func(m *MockCloudEventModule) {
 				event := cloudevent.CloudEventHeader{
 					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
-					Producer: "test-producer",
-					Subject:  "test-subject",
-					Source:   "test-source",
-					Time:     time.Now().UTC(),
+					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
+					Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+					Time:     timestamp,
 				}
 				event2 := event
 				event2.Type = cloudevent.TypeFingerprint
@@ -47,13 +48,17 @@ func TestProcessBatch(t *testing.T) {
 
 				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]cloudevent.CloudEventHeader{event, event2}, data, nil)
 			},
-			msgLen:        3,
+			msgLen:        2,
 			expectedError: false,
-			expectedMeta: map[string]string{
+			expectedMeta: map[string]any{
 				cloudEventTypeKey:            fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
-				cloudEventProducerKey:        "test-producer",
-				cloudEventSubjectKey:         "test-subject",
+				cloudEventProducerKey:        "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
+				cloudEventSubjectKey:         "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
+				CloudEventIndexValueKey: [][]any{{"000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002", timestamp, "MA",
+					"0000000000000000000000000000000000000000", "!!!!!!!!!!!!!!!!!!!!", "00", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001", "", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002799898000000MA0000000000000000000000000000000000000000!!!!!!!!!!!!!!!!!!!!00000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001",
+				}, {"000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002", timestamp, "ME", "0000000000000000000000000000000000000000", "!!!!!!!!!!!!!!!!!!!!", "00", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001", "", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002799898000000MA0000000000000000000000000000000000000000!!!!!!!!!!!!!!!!!!!!00000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001"},
+				},
 			},
 		},
 		{
@@ -124,7 +129,7 @@ func TestProcessBatch(t *testing.T) {
 
 				// Validate metadata
 				for key, expectedValue := range tt.expectedMeta {
-					actualValue, exists := outMsg.MetaGet(key)
+					actualValue, exists := outMsg.MetaGetMut(key)
 					assert.True(t, exists, "metadata key %s not found", key)
 					assert.Equal(t, expectedValue, actualValue, "unexpected value for metadata key %s", key)
 				}

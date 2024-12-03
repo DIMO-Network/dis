@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
@@ -24,10 +23,11 @@ const (
 	cloudEventSubjectKey  = "dimo_cloudevent_subject"
 	cloudEventIDKey       = "dimo_cloudevent_id"
 	cloudEventIndexKey    = "dimo_cloudevent_index"
+	// CloudEventIndexValueKey is the key for the index value for inserting a cloud event's metadata.
+	CloudEventIndexValueKey = "dimo_cloudevent_index_value"
 
 	cloudEventValidContentType   = "dimo_valid_cloudevent"
-	cloudEventPartialContentType = "dimo_valid_cloudevent"
-	cloudEventIndexContentType   = "dimo_valid_index_values"
+	cloudEventPartialContentType = "dimo_partial_cloudevent"
 )
 
 type CloudEventModule interface {
@@ -66,7 +66,6 @@ func newCloudConvertProcessor(lgr *service.Logger, moduleName, moduleConfig stri
 func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
-		var retBatch service.MessageBatch
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
 			// Add the error to the batch and continue to the next message.
@@ -95,61 +94,54 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			continue
 		}
 
-		err = updateEventMsg(msg, source, hdrs, eventData)
+		retBatch, err := createEventMsgs(msg, source, hdrs, eventData)
 		if err != nil {
 			retBatches = processors.AppendError(retBatches, msg, err)
 			continue
 		}
-		idxValueMsgs, err := createIndexValueMsgs(msg, hdrs)
-		if err != nil {
-			retBatches = processors.AppendError(retBatches, msg, err)
-			continue
-		}
-		retBatch = append(retBatch, msg)
-		retBatch = append(retBatch, idxValueMsgs...)
-		retBatches = append(retBatches, retBatch)
 
+		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
 }
 
-func updateEventMsg(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) error {
+func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
+	messages := make([]*service.Message, len(hdrs))
+	allValues := make([][]any, len(hdrs))
+
+	var encodedIndex string
+	// First set defaults and calculate indices for all headers
 	for i := range hdrs {
+		newMsg := origMsg.Copy()
 		err := setDefaults(&hdrs[i], source)
 		if err != nil {
-			return err
+			return nil, err
 		}
-	}
-	// In the future we may have a better way to handle multiple cloud events headers but for now we will just use the first one
-	mainHdr := hdrs[0]
-	err := SetMetaData(&mainHdr, origMsg)
-	if err != nil {
-		return err
-	}
-	origMsg.SetStructuredMut(
-		&cloudevent.CloudEvent[json.RawMessage]{
-			CloudEventHeader: mainHdr,
-			Data:             eventData,
-		},
-	)
-	return nil
-}
 
-func createIndexValueMsgs(origMsg *service.Message, hdrs []cloudevent.CloudEventHeader) ([]*service.Message, error) {
-	encodedIndex, ok := origMsg.MetaGet(cloudEventIndexKey)
-	if !ok {
-		return nil, fmt.Errorf("failed to get cloud event index")
+		index, valid := getCloudEventIndex(&hdrs[i])
+		if encodedIndex == "" {
+			encodedIndex, err = nameindexer.EncodeIndex(&index)
+			if err != nil {
+				return nil, fmt.Errorf("failed to encode index: %w", err)
+			}
+		}
+		allValues[i] = chindexer.IndexToSliceWithKey(&index, encodedIndex)
+
+		setMetaData(&hdrs[i], newMsg, valid)
+		newMsg.SetStructuredMut(
+			&cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: hdrs[i],
+				Data:             eventData,
+			},
+		)
+		messages[i] = newMsg
 	}
-	retMsgs := make([]*service.Message, 0, len(hdrs))
-	for _, hdr := range hdrs {
-		index, _ := getCloudEventIndex(&hdr)
-		idxValues := chindexer.IndexToSliceWithKey(&index, encodedIndex)
-		newMsg := origMsg.Copy()
-		newMsg.MetaSetMut(processors.MessageContentKey, cloudEventIndexContentType)
-		newMsg.SetStructuredMut(idxValues)
-		retMsgs = append(retMsgs, newMsg)
-	}
-	return retMsgs, nil
+
+	// Add index and values to the first message only so we do not get duplicate s3 objects
+	messages[0].MetaSetMut(cloudEventIndexKey, encodedIndex)
+	messages[0].MetaSetMut(CloudEventIndexValueKey, allValues)
+
+	return messages, nil
 }
 
 func setDefaults(event *cloudevent.CloudEventHeader, source string) error {
@@ -163,41 +155,17 @@ func setDefaults(event *cloudevent.CloudEventHeader, source string) error {
 	return nil
 }
 
-func SetMetaData(eventHeader *cloudevent.CloudEventHeader, msg *service.Message) error {
-	allTypes := strings.Split(eventHeader.Type, ",")
-	allValues := make([][]any, len(allTypes))
-	hdrCpy := *eventHeader
-
-	// get index value of the first message
-	eventType := strings.Split(eventHeader.Type, ",")[0]
-	hdrCpy.Type = eventType
-	index, valid := getCloudEventIndex(&hdrCpy)
-
-	// Encode the index
-	encodedIndex, err := nameindexer.EncodeIndex(&index)
-	if err != nil {
-		return fmt.Errorf("failed to encode index: %w", err)
-	}
-
-	for i, eventType := range allTypes {
-		hdrCpy.Type = eventType
-		index, _ = getCloudEventIndex(&hdrCpy)
-		allValues[i] = chindexer.IndexToSliceWithKey(&index, encodedIndex)
-	}
-
-	// Set the encoded index and values in the message metadata
-	msg.MetaSetMut(cloudEventIndexKey, encodedIndex)
+func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message, valid bool) {
 	contentType := cloudEventValidContentType
 	if !valid {
 		contentType = cloudEventPartialContentType
 	}
-	msg.MetaSetMut(processors.MessageContentKey, contentType)
-	msg.MetaSetMut(cloudEventTypeKey, eventHeader.Type)
-	msg.MetaSetMut(cloudEventProducerKey, eventHeader.Producer)
-	msg.MetaSetMut(cloudEventSubjectKey, eventHeader.Subject)
-	msg.MetaSetMut(cloudEventIDKey, eventHeader.ID)
 
-	return nil
+	msg.MetaSetMut(processors.MessageContentKey, contentType)
+	msg.MetaSetMut(cloudEventTypeKey, hdr.Type)
+	msg.MetaSetMut(cloudEventProducerKey, hdr.Producer)
+	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
+	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
 }
 
 // getCloudEventIndexe attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index
