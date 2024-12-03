@@ -13,6 +13,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	cloudevent "github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -40,12 +41,13 @@ func (m *MockCloudEventModule) EXPECT() *MockCloudEventModuleMockRecorder {
 }
 
 // CloudEventConvert mocks base method.
-func (m *MockCloudEventModule) CloudEventConvert(ctx context.Context, msgData []byte) ([]byte, error) {
+func (m *MockCloudEventModule) CloudEventConvert(ctx context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CloudEventConvert", ctx, msgData)
-	ret0, _ := ret[0].([]byte)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].([]cloudevent.CloudEventHeader)
+	ret1, _ := ret[1].([]byte)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
 // CloudEventConvert indicates an expected call of CloudEventConvert.

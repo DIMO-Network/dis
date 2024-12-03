@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
@@ -91,14 +90,14 @@ func (*Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, 
 }
 
 // CloudEventConvert converts a message to cloud events.
-func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]byte, error) {
+func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
 	var event RuptelaEvent
 	err := json.Unmarshal(msgData, &event)
 	if err != nil {
-		return nil, fmt.Errorf("failed to unmarshal record data: %w", err)
+		return nil, nil, fmt.Errorf("failed to unmarshal record data: %w", err)
 	}
 	if event.DeviceTokenID == nil {
-		return nil, fmt.Errorf("device token id is missing")
+		return nil, nil, fmt.Errorf("device token id is missing")
 	}
 
 	// Construct the producer DID
@@ -109,31 +108,29 @@ func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]byte, er
 	}.String()
 	subject, err := m.determineSubject(&event, producer)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	eventType := []string{cloudevent.TypeStatus}
+	statusHdr, err := createCloudEventHdr(&event, producer, subject, cloudevent.TypeStatus)
+	if err != nil {
+		return nil, nil, err
+	}
+	hdrs := []cloudevent.CloudEventHeader{statusHdr}
 
 	isVinPresent, err := checkVINPresenceInPayload(&event)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if isVinPresent {
-		eventType = append(eventType, cloudevent.TypeFingerprint)
+		fpHdr, err := createCloudEventHdr(&event, producer, subject, cloudevent.TypeFingerprint)
+		if err != nil {
+			return nil, nil, err
+		}
+		hdrs = append(hdrs, fpHdr)
 	}
 
-	cloudEvent, err := createCloudEvent(&event, producer, subject, strings.Join(eventType, ", "))
-	if err != nil {
-		return nil, err
-	}
-
-	cloudEventBytes, err := marshalCloudEvent(cloudEvent)
-	if err != nil {
-		return nil, err
-	}
-
-	return cloudEventBytes, nil
+	return hdrs, event.Data, nil
 }
 
 // determineSubject determines the subject of the cloud event based on the DS type.
@@ -157,27 +154,24 @@ func (m Module) determineSubject(event *RuptelaEvent, producer string) (string, 
 }
 
 // createCloudEvent creates a cloud event from a ruptela event.
-func createCloudEvent(event *RuptelaEvent, producer, subject, eventType string) (cloudevent.CloudEvent[json.RawMessage], error) {
+func createCloudEventHdr(event *RuptelaEvent, producer, subject, eventType string) (cloudevent.CloudEventHeader, error) {
 	timeValue, err := time.Parse(time.RFC3339, event.Time)
 	if err != nil {
-		return cloudevent.CloudEvent[json.RawMessage]{}, fmt.Errorf("Failed to parse time: %v\n", err)
+		return cloudevent.CloudEventHeader{}, fmt.Errorf("Failed to parse time: %v\n", err)
 	}
-	return cloudevent.CloudEvent[json.RawMessage]{
-		CloudEventHeader: cloudevent.CloudEventHeader{
-			DataContentType: "application/json",
-			ID:              ksuid.New().String(),
-			Subject:         subject,
-			Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
-			SpecVersion:     "1.0",
-			Time:            timeValue,
-			Type:            eventType,
-			DataVersion:     event.DS,
-			Producer:        producer,
-			Extras: map[string]any{
-				"signature": event.Signature,
-			},
+	return cloudevent.CloudEventHeader{
+		DataContentType: "application/json",
+		ID:              ksuid.New().String(),
+		Subject:         subject,
+		Source:          "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3",
+		SpecVersion:     "1.0",
+		Time:            timeValue,
+		Type:            eventType,
+		DataVersion:     event.DS,
+		Producer:        producer,
+		Extras: map[string]any{
+			"signature": event.Signature,
 		},
-		Data: event.Data,
 	}, nil
 }
 

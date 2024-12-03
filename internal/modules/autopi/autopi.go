@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/autopi/status"
 
@@ -83,6 +84,21 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 }
 
 // CloudEventConvert converts a message to cloud events.
-func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([][]byte, error) {
-	return autopi.ConvertToCloudEvents(msgData, m.cfg.ChainID, m.cfg.AftermarketContractAddr, m.cfg.VehicleContractAddr)
+func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
+	events, err := autopi.ConvertToCloudEvents(msgData, m.cfg.ChainID, m.cfg.AftermarketContractAddr, m.cfg.VehicleContractAddr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert to cloud events: %w", err)
+	}
+	hdrs := make([]cloudevent.CloudEventHeader, 0, len(events))
+	var data []byte
+	for _, eventData := range events {
+		event := cloudevent.CloudEvent[json.RawMessage]{}
+		err := json.Unmarshal(eventData, &event)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to unmarshal message: %w", err)
+		}
+		data = event.Data
+		hdrs = append(hdrs, event.CloudEventHeader)
+	}
+	return hdrs, data, nil
 }

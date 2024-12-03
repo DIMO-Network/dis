@@ -8,6 +8,7 @@ import (
 
 	"github.com/DIMO-Network/dis/internal/service/deviceapi"
 	"github.com/DIMO-Network/dis/internal/tokengetter"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/convert"
 	"github.com/DIMO-Network/model-garage/pkg/nativestatus"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
@@ -83,6 +84,12 @@ func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vs
 }
 
 // CloudEventConvert converts a macaron message to cloud events.
-func (MacaronModule) CloudEventConvert(ctx context.Context, msgData []byte) ([]byte, error) {
-	return msgData, nil
+func (MacaronModule) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
+	event := cloudevent.CloudEvent[json.RawMessage]{}
+	err := json.Unmarshal(msgData, &event)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to unmarshal message: %w", err)
+	}
+
+	return []cloudevent.CloudEventHeader{event.CloudEventHeader}, event.Data, nil
 }

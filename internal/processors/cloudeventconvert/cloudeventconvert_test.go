@@ -34,18 +34,18 @@ func TestProcessBatch(t *testing.T) {
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "test-source",
 			setupMock: func(m *MockCloudEventModule) {
-				event := cloudevent.CloudEvent[json.RawMessage]{
-					CloudEventHeader: cloudevent.CloudEventHeader{
-						Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
-						Producer: "test-producer",
-						Subject:  "test-subject",
-						Source:   "test-source",
-						Time:     time.Now().UTC(),
-					},
-					Data: json.RawMessage(`{"key": "value"}`),
+				event := cloudevent.CloudEventHeader{
+					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
+					Producer: "test-producer",
+					Subject:  "test-subject",
+					Source:   "test-source",
+					Time:     time.Now().UTC(),
 				}
-				eventBytes, _ := json.Marshal(event)
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(eventBytes, nil)
+				event2 := event
+				event2.Type = cloudevent.TypeFingerprint
+				data := json.RawMessage(`{"key": "value"}`)
+
+				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]cloudevent.CloudEventHeader{event, event2}, data, nil)
 			},
 			msgLen:        3,
 			expectedError: false,
@@ -72,7 +72,7 @@ func TestProcessBatch(t *testing.T) {
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "test-source",
 			setupMock: func(m *MockCloudEventModule) {
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(nil, errors.New("conversion failed"))
+				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(nil, nil, errors.New("conversion failed"))
 			},
 			msgLen:        1,
 			expectedError: true,
@@ -83,7 +83,7 @@ func TestProcessBatch(t *testing.T) {
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "test-source",
 			setupMock: func(m *MockCloudEventModule) {
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]byte(`invalid json`), nil)
+				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(nil, []byte(`invalid json`), nil)
 			},
 			msgLen:        1,
 			expectedError: true,
