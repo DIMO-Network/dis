@@ -164,7 +164,7 @@ output:
                     meta response_message = "failed to store converted signals, please try again later"
                 - resource: "handle_db_error"
       # Output for valid cloudevents
-      - check: metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
+      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
         output:
           label: "insert_valid_cloudevent"
           fallback:
@@ -200,12 +200,15 @@ output:
                         dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
                         table: name_index
                         columns: []
-                        args_mapping: root = metadata("dimo_cloudevent_index_values")
+                        args_mapping: root = this
                         batching:
                           count: 100000
                           byte_size: 0
                           period: "1s"
                           check: ""
+                      processors:
+                        - label: "split_values_valid"
+                          dimo_split_values: {}
 
                     # Drop the message, log, record metrics and send 500 response
                     - label: 'insert_valid_cloudevent_clickhouse_failure'
@@ -218,7 +221,7 @@ output:
             - drop: {}
 
       # Output for partial cloudevents
-      - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
+      - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
         output:
           label: "insert_partial_cloudevent"
           drop_on:
@@ -230,7 +233,7 @@ output:
                   - fallback:
                     - label: "insert_partial_cloudevent_s3"
                       aws_s3:
-                        bucket: ${S3_CLOUDEVENT_BUCKET}
+                        bucket: ${S3_EPHEMERAL_BUCKET}
                         path: ${!meta("dimo_cloudevent_index")}
                         content_type: application/json
                         region: us-east-2
@@ -256,12 +259,15 @@ output:
                         dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
                         table: name_index
                         columns: []
-                        args_mapping: root = metadata("dimo_cloudevent_index_values")
+                        args_mapping: root = this
                         batching:
                           count: 100000
                           byte_size: 0
                           period: "1s"
                           check: ""
+                      processors:
+                        - label: "split_values_partial"
+                          dimo_split_values: {}
 
                     # Drop the message, log, record metrics and send 500 response
                     - label: 'insert_partial_cloudevent_clickhouse_failure'
