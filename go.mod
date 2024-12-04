@@ -16,6 +16,7 @@ require (
 	github.com/redpanda-data/connect/v4 v4.37.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
+	github.com/tidwall/gjson v1.18.0
 	go.uber.org/mock v0.4.0
 	golang.org/x/mod v0.22.0
 	golang.org/x/time v0.7.0
@@ -174,7 +175,6 @@ require (
 	github.com/sijms/go-ora/v2 v2.8.19 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/snowflakedb/gosnowflake v1.11.0 // indirect
-	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
