@@ -1,0 +1,24 @@
+rule_files:
+  - alerts-modified.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    # Series data.
+    input_series:
+      - series: 'processor_sent{container="dis", label="dimo_internal_error_sync_response", namespace="dev"}'
+        values: '100 200 300 400 500 600 700 800 900 1000'
+
+    alert_rule_test:
+      # Unit test 1.
+      - eval_time: 10m
+        alertname: HighErrorRate
+        exp_alerts:
+          # Alert 1.
+          - exp_labels:
+              severity: critical
+              namespace: dev
+            exp_annotations:
+              summary: "High error rate detected"
+              description: "There is at least 1 internal error per second for the last 5 minutes in the dis."
