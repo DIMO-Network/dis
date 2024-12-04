@@ -9,11 +9,11 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/tesla/status"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
+	"github.com/tidwall/gjson"
 )
 
 // Module holds dependencies for the Tesla module. At present, there are none.
-type Module struct {
-}
+type Module struct{}
 
 // New creates a new Tesla, uninitialized module.
 func New() (*Module, error) {
@@ -42,6 +42,12 @@ func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudeve
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
+	hdrs := []cloudevent.CloudEventHeader{event.CloudEventHeader}
+	if gjson.GetBytes(event.Data, "vin").Exists() {
+		fpHdr := event.CloudEventHeader
+		fpHdr.Type = cloudevent.TypeFingerprint
+		hdrs = append(hdrs, fpHdr)
+	}
 
-	return []cloudevent.CloudEventHeader{event.CloudEventHeader}, event.Data, nil
+	return hdrs, event.Data, nil
 }
