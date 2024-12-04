@@ -9,6 +9,7 @@ import (
 
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	modelRuptela "github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -136,7 +137,7 @@ func TestSignalConvert(t *testing.T) {
 			name: "Valid Signal Payload",
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
-					DataVersion: ruptela.StatusEventDS,
+					DataVersion: modelRuptela.StatusEventDS,
 					Type:        cloudevent.TypeStatus,
 					Source:      "ruptela/TODO",
 					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
@@ -154,7 +155,7 @@ func TestSignalConvert(t *testing.T) {
 			name: "Valid Location Payload",
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
-					DataVersion: ruptela.LocationEventDS,
+					DataVersion: modelRuptela.LocationEventDS,
 					Type:        cloudevent.TypeStatus,
 					Source:      "ruptela/TODO",
 					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
@@ -183,7 +184,7 @@ func TestSignalConvert(t *testing.T) {
 			name: "Non-Status Event Type",
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
-					DataVersion: ruptela.StatusEventDS,
+					DataVersion: modelRuptela.StatusEventDS,
 					Type:        "fingerprint",
 				},
 				Data: json.RawMessage(signalData),

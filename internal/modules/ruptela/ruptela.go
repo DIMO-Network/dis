@@ -9,17 +9,12 @@ import (
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/convert"
+	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela/status"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
-)
-
-const (
-	StatusEventDS   = "r/v0/s"
-	DevStatusDS     = "r/v0/dev"
-	LocationEventDS = "r/v0/loc"
 )
 
 type moduleConfig struct {
@@ -73,7 +68,7 @@ func (*Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
-	if event.DataVersion == DevStatusDS || event.Type != cloudevent.TypeStatus {
+	if event.DataVersion == ruptela.DevStatusDS || event.Type != cloudevent.TypeStatus {
 		return nil, nil
 	}
 	signals, err := status.DecodeStatusSignals(msgBytes)
@@ -137,7 +132,7 @@ func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudeve
 func (m Module) determineSubject(event *RuptelaEvent, producer string) (string, error) {
 	var subject string
 	switch event.DS {
-	case StatusEventDS, LocationEventDS:
+	case ruptela.StatusEventDS, ruptela.LocationEventDS:
 		if event.VehicleTokenID != nil {
 			subject = cloudevent.NFTDID{
 				ChainID:         m.cfg.ChainID,
@@ -145,7 +140,7 @@ func (m Module) determineSubject(event *RuptelaEvent, producer string) (string, 
 				TokenID:         *event.VehicleTokenID,
 			}.String()
 		}
-	case DevStatusDS:
+	case ruptela.DevStatusDS:
 		subject = producer
 	default:
 		return "", fmt.Errorf("unknown DS type: %s", event.DS)
@@ -177,7 +172,7 @@ func createCloudEventHdr(event *RuptelaEvent, producer, subject, eventType strin
 
 // checkVINPresenceInPayload checks if the VIN is present in the payload.
 func checkVINPresenceInPayload(event *RuptelaEvent) (bool, error) {
-	if event.DS != StatusEventDS {
+	if event.DS != ruptela.StatusEventDS {
 		return false, nil
 	}
 
