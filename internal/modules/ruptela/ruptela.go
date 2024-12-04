@@ -198,11 +198,3 @@ func checkVINPresenceInPayload(event *RuptelaEvent) (bool, error) {
 	}
 	return true, nil
 }
-
-func marshalCloudEvent(cloudEvent cloudevent.CloudEvent[json.RawMessage]) ([]byte, error) {
-	cloudEventBytes, err := json.Marshal(cloudEvent)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal cloudEvent: %w", err)
-	}
-	return cloudEventBytes, nil
-}
