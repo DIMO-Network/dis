@@ -9,6 +9,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/modules/macaron"
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/dis/internal/modules/tesla"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
@@ -27,7 +28,7 @@ type SignalModule interface {
 // CloudEventModule is an interface for converting messages to cloud events.
 type CloudEventModule interface {
 	Module
-	CloudEventConvert(ctx context.Context, msgData []byte) ([][]byte, error)
+	CloudEventConvert(ctx context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error)
 }
 
 var signalModules = map[string]func() (SignalModule, error){

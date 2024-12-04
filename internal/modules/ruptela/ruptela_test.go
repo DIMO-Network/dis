@@ -9,6 +9,7 @@ import (
 
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	modelRuptela "github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -86,19 +87,14 @@ func TestCloudEventConvert(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			events, err := module.CloudEventConvert(context.Background(), tt.input)
+			hdrs, _, err := module.CloudEventConvert(context.Background(), tt.input)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
-				require.Len(t, events, tt.length)
+				require.Len(t, hdrs, tt.length)
 
-				var cloudEvent cloudevent.CloudEvent[json.RawMessage]
-				err := json.Unmarshal(events[0], &cloudEvent)
-				if err != nil {
-					t.Fatalf("Failed to unmarshal cloud event: %v", err)
-				}
-
+				cloudEvent := hdrs[0]
 				assert.Equal(t, tt.expectedSubject, cloudEvent.Subject)
 				assert.Equal(t, tt.expectedProducer, cloudEvent.Producer)
 			}
@@ -141,7 +137,7 @@ func TestSignalConvert(t *testing.T) {
 			name: "Valid Signal Payload",
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
-					DataVersion: ruptela.StatusEventDS,
+					DataVersion: modelRuptela.StatusEventDS,
 					Type:        cloudevent.TypeStatus,
 					Source:      "ruptela/TODO",
 					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
@@ -159,7 +155,7 @@ func TestSignalConvert(t *testing.T) {
 			name: "Valid Location Payload",
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
-					DataVersion: ruptela.LocationEventDS,
+					DataVersion: modelRuptela.LocationEventDS,
 					Type:        cloudevent.TypeStatus,
 					Source:      "ruptela/TODO",
 					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
@@ -188,7 +184,7 @@ func TestSignalConvert(t *testing.T) {
 			name: "Non-Status Event Type",
 			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: cloudevent.CloudEventHeader{
-					DataVersion: ruptela.StatusEventDS,
+					DataVersion: modelRuptela.StatusEventDS,
 					Type:        "fingerprint",
 				},
 				Data: json.RawMessage(signalData),

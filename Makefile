@@ -23,6 +23,7 @@ GOARCH_LIST := amd64 arm64
 
 # Dependency versions
 GOLANGCI_VERSION   = latest
+MOCKGEN_VERSION    = $(shell go list -m -f '{{.Version}}' go.uber.org/mock)
 
 help:
 	@echo "\nSpecify a subcommand:\n"
@@ -85,8 +86,11 @@ tools-golangci-lint:
 	@mkdir -p $(PATHINSTBIN)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
 
-tools: tools-golangci-lint ## Install all tools
+tools-mockgen: ## install mockgen tool
+	@mkdir -p $(PATHINSTBIN)
+	GOBIN=$(PATHINSTBIN) go install go.uber.org/mock/mockgen@$(MOCKGEN_VERSION)
 
+tools: tools-golangci-lint tools-mockgen ## Install all tools
 
 config-gen: ## Generate Benthos config files
 	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev 
