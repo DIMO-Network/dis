@@ -63,8 +63,9 @@ func newCloudConvertProcessor(lgr *service.Logger, moduleName, moduleConfig stri
 	}, nil
 }
 
+// ProcessBatch converts a batch of messages to cloud events.
 func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
-	var retBatches []service.MessageBatch
+	retBatches := make([]service.MessageBatch, 0, len(msgs))
 	for _, msg := range msgs {
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
@@ -113,13 +114,11 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 	// First set defaults and calculate indices for all headers
 	for i := range hdrs {
 		newMsg := origMsg.Copy()
-		err := setDefaults(&hdrs[i], source)
-		if err != nil {
-			return nil, err
-		}
+		setDefaults(&hdrs[i], source)
 
 		index, valid := getCloudEventIndex(&hdrs[i])
 		if encodedIndex == "" {
+			var err error
 			encodedIndex, err = nameindexer.EncodeIndex(&index)
 			if err != nil {
 				return nil, fmt.Errorf("failed to encode index: %w", err)
@@ -144,7 +143,7 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 	return messages, nil
 }
 
-func setDefaults(event *cloudevent.CloudEventHeader, source string) error {
+func setDefaults(event *cloudevent.CloudEventHeader, source string) {
 	event.Source = source
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
@@ -152,7 +151,6 @@ func setDefaults(event *cloudevent.CloudEventHeader, source string) error {
 	if event.ID == "" {
 		event.ID = ksuid.New().String()
 	}
-	return nil
 }
 
 func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message, valid bool) {
@@ -168,7 +166,7 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message, valid b
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
 }
 
-// getCloudEventIndexe attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index
+// getCloudEventIndex attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index.
 func getCloudEventIndex(eventHdr *cloudevent.CloudEventHeader) (nameindexer.Index, bool) {
 	index, err := nameindexer.CloudEventToIndex(eventHdr)
 	if err != nil {
