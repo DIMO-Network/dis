@@ -4,6 +4,22 @@ rule_files:
 evaluation_interval: 1m
 
 tests:
+  - interval: 6m
+    # Series data.
+    input_series:
+      - series: 'processor_sent{container="dis", label="convert_cloudevent", namespace="dev"}'
+        values: '0 0 0 0 0 0 0 0 0 0'
+
+    alert_rule_test:
+      - eval_time: 60m
+        alertname: NoDataReceived
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              namespace: dev
+            exp_annotations:
+              summary: "No data received in 30 minutes"
+              description: "Please check dis service and networking."
   - interval: 1m
     # Series data.
     input_series:

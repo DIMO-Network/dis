@@ -29,6 +29,7 @@ pipeline:
     - label: signal_db_migration
       dimo_signal_migration:
         dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s
+    # If label name change, update the alerts
     - label: "convert_cloudevent"
       switch:
         - check: 'metadata("dimo_cloudevent_source") == "0xf34215C3aC0eA07195a0424cC19e2deA61A97097"'
@@ -59,6 +60,7 @@ pipeline:
           processors:
             - set_error:
                 message: 'unknown connection ${! meta("dimo_cloudevent_source") }'
+    # If label name change, update the alerts
     - label: "convert_cloudevent_errors"
       catch:
         - log:
@@ -80,6 +82,7 @@ pipeline:
         - resource: "dimo_bad_request_sync_response"
         # Drop the message
         - mapping: root = deleted()
+    # If label name change, update the alerts
     - label: "convert_signals"
       switch:
         - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
@@ -109,6 +112,7 @@ pipeline:
               dimo_signal_convert:
                 module_name: tesla
                 module_config: ewp9Cg==
+    # If label name change, update the alerts
     - label: "convert_signal_errors"
       catch:
       -  mutation: |
