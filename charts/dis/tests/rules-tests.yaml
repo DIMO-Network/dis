@@ -39,7 +39,7 @@ tests:
   - interval: 1m
     # Series data.
     input_series:
-      - series: 'processor_sent{container="dis", label="convert_cloudevent_errors", namespace="dev"}'
+      - series: 'dimo_error_count{container="dis", component="dimo_cloudevent_convert", namespace="dev"}'
         values: '20 40 60 80 100 120 140 160 180 200'
       - series: 'processor_sent{container="dis", label="convert_cloudevent", namespace="dev"}'
         values: '100 200 300 400 500 600 700 800 900 1000'
