@@ -8,15 +8,15 @@ connections:
         "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
         "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
       }
-  - connectionId: "0xAff1B580F05F2ee577162B39851b79f84F82f46A"
-    moduleName: "autopi"
-    connectionName: "AutoPi"
-    moduleConfig: |
-      {
-        "chain_id": 137,
-        "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
-        "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
-      }
+  # - connectionId: "0xAff1B580F05F2ee577162B39851b79f84F82f46A"
+  #   moduleName: "autopi"
+  #   connectionName: "AutoPi"
+  #   moduleConfig: |
+  #     {
+  #       "chain_id": 137,
+  #       "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
+  #       "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+  #     }
   - connectionId: "macaron_integration_id"
     connectionName: "Macaron"
     moduleName: "macaron"
