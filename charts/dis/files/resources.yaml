@@ -52,6 +52,6 @@ processor_resources:
             cloudevent_type = metadata("dimo_cloudevent_type").or("unknown")
             cloudevent_id = metadata("dimo_cloudevent_id").or("unknown")
             component = metadata("dimo_component").or("unknown")
-            error = metadata("fallback_error").or("unknown")
+            error = if errored() { error() } else { metadata("fallback_error").or("unknown") }
       - resource: "dimo_error_count"
       - resource: "dimo_internal_error_sync_response"
