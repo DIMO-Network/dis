@@ -1,0 +1,40 @@
+rule_files:
+  - alerts-modified.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    # Series data.
+    input_series:
+      - series: 'processor_sent{container="dis", label="dimo_internal_error_sync_response", namespace="dev"}'
+        values: '100 200 300 400 500 600 700 800 900 1000'
+
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: High500ErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              namespace: dev
+            exp_annotations:
+              summary: "High internal error rate detected"
+              description: "There is at least 1 internal error per second for the last 5 minutes in the dis."
+  - interval: 1m
+    # Series data.
+    input_series:
+      - series: 'processor_sent{container="dis", label="convert_cloudevent_errors", namespace="dev"}'
+        values: '20 40 60 80 100 120 140 160 180 200'
+      - series: 'processor_sent{container="dis", label="convert_cloudevent", namespace="dev"}'
+        values: '100 200 300 400 500 600 700 800 900 1000'
+
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: HighCloudEventConvertErrorRate
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              namespace: dev
+            exp_annotations:
+              summary: "High failure rate for convert cloud events detected"
+              description: "The error rate for converting cloud events has exceeded 10% in the last 5 minutes."

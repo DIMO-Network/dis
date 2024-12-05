@@ -1,23 +1,41 @@
 {{- define "alerts" -}}
 groups:
-  - name: data-ingest-autopi
+  - name: dis-service
     rules:
-      - alert: VssConversionHighFailureRate
-        expr:  sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="log_convert_errors"}[5m])) BY (pod, job, namespace)  / sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="convert_vss"}[5m])) BY (pod, job, namespace) > 0.05
+      - alert: High500ErrorRate
+        expr: sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="dimo_internal_error_sync_response"}[5m])) BY (pod, job, namespace) >= 1
         for: 5m
         labels:
           severity: warning
           namespace: {{ .Release.Namespace }}
         annotations:
-          summary: 'High failure rate for convert_vss processor detected'
-          description: 'The failure rate has exceeded 5% in the last 5 minutes.'
-      - alert: VssConversionCriticalFailureRate
-        expr:  sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="log_convert_errors"}[5m])) BY (pod, job, namespace)  / sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="convert_vss"}[5m])) BY (pod, job, namespace) > 0.1
+          summary: 'High internal error rate detected'
+          description: 'There is at least 1 internal error per second for the last 5 minutes in the dis.'
+      - alert: High400ErrorRate
+        expr: sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="dimo_bad_request_sync_response"}[5m])) BY (pod, job, namespace) >= 1
         for: 5m
         labels:
-          severity: critical
+          severity: warning
           namespace: {{ .Release.Namespace }}
         annotations:
-          summary: 'Critical failure rate for convert_vss processor detected'
-          description: 'The failure rate has exceeded 10% in the last 5 minutes.'
+          summary: 'High rate of 400 errors detected'
+          description: 'The rate of 400 (Bad Request) errors has exceeded 1 per second in the last 5 minutes.'
+      - alert: HighCloudEventConvertErrorRate
+        expr: sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_cloudevent_errors"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_cloudevent"}[5m])) BY (pod, job, namespace) >= 0.1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'High failure rate for convert cloud events detected'
+          description: 'The error rate for converting cloud events has exceeded 10% in the last 5 minutes.'
+      - alert: HighSignalConvertErrorRate
+        expr: sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_signal_errors"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_signals"}[5m])) BY (pod, job, namespace) >= 0.1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'High failure rate for signals convert detected'
+          description: 'The error rate for converting signals has exceeded 10% in the last 5 minutes.'
 {{- end -}}

@@ -1,0 +1,32 @@
+name: rulestest
+
+on:
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  rules-test:
+    runs-on: [self-hosted, linux]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # we need to install promtool to run the tests
+      - name: Install promtool
+        run: sudo wget https://github.com/prometheus/prometheus/releases/download/v2.47.0/prometheus-2.47.0.linux-amd64.tar.gz && sudo tar -xvf prometheus-2.47.0.linux-amd64.tar.gz && sudo cp prometheus-2.47.0.linux-amd64/promtool /usr/local/bin/
+
+      - name: Sed helm chart placeholders
+        run: sed "s/{{ .Release.Namespace }}/dev/g"  ./charts/dis/templates/alerts.yaml |  sed 's/{{.*}}//g' >  ./charts/dis/tests/alerts-modified.yaml
+
+      # this action only can execute check and config promtool commands
+      - name: Check Prometheus alert rules
+        uses: peimanja/promtool-github-actions@master
+        with:
+          promtool_actions_subcommand: 'rules'
+          promtool_actions_files: './charts/dis/tests/alerts-modified.yaml'
+          promtool_actions_version: '2.14.0'
+          promtool_actions_comment: true
+
+      - name: Exec promtool tests on alerts
+        run: promtool test rules ./charts/dis/tests/rules-tests.yaml
