@@ -36,15 +36,11 @@ func (p processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) ([
 		if !ok {
 			return nil, errors.New("no index values found")
 		}
-		allValSlices, ok := values.([]any)
+		valSlice, ok := values.([][]any)
 		if !ok {
 			return nil, fmt.Errorf("index values is not a slice of slices instead is %T", values)
 		}
-		for _, valSlice := range allValSlices {
-			vals, ok := valSlice.([]any)
-			if !ok {
-				return nil, fmt.Errorf("index value is not a slice instead is %T", vals)
-			}
+		for _, vals := range valSlice {
 			newMsg := msg.Copy()
 			newMsg.SetStructured(vals)
 			retMsgs = append(retMsgs, newMsg)

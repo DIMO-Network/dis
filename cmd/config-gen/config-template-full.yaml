@@ -177,6 +177,12 @@ output:
                       processors:
                         - label: "split_values_valid"
                           dimo_split_values: {}
+                        - catch:
+                          -  mutation: |
+                              meta dimo_component = "split_values_valid"
+                              meta response_message = "failed to store converted cloudevent, please try again later"
+                          - resource: "handle_db_error"
+                          - mapping: root = deleted()
 
                     # Drop the message, log, record metrics and send 500 response
                     - label: 'insert_valid_cloudevent_clickhouse_failure'
@@ -236,6 +242,12 @@ output:
                       processors:
                         - label: "split_values_partial"
                           dimo_split_values: {}
+                        - catch:
+                          -  mutation: |
+                              meta dimo_component = "split_values_partial"
+                              meta response_message = "failed to store converted cloudevent, please try again later"
+                          - resource: "handle_db_error"
+                          - mapping: root = deleted()
 
                     # Drop the message, log, record metrics and send 500 response
                     - label: 'insert_partial_cloudevent_clickhouse_failure'
@@ -245,3 +257,7 @@ output:
                             meta dimo_component = "insert_partial_cloudevent_clickhouse"
                             meta response_message = "failed to store converted cloudevent"
                         - resource: "handle_db_error"
+      - check: ''
+        output:
+          label: "drop_message"
+          drop: {}
