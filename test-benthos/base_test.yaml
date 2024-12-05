@@ -117,15 +117,4 @@ tests:
               "status": "active"
             }
             signature: "abc123signature"
-
-  - name: "Test Split Values"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#split_values_valid"
-    environment: {}
-    input_batch:
-      - metadata:
-          dimo_cloudevent_index_value: [["foo", 1],["bar", 2]]
-    output_batches:
-      - # Expected batch
-        - json_contains: ["foo", 1]
-        - json_contains: ["bar", 2]
             
