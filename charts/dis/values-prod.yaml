@@ -2,8 +2,8 @@ replicaCount: 3
 kafka:
   clusterName: kafka-prod-dimo-kafka
 podAnnotations:
-  config.linkerd.io/proxy-cpu-limit: 1000m
-  config.linkerd.io/proxy-cpu-request: 300m
+  config.linkerd.io/proxy-cpu-limit: 2000m
+  config.linkerd.io/proxy-cpu-request: 500m
 env:
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
@@ -30,11 +30,11 @@ certificate:
   caConfigMap: cae-prod-dimo-ca-certs
 resources:
   limits:
-    cpu: 4500m
-    memory: 700Mi
+    cpu: 7000m
+    memory: 4000Mi
   requests:
-    cpu: 4000m
-    memory: 500Mi
+    cpu: 7000m
+    memory: 4000Mi
 autoscaling:
   enabled: false
   minReplicas: 1
