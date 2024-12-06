@@ -27,6 +27,8 @@ go.work
 *.code-workspace
 .history/
 
-
 # GoLand
 .idea/
+
+# ignore file used for test.
+alerts-modified.yaml
