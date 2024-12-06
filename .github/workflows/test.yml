@@ -32,6 +32,8 @@ jobs:
         with:
           name: tools
           path: bin/
+      - name: Set executable
+        run: chmod +x bin/*
       - name: Run Benthos tests
         run: make test-benthos
 
@@ -48,6 +50,8 @@ jobs:
         with:
           name: tools
           path: bin/
+      - name: Set executable
+        run: chmod +x bin/*
       - name: Run Go tests
         run: go test ./...
 
@@ -61,6 +65,8 @@ jobs:
         with:
           name: tools
           path: bin/
+      - name: Set executable
+        run: chmod +x bin/*
       - name: Run Prometheus alert tests
         run: make test-prometheus-alerts
 
@@ -74,5 +80,7 @@ jobs:
         with:
           name: tools
           path: bin/
+      - name: Set executable
+        run: chmod +x bin/*
       - name: Run Prometheus rules tests
         run: make test-prometheus-rules
