@@ -111,7 +111,7 @@ output:
     strict_mode: true
     cases:
       # Output for valid signals
-      - check: 'metadata("dimo_valid_signal").or(false)'
+      - check: 'metadata("dimo_message_content").or("") = "dimo_valid_signal"'
         output:
           label: "insert_signal"
           fallback:
