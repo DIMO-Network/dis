@@ -1,0 +1,58 @@
+name: Tests
+on:
+  pull_request:
+    branches: ["**"]
+  push:
+    branches:
+      - main
+
+jobs:
+  install-tools:
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: Install all tools
+        run: make tools
+
+  benthos-test:
+    needs: install-tools
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Benthos tests
+        run: make test-benthos
+
+  go-tests:
+    needs: install-tools
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+      - name: Run Go tests
+        run: make test-go
+
+  prometheus-alerts:
+    needs: install-tools
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Prometheus alert tests
+        run: make test-prometheus-alerts
+
+  prometheus-rules:
+    needs: install-tools
+    if: "!contains(github.event.head_commit.message, 'Merge pull request')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Prometheus rules tests
+        run: make test-prometheus-rules

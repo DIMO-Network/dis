@@ -1,0 +1,68 @@
+
+groups:
+  - name: dis-service
+    rules:
+      - alert: NoDataReceived
+        expr: sum(rate(processor_sent{namespace="dev", container="dis", label="convert_cloudevent"}[30m])) BY (pod, job, namespace) == 0
+        for: 30m
+        labels:
+          severity: critical
+          namespace: dev
+        annotations:
+          summary: 'No data received in 30 minutes'
+          description: 'Please check dis service and networking.'
+      - alert: NoDataSentS3
+        expr: sum(rate(output_batch_sent{namespace="dev", container="dis", label="insert_valid_cloudevent_clickhouse"}[30m])) BY (pod, job, namespace) == 0
+        for: 30m
+        labels:
+          severity: critical
+          namespace: dev
+        annotations:
+          summary: 'No data sent to S3 in the last 30 minutes'
+          description: 'Please check dis service and networking.'
+      - alert: NoDataSentClickhouse
+        expr: sum(rate(output_batch_sent{namespace="dev", container="dis", label="insert_signal_clickhouse"}[30m])) BY (pod, job, namespace) == 0
+        for: 30m
+        labels:
+          severity: critical
+          namespace: dev
+        annotations:
+          summary: 'No data sent to Clickhouse in the last 30 minutes'
+          description: 'Please check dis service and networking.'
+      - alert: High500ErrorRate
+        expr: sum(rate(processor_sent{namespace="dev", container="dis", label="dimo_internal_error_sync_response"}[5m])) BY (pod, job, namespace) >= 1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: dev
+        annotations:
+          summary: 'High internal error rate detected'
+          description: 'There is at least 1 internal error per second for the last 5 minutes in the dis.'
+      - alert: High400ErrorRate
+        expr: sum(rate(processor_sent{namespace="dev", container="dis", label="dimo_bad_request_sync_response"}[5m])) BY (pod, job, namespace) >= 1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: dev
+        annotations:
+          summary: 'High rate of 400 errors detected'
+          description: 'The rate of 400 (Bad Request) errors has exceeded 1 per second in the last 5 minutes.'
+      - alert: HighCloudEventConvertErrorRate
+        expr: sum(rate(dimo_error_count{namespace="dev", container="dis", component="dimo_cloudevent_convert"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="dev", container="dis", label="convert_cloudevent"}[5m])) BY (pod, job, namespace) >= 0.1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: dev
+        annotations:
+          summary: 'High failure rate for convert cloud events detected'
+          description: 'The error rate for converting cloud events has exceeded 10% in the last 5 minutes.'
+      - alert: HighSignalConvertErrorRate
+        expr: sum(rate(dimo_error_count{namespace="dev", container="dis", component="dimo_signal_convert"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="dev", container="dis", label="convert_signals"}[5m])) BY (pod, job, namespace) >= 0.1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: dev
+        annotations:
+          summary: 'High failure rate for signals convert detected'
+          description: 'The error rate for converting signals has exceeded 10% in the last 5 minutes.'
+
