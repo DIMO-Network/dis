@@ -1,6 +1,6 @@
 tests:
   - name: "Test convert indexing"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
+    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
     input_batch:
        - metadata:
           example_key: example metadata value
@@ -48,7 +48,7 @@ tests:
     
 
   - name: "Test Signal convert"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals"
+    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals"
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_valid_cloudevent'
@@ -77,7 +77,7 @@ tests:
         - json_equals: [123,"2024-04-18T17:20:26.633Z","powertrainCombustionEngineECT","0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",107,""]
 
   - name: "Test CloudConvert"
-    target_processors: "../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
+    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
     environment: {}
     input_batch:
       - metadata:

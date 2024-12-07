@@ -24,6 +24,7 @@ GOARCH_LIST := amd64 arm64
 # Dependency versions
 GOLANGCI_VERSION   = latest
 MOCKGEN_VERSION    = $(shell go list -m -f '{{.Version}}' go.uber.org/mock)
+PROMETHEUS_VERSION = 2.47.0
 
 help:
 	@echo "\nSpecify a subcommand:\n"
@@ -54,13 +55,24 @@ install: build
 dep: 
 	@go mod tidy
 
-test: test-benthos ## Run all tests
+test: test-go test-benthos test-prometheus-alerts test-prometheus-rules ## Run all tests
+
+test-go: ## Run Go tests
 	@go test ./...
-	
+
 test-benthos: build ## Run Benthos tests
 	S3_CLOUDEVENT_BUCKET="status" S3_EPHEMERAL_BUCKET="status_tmp" \
-	dis test --log debug -r ./charts/dis/files/resources.yaml ./test-benthos/...
+	dis test --log debug -r ./charts/dis/files/resources.yaml ./tests/benthos/...
 
+test-prometheus-prepare: ## Prepare Prometheus alert files for testing
+	@mkdir -p ./charts/dis/tests
+	@sed "s/{{ .Release.Namespace }}/dev/g" ./charts/dis/templates/alerts.yaml | sed 's/{{.*}}//g' > ./tests/prom/alerts-modified.yaml
+
+test-prometheus-alerts: test-prometheus-prepare ## Check Prometheus alert rules
+	@promtool check rules ./tests/prom/alerts-modified.yaml
+
+test-prometheus-rules: test-prometheus-prepare ## Run Prometheus rules tests
+	@promtool test rules ./tests/prom/rules-tests.yaml
 
 lint-benthos: build  ## Run Benthos linter
 	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_SIGNAL_DATABASE="" CLICKHOUSE_INDEX_DATABASE=""  CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
@@ -82,6 +94,15 @@ docker: dep
 	@docker build -f ./docker/dockerfile . -t dimozone/$(BIN_NAME):$(VER_CUT)
 	@docker tag dimozone/$(BIN_NAME):$(VER_CUT) dimozone/$(BIN_NAME):latest
 
+tools-prometheus: ## Install Prometheus and promtool
+	@echo "Installing Prometheus $(PROMETHEUS_VERSION) for $(GOOS)/$(ARCH)"
+	@mkdir -p $(PATHINSTBIN)
+	@curl -L -o prometheus.tar.gz https://github.com/prometheus/prometheus/releases/download/v$(PROMETHEUS_VERSION)/prometheus-$(PROMETHEUS_VERSION).$(GOOS)-$(ARCH).tar.gz
+	@tar -xzf prometheus.tar.gz
+	@cp prometheus-$(PROMETHEUS_VERSION).$(GOOS)-$(ARCH)/promtool $(PATHINSTBIN)/
+	@rm -rf prometheus-$(PROMETHEUS_VERSION).$(GOOS)-$(ARCH)* prometheus.tar.gz
+	@echo "Prometheus tools installed successfully in $(PATHINSTBIN)"
+
 tools-golangci-lint:
 	@mkdir -p $(PATHINSTBIN)
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
@@ -90,7 +111,7 @@ tools-mockgen: ## install mockgen tool
 	@mkdir -p $(PATHINSTBIN)
 	GOBIN=$(PATHINSTBIN) go install go.uber.org/mock/mockgen@$(MOCKGEN_VERSION)
 
-tools: tools-golangci-lint tools-mockgen ## Install all tools
+tools: tools-golangci-lint tools-mockgen tools-prometheus## Install all tools
 
 config-gen: ## Generate Benthos config files
 	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev 
