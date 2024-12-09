@@ -1,5 +1,5 @@
 connections:
-  - connectionId: "0xf34215C3aC0eA07195a0424cC19e2deA61A97097"
+  - connectionId: "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"
     moduleName: "ruptela"
     connectionName: "Ruptela"
     moduleConfig: |
