@@ -8,7 +8,7 @@ connections:
         "aftermarket_contract_addr": "0x325b45949C833986bC98e98a49F3CA5C5c4643B5",
         "vehicle_contract_addr": "0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8"
       }
-  - connectionId: "0xAff1B580F05F2ee577162B39851b79f84F82f46A"
+  - connectionId: "0x762Fd53c4973075a6fC0d17237BC65E183299980"
     moduleName: "autopi"
     connectionName: "AutoPi"
     moduleConfig: |
@@ -24,7 +24,7 @@ connections:
       {
         "device_api_url": "http://devices-api-dev:8086"
       }
-  - connectionId: "0xFFEE022fAb46610EAFe98b87377B42e366364a71"
+  - connectionId: "0x354574EC2cC27A29410df751e43723B1bC362Ce4"
     connectionName: "Tesla"
     moduleName: "tesla"
     moduleConfig: |
