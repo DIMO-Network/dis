@@ -32,7 +32,7 @@ pipeline:
     # If label name change, update the alerts
     - label: "convert_cloudevent"
       switch:
-        - check: 'metadata("dimo_cloudevent_source") == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
+        - check: 'metadata("dimo_cloudevent_source") == "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"'
           processors:
             - label: convert_cloudevent_ruptela
               dimo_cloudevent_convert:
@@ -76,7 +76,7 @@ pipeline:
         - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
           processors:
             - resource: "dimo_partial_index_count"
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x3A6603E1065C9b3142403b1b7e349a6Ae936E819"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"'
           processors:
             - label: convert_signals_ruptela
               dimo_signal_convert:
