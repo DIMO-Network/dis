@@ -1,10 +1,10 @@
 tests:
   - name: "Test convert indexing"
-    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
+    target_processors: "../../charts/dis/files/streams_dev/external-ingest.yaml#convert_cloudevent"
     input_batch:
        - metadata:
           example_key: example metadata value
-          dimo_cloudevent_source: "macaron_integration_id"
+          dimo_cloudevent_source: "sample_integration_id"
          json_content:
             source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
             dataversion: "testschema/v2.0"
@@ -26,7 +26,7 @@ tests:
     output_batches:
       - # Expected batch
         - json_contains:
-            source: "macaron_integration_id"
+            source: "sample_integration_id"
             dataversion: "testschema/v2.0"
             subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
             producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
@@ -44,15 +44,15 @@ tests:
                     name: "coolantTemp"
                     value: 107
           metadata_equals:
-            dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!!macaron_integration_id!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
+            dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!!!sample_integration_id!!!!!testschema/v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
     
 
   - name: "Test Signal convert"
-    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_signals"
+    target_processors: "../../charts/dis/files/streams_dev/external-ingest.yaml#convert_signals"
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_valid_cloudevent'
-          dimo_cloudevent_source: "macaron_integration_id"
+          dimo_cloudevent_source: "sample_integration_id"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           source: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"

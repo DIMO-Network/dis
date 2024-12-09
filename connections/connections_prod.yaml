@@ -17,13 +17,6 @@ connections:
   #       "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
   #       "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
   #     }
-  - connectionId: "macaron_integration_id"
-    connectionName: "Macaron"
-    moduleName: "macaron"
-    moduleConfig: |
-      {
-        "device_api_url": "http://devices-api-dev:8086"
-      }
   - connectionId: "0xFFEE022fAb46610EAFe98b87377B42e366364a71"
     connectionName: "Tesla"
     moduleName: "tesla"

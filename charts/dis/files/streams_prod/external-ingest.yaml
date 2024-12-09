@@ -38,12 +38,6 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
-        - check: 'metadata("dimo_cloudevent_source") == "macaron_integration_id"'
-          processors:
-            - label: convert_cloudevent_macaron
-              dimo_cloudevent_convert:
-                module_name: macaron
-                module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
         - check: 'metadata("dimo_cloudevent_source") == "0xFFEE022fAb46610EAFe98b87377B42e366364a71"'
           processors:
             - label: convert_cloudevent_tesla
@@ -88,12 +82,6 @@ pipeline:
               dimo_signal_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "macaron_integration_id"'
-          processors:
-            - label: convert_signals_macaron
-              dimo_signal_convert:
-                module_name: macaron
-                module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xFFEE022fAb46610EAFe98b87377B42e366364a71"'
           processors:
             - label: convert_signals_tesla
