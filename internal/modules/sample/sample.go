@@ -1,4 +1,4 @@
-package macaron
+package sample
 
 import (
 	"context"
@@ -22,24 +22,24 @@ type moduleConfig struct {
 	DevicesAPIGRPCAddr string `json:"devices_api_grpc_addr"`
 }
 
-// MacaronModule is a module that converts macaron messages to signals.
-type MacaronModule struct {
+// sampleModule is a module that converts sample messages to signals.
+type sampleModule struct {
 	TokenGetter nativestatus.TokenIDGetter
 	logger      *service.Logger
 }
 
-// New creates a new MacaronModule.
-func New() (*MacaronModule, error) {
-	return &MacaronModule{}, nil
+// New creates a new sampleModule.
+func New() (*sampleModule, error) {
+	return &sampleModule{}, nil
 }
 
 // SetLogger sets the logger for the module.
-func (m *MacaronModule) SetLogger(logger *service.Logger) {
+func (m *sampleModule) SetLogger(logger *service.Logger) {
 	m.logger = logger
 }
 
 // SetConfig sets the configuration for the module.
-func (m *MacaronModule) SetConfig(config string) error {
+func (m *sampleModule) SetConfig(config string) error {
 	var cfg moduleConfig
 	err := json.Unmarshal([]byte(config), &cfg)
 	if err != nil {
@@ -57,7 +57,7 @@ func (m *MacaronModule) SetConfig(config string) error {
 }
 
 // SignalConvert converts a message to signals.
-func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
+func (m sampleModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vss.Signal, error) {
 	schemaVersion := nativestatus.GetSchemaVersion(msgBytes)
 	if semver.Compare(nativestatus.StatusV1Converted, schemaVersion) == 0 {
 		// ignore v1.1 messages
@@ -83,8 +83,8 @@ func (m MacaronModule) SignalConvert(ctx context.Context, msgBytes []byte) ([]vs
 	return convertErr.DecodedSignals, convertErr
 }
 
-// CloudEventConvert converts a macaron message to cloud events.
-func (MacaronModule) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
+// CloudEventConvert converts a sample message to cloud events.
+func (sampleModule) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
 	event := cloudevent.CloudEvent[json.RawMessage]{}
 	err := json.Unmarshal(msgData, &event)
 	if err != nil {
