@@ -82,7 +82,7 @@ tests:
     input_batch:
       - metadata:
           example_key: example metadata value
-          dimo_cloudevent_source: "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
         json_content:
           ds: "r/v0/s"
           signature: "abc123signature"
@@ -102,7 +102,7 @@ tests:
         - json_contains:
             datacontenttype: "application/json"
             subject: "did:nft:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_12"  
-            source: "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
             specversion: "1.0"
             time: "2024-10-22T15:30:00Z"
             type: "dimo.status"  

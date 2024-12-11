@@ -32,13 +32,13 @@ pipeline:
     # If label name change, update the alerts
     - label: "convert_cloudevent"
       switch:
-        - check: 'metadata("dimo_cloudevent_source") == "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"'
+        - check: 'metadata("dimo_cloudevent_source") == "0xF26421509Efe92861a587482100c6d728aBf1CD0"'
           processors:
             - label: convert_cloudevent_ruptela
               dimo_cloudevent_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
-        - check: 'metadata("dimo_cloudevent_source") == "0x762Fd53c4973075a6fC0d17237BC65E183299980"'
+        - check: 'metadata("dimo_cloudevent_source") == "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"'
           processors:
             - label: convert_cloudevent_autopi
               dimo_cloudevent_convert:
@@ -50,7 +50,7 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: sample
                 module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
-        - check: 'metadata("dimo_cloudevent_source") == "0x354574EC2cC27A29410df751e43723B1bC362Ce4"'
+        - check: 'metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_cloudevent_tesla
               dimo_cloudevent_convert:
@@ -88,13 +88,13 @@ pipeline:
         - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
           processors:
             - resource: "dimo_partial_index_count"
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xF26421509Efe92861a587482100c6d728aBf1CD0"'
           processors:
             - label: convert_signals_ruptela
               dimo_signal_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x762Fd53c4973075a6fC0d17237BC65E183299980"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"'
           processors:
             - label: convert_signals_autopi
               dimo_signal_convert:
@@ -106,7 +106,7 @@ pipeline:
               dimo_signal_convert:
                 module_name: sample
                 module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x354574EC2cC27A29410df751e43723B1bC362Ce4"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_signals_tesla
               dimo_signal_convert:
