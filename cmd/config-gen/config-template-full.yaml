@@ -105,91 +105,98 @@ pipeline:
       - mapping: root = deleted()
 
 output:
-  label: "all_outputs"
-  switch:
-    retry_until_success: true
-    strict_mode: true
-    cases:
-      # Output for valid signals
-      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_signal"'
-        output:
-          label: "insert_signal"
-          kafka:
-            addresses:
-              - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-            topic: '${KAFKA_SIGNALS_TOPIC:topic.dis.signal}'
-            client_id: ${CONTAINER_NAME:localhost}-dis-output
-            target_version: 2.8.1
-            # key: '${! meta("kafka_key") }' 
-            partitioner: murmur2_hash
-            compression: '${KAFKA_COMPRESSION:none}'
-            max_in_flight: 100000
-            ack_replicas: false
-            max_msg_bytes: 52428800
-            timeout: 5s
-            batching:
-              count: 0
-              byte_size: 0
-              period: 10ms
-            max_retries: 5
-            backoff:
-              initial_interval: 200ms
-              max_interval: 1s
-              max_elapsed_time: 30s
-      # Output for valid cloudevents
-      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-        output:
-          label: "insert_valid_cloudevent"
-          kafka:
-            addresses:
-              - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-            topic: '${KAFKA_VALID_CE_TOPIC:topic.valid.cloudevent}'
-            client_id: ${CONTAINER_NAME:localhost}-dis-output
-            target_version: 2.8.1
-            # key: '${! meta("kafka_key") }' 
-            partitioner: murmur2_hash
-            compression: '${KAFKA_COMPRESSION:none}'
-            max_in_flight: 100000
-            ack_replicas: false
-            max_msg_bytes: 52428800
-            timeout: 5s
-            batching:
-              count: 0
-              byte_size: 0
-              period: 10ms
-            max_retries: 5
-            backoff:
-              initial_interval: 200ms
-              max_interval: 1s
-              max_elapsed_time: 30s
+  fallback:
+    - label: "all_outputs"
+      switch:
+        retry_until_success: true
+        strict_mode: true
+        cases:
+          # Output for valid signals
+          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_signal"'
+            output:
+              label: "insert_signal"
+              kafka:
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                topic: '${KAFKA_SIGNALS_TOPIC:topic.dis.signal}'
+                client_id: ${CONTAINER_NAME:localhost}-dis-output
+                target_version: 2.8.1
+                # key: '${! meta("kafka_key") }'
+                partitioner: murmur2_hash
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_in_flight: 100000
+                ack_replicas: false
+                max_msg_bytes: 52428800
+                timeout: 5s
+                batching:
+                  count: 0
+                  byte_size: 0
+                  period: 10ms
+                max_retries: 5
+                backoff:
+                  initial_interval: 200ms
+                  max_interval: 1s
+                  max_elapsed_time: 30s
+          # Output for valid cloudevents
+          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
+            output:
+              label: "insert_valid_cloudevent"
+              kafka:
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                topic: '${KAFKA_VALID_CE_TOPIC:topic.valid.cloudevent}'
+                client_id: ${CONTAINER_NAME:localhost}-dis-output
+                target_version: 2.8.1
+                # key: '${! meta("kafka_key") }'
+                partitioner: murmur2_hash
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_in_flight: 100000
+                ack_replicas: false
+                max_msg_bytes: 52428800
+                timeout: 5s
+                batching:
+                  count: 0
+                  byte_size: 0
+                  period: 10ms
+                max_retries: 5
+                backoff:
+                  initial_interval: 200ms
+                  max_interval: 1s
+                  max_elapsed_time: 30s
 
-      # Output for partial cloudevents
-      - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-        output:
-          label: "insert_partial_cloudevent"
-          kafka:
-            addresses:
-              - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-            topic: '${KAFKA_PARTIAL_CE_TOPIC:topic.partial.cloudevent}'
-            client_id: ${CONTAINER_NAME:localhost}-dis-output
-            target_version: 2.8.1
-            # key: '${! meta("kafka_key") }' 
-            partitioner: murmur2_hash
-            compression: '${KAFKA_COMPRESSION:none}'
-            max_in_flight: 100000
-            ack_replicas: false
-            max_msg_bytes: 52428800
-            timeout: 5s
-            batching:
-              count: 0
-              byte_size: 0
-              period: 10ms
-            max_retries: 5
-            backoff:
-              initial_interval: 200ms
-              max_interval: 1s
-              max_elapsed_time: 30s
-      - check: ''
-        output:
-          label: "drop_message"
-          drop: {}
+          # Output for partial cloudevents
+          - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
+            output:
+              label: "insert_partial_cloudevent"
+              kafka:
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                topic: '${KAFKA_PARTIAL_CE_TOPIC:topic.partial.cloudevent}'
+                client_id: ${CONTAINER_NAME:localhost}-dis-output
+                target_version: 2.8.1
+                # key: '${! meta("kafka_key") }'
+                partitioner: murmur2_hash
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_in_flight: 100000
+                ack_replicas: false
+                max_msg_bytes: 52428800
+                timeout: 5s
+                batching:
+                  count: 0
+                  byte_size: 0
+                  period: 10ms
+                max_retries: 5
+                backoff:
+                  initial_interval: 200ms
+                  max_interval: 1s
+                  max_elapsed_time: 30s
+          - check: ''
+            output:
+              label: "drop_message"
+              drop: {}
+    - label: "error_output"
+      drop: { }
+      processors:
+        - mutation: |
+            meta response_message = "failed send message to kafka: " + error()
+        - resource: "dimo_internal_error_sync_response"
