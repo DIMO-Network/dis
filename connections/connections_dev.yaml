@@ -1,5 +1,5 @@
 connections:
-  - connectionId: "0x5a87788D90f0ded17A35E4BDaCb47f1993021630"
+  - connectionId: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
     moduleName: "ruptela"
     connectionName: "Ruptela"
     moduleConfig: |
@@ -8,7 +8,7 @@ connections:
         "aftermarket_contract_addr": "0x325b45949C833986bC98e98a49F3CA5C5c4643B5",
         "vehicle_contract_addr": "0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8"
       }
-  - connectionId: "0x762Fd53c4973075a6fC0d17237BC65E183299980"
+  - connectionId: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
     moduleName: "autopi"
     connectionName: "AutoPi"
     moduleConfig: |
@@ -24,7 +24,7 @@ connections:
       {
         "device_api_url": "http://devices-api-dev:8086"
       }
-  - connectionId: "0x354574EC2cC27A29410df751e43723B1bC362Ce4"
+  - connectionId: "0xc4035Fecb1cc906130423EF05f9C20977F643722"
     connectionName: "Tesla"
     moduleName: "tesla"
     moduleConfig: |
