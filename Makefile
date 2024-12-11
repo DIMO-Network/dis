@@ -52,7 +52,7 @@ install: build
 	@rm -f $(INSTALL_DIR)/benthos
 	@cp bin/* $(INSTALL_DIR)/
 
-dep: 
+dep:
 	@go mod tidy
 
 test: test-go test-benthos test-prometheus-alerts test-prometheus-rules ## Run all tests
@@ -61,7 +61,6 @@ test-go: ## Run Go tests
 	@go test ./...
 
 test-benthos: build ## Run Benthos tests
-	S3_CLOUDEVENT_BUCKET="status" S3_EPHEMERAL_BUCKET="status_tmp" \
 	dis test --log debug -r ./charts/dis/files/resources.yaml ./tests/benthos/...
 
 test-prometheus-prepare: ## Prepare Prometheus alert files for testing
@@ -76,11 +75,9 @@ test-prometheus-rules: test-prometheus-prepare ## Run Prometheus rules tests
 
 lint-benthos: build  ## Run Benthos linter
 	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_SIGNAL_DATABASE="" CLICKHOUSE_INDEX_DATABASE=""  CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
-		S3_AWS_ACCESS_KEY_ID="" S3_AWS_SECRET_ACCESS_KEY="" S3_CLOUDEVENT_BUCKET="" S3_EPHEMERAL_BUCKET="" \
 	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams_dev/*
 
 	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_SIGNAL_DATABASE="" CLICKHOUSE_INDEX_DATABASE=""  CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
-	S3_AWS_ACCESS_KEY_ID="" S3_AWS_SECRET_ACCESS_KEY="" S3_CLOUDEVENT_BUCKET="" S3_EPHEMERAL_BUCKET="" \
 	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams_prod/*
 
 lint: lint-benthos ## Run linter for benthos config and go code
@@ -114,7 +111,7 @@ tools-mockgen: ## install mockgen tool
 tools: tools-golangci-lint tools-mockgen tools-prometheus## Install all tools
 
 config-gen: ## Generate Benthos config files
-	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev 
+	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev
 
 generate: config-gen ## Run all generate commands
 	@go generate ./...
