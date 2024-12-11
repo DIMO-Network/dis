@@ -7,6 +7,8 @@ podAnnotations:
 env:
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
+  KAFKA_BOOTSTRAP_SERVERS: kafka-prod-dimo-kafka-kafka-bootstrap
+
 ingress:
   enabled: true
   className: nginx-direct
