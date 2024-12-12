@@ -7,8 +7,8 @@ podAnnotations:
 env:
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
-  KAFKA_BOOTSTRAP_SERVERS: kafka-prod-dimo-kafka-kafka-bootstrap
-
+  S3_CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-prod
+  S3_EPHEMERAL_BUCKET: dimo-ingest-ephemeral-prod
 ingress:
   enabled: true
   className: nginx-direct
@@ -43,4 +43,4 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 image:
   pullPolicy: IfNotPresent
-  tag: 0.0.17
+  tag: 0.0.18
