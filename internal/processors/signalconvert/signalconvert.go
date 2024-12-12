@@ -73,9 +73,8 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		}
 
 		for i := range signals {
-			sigVals := vss.SignalToSlice(signals[i])
 			msgCpy := msg.Copy()
-			msgCpy.SetStructured(sigVals)
+			msgCpy.SetStructured(signals[i])
 			msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
 			retBatch = append(retBatch, msgCpy)
 		}
