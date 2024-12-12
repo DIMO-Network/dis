@@ -124,7 +124,7 @@ output:
                 # key: '${! meta("kafka_key") }'
                 partitioner: murmur2_hash
                 compression: '${KAFKA_COMPRESSION:none}'
-                max_in_flight: 100000
+                max_in_flight: 20
                 ack_replicas: false
                 max_msg_bytes: 52428800
                 timeout: 5s
@@ -150,7 +150,7 @@ output:
                 # key: '${! meta("kafka_key") }'
                 partitioner: murmur2_hash
                 compression: '${KAFKA_COMPRESSION:none}'
-                max_in_flight: 100000
+                max_in_flight: 20
                 ack_replicas: false
                 max_msg_bytes: 52428800
                 timeout: 5s
@@ -177,7 +177,7 @@ output:
                 # key: '${! meta("kafka_key") }'
                 partitioner: murmur2_hash
                 compression: '${KAFKA_COMPRESSION:none}'
-                max_in_flight: 100000
+                max_in_flight: 20
                 ack_replicas: false
                 max_msg_bytes: 52428800
                 timeout: 5s
