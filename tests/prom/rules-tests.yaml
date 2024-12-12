@@ -54,36 +54,3 @@ tests:
             exp_annotations:
               summary: "High failure rate for convert cloud events detected"
               description: "The error rate for converting cloud events has exceeded 10% in the last 5 minutes."
-
-  # Test for NoDataSentS3 alert
-  - interval: 6m
-    input_series:
-      - series: 'output_batch_sent{namespace="dev", container="dis", label="insert_valid_cloudevent_clickhouse"}'
-        values: '35 35 35 35 35 35 35' # 30m of no data
-    alert_rule_test:
-      - eval_time: 60m
-        alertname: NoDataSentS3
-        exp_alerts:
-          - exp_labels:
-              severity: critical
-              namespace: dev
-            exp_annotations:
-              summary: "No data sent to S3 in the last 30 minutes"
-              description: "Please check dis service and networking."    
-
-  # Test for NoDataSentClickhouse alert
-  - interval: 6m
-    input_series:
-      - series: 'output_batch_sent{namespace="dev", container="dis", label="insert_signal_clickhouse"}'
-        values: '35 35 35 35 35 35 35'  # 30m of no data
-    alert_rule_test:
-      - eval_time: 60m
-        alertname: NoDataSentClickhouse
-        exp_alerts:
-          - exp_labels:
-              severity: critical
-              namespace: dev
-            exp_annotations:
-              summary: "No data sent to Clickhouse in the last 30 minutes"
-              description: "Please check dis service and networking."
-

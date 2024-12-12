@@ -105,163 +105,98 @@ pipeline:
       - mapping: root = deleted()
 
 output:
-  label: "all_outputs"
-  switch:
-    retry_until_success: true
-    strict_mode: true
-    cases:
-      # Output for valid signals
-      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_signal"'
-        output:
-          label: "insert_signal"
-          fallback:
-            - label: "insert_signal_clickhouse"
-              sql_insert:
-                driver: clickhouse
-                dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_SIGNAL_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&max_execution_time=600
-                table: signal
-                columns: []
-                args_mapping: root = this
-                batching:
-                  count: 10000
-                  byte_size: 0
-                  period: "10ms"
-                  check: ""
-            # Drop the message, log, record metrics and send 500 response
-            - label: "insert_signal_clickhouse_failure"
-              drop: {}
-              processors:
-                -  mutation: |
-                    meta dimo_component = "insert_signal_clickhouse"
-                    meta response_message = "failed to store converted signals, please try again later"
-                - resource: "handle_db_error"
-      # Output for valid cloudevents
-      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-        output:
-          label: "insert_valid_cloudevent"
-          fallback:
-            - broker:
-                pattern: fan_out_sequential_fail_fast
-                outputs:
-                  - fallback:
-                    - label: "insert_valid_cloudevent_s3"
-                      aws_s3:
-                        bucket: ${S3_CLOUDEVENT_BUCKET}
-                        path: ${!meta("dimo_cloudevent_index")}
-                        content_type: application/json
-                        region: us-east-2
-                        max_in_flight: 250
-                        timeout: 30s
-                        credentials:
-                          id: ${S3_AWS_ACCESS_KEY_ID}
-                          secret: ${S3_AWS_SECRET_ACCESS_KEY}
-                    # reject the message, log, record metrics and send 500 response
-                    # reject instead of drop to avoid attempting CH index insert with no backing obj
-                    - label: 'insert_valid_cloudevent_s3_failure'
-                      reject: '${!metadata("fallback_error").or("failed to store converted cloudevent")}'
-                      processors:
-                        -  mutation: |
-                            meta dimo_component = "insert_valid_cloudevent_s3"
-                            meta response_message = "failed to store converted cloudevent, please try again later"
-                        - resource: "handle_db_error"
-
-                  - fallback:
-                    - label: "insert_valid_cloudevent_clickhouse"
-                      sql_insert:
-                        driver: clickhouse
-                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
-                        table: name_index
-                        columns: []
-                        args_mapping: root = this
-                        batching:
-                          count: 100000
-                          byte_size: 0
-                          period: "1s"
-                          check: ""
-                      processors:
-                        - label: "split_values_valid"
-                          dimo_split_values: {}
-                        - catch:
-                          -  mutation: |
-                              meta dimo_component = "split_values_valid"
-                              meta response_message = "failed to store converted cloudevent, please try again later"
-                          - resource: "handle_db_error"
-                          - mapping: root = deleted()
-
-                    # Drop the message, log, record metrics and send 500 response
-                    - label: 'insert_valid_cloudevent_clickhouse_failure'
-                      drop: {}
-                      processors:
-                        -  mutation: |
-                            meta dimo_component = "insert_valid_cloudevent_clickhouse"
-                            meta response_message = "failed to store converted cloudevent, please try again later"
-                        - resource: "handle_db_error"
-            - drop: {}
-
-      # Output for partial cloudevents
-      - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-        output:
-          label: "insert_partial_cloudevent"
-          drop_on:
-            error: true
+  fallback:
+    - label: "all_outputs"
+      switch:
+        retry_until_success: true
+        strict_mode: true
+        cases:
+          # Output for valid signals
+          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_signal"'
             output:
-              broker:
-                pattern: fan_out_sequential_fail_fast
-                outputs:
-                  - fallback:
-                    - label: "insert_partial_cloudevent_s3"
-                      aws_s3:
-                        bucket: ${S3_EPHEMERAL_BUCKET}
-                        path: ${!meta("dimo_cloudevent_index")}
-                        content_type: application/json
-                        region: us-east-2
-                        max_in_flight: 250
-                        timeout: 30s
-                        credentials:
-                          id: ${S3_AWS_ACCESS_KEY_ID}
-                          secret: ${S3_AWS_SECRET_ACCESS_KEY}
-                    # reject the message, log, record metrics and send 500 response
-                    # reject instead of drop to avoid attempting CH index insert with no backing obj
-                    - label: 'insert_partial_cloudevent_s3_failure'
-                      reject: '${!metadata("fallback_error").or("failed to store converted cloudevent")}'
-                      processors:
-                        -  mutation: |
-                            meta dimo_component = "insert_partial_cloudevent_s3"
-                            meta response_message = "failed to store converted cloudevent"
-                        - resource: "handle_db_error"
+              label: "send_signal"
+              kafka:
+                ack_replicas: false
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                backoff:
+                  initial_interval: 1s
+                  max_elapsed_time: 30s
+                  max_interval: 5s
+                client_id: ${CONTAINER_NAME:localhost}-signal-output
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_msg_bytes: 52428800
+                max_retries: 2
+                max_in_flight: 20
+                key: ${!metadata("subject")} #check if this is still needed
+                partitioner: murmur2_hash
+                batching:
+                  count: 0
+                  byte_size: 0
+                  period: 100ms
+                target_version: 2.5.0
+                timeout: 5s
+                topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
+          # Output for valid cloudevents
+          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
+            output:
+              label: "send_valid_cloudevent"
+              kafka:
+                ack_replicas: false
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                backoff:
+                  initial_interval: 1s
+                  max_elapsed_time: 30s
+                  max_interval: 5s
+                client_id: ${CONTAINER_NAME:localhost}-valid-output
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_msg_bytes: 52428800
+                max_retries: 2
+                max_in_flight: 20
+                key: ${!metadata("subject")} #check if this is still needed
+                partitioner: murmur2_hash
+                batching:
+                  count: 0
+                  byte_size: 0
+                  period: 100ms
+                target_version: 2.5.0
+                timeout: 5s
+                topic: '${KAFKA_VALID_CE_TOPIC:topic.device.validcloudevents}'
 
-                  - fallback:
-                    - label: "insert_partial_cloudevent_clickhouse"
-                      sql_insert:
-                        driver: clickhouse
-                        dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_INDEX_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=true&dial_timeout=5s&max_execution_time=300
-                        table: name_index
-                        columns: []
-                        args_mapping: root = this
-                        batching:
-                          count: 100000
-                          byte_size: 0
-                          period: "1s"
-                          check: ""
-                      processors:
-                        - label: "split_values_partial"
-                          dimo_split_values: {}
-                        - catch:
-                          -  mutation: |
-                              meta dimo_component = "split_values_partial"
-                              meta response_message = "failed to store converted cloudevent, please try again later"
-                          - resource: "handle_db_error"
-                          - mapping: root = deleted()
-
-                    # Drop the message, log, record metrics and send 500 response
-                    - label: 'insert_partial_cloudevent_clickhouse_failure'
-                      drop: {}
-                      processors:
-                        -  mutation: |
-                            meta dimo_component = "insert_partial_cloudevent_clickhouse"
-                            meta response_message = "failed to store converted cloudevent"
-                        - resource: "handle_db_error"
-      - check: ''
-        output:
-          label: "drop_message"
-          drop: {}
+          # Output for partial cloudevents
+          - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
+            output:
+              label: "send_partial_cloudevent"
+              kafka:
+                ack_replicas: false
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                backoff:
+                  initial_interval: 1s
+                  max_elapsed_time: 30s
+                  max_interval: 5s
+                client_id: ${CONTAINER_NAME:localhost}-partial-output
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_msg_bytes: 52428800
+                max_retries: 2
+                max_in_flight: 20
+                key: ${!metadata("subject")} #check if this is still needed
+                partitioner: murmur2_hash
+                batching:
+                  count: 0
+                  byte_size: 0
+                  period: 100ms
+                target_version: 2.5.0
+                timeout: 5s
+                topic: '${KAFKA_PARTIAL_CE_TOPIC:topic.device.partialcloudevents}'
+          - check: ''
+            output:
+              label: "drop_message"
+              drop: {}
+    - label: "error_output"
+      drop: { }
+      processors:
+        - mutation: |
+            meta response_message = "failed send message to kafka: " + error()
+        - resource: "dimo_internal_error_sync_response"
