@@ -35,10 +35,9 @@ env:
   CLICKHOUSE_PORT: 9440
   CLICKHOUSE_SIGNAL_DATABASE: dimo
   CLICKHOUSE_INDEX_DATABASE: file_index
+  S3_CLOUDEVENT_BUCKET: dimo-ingest-cloudevent-dev
+  S3_EPHEMERAL_BUCKET: dimo-ingest-ephemeral-dev
   DEVICES_APIGRPC_ADDR: devices-api-dev:8086
-  KAFKA_SIGNALS_TOPIC: topic.device.signals
-  KAFKA_VALID_CE_TOPIC: topic.device.validcloudevents
-  KAFKA_PARTIAL_CE_TOPIC: topic.device.partialcloudevents
   LOG_LEVEL: INFO
 service:
   type: ClusterIP
