@@ -8,15 +8,15 @@ connections:
         "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
         "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
       }
-  # - connectionId: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
-  #   moduleName: "autopi"
-  #   connectionName: "AutoPi"
-  #   moduleConfig: |
-  #     {
-  #       "chain_id": 137,
-  #       "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
-  #       "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
-  #     }
+  - connectionId: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
+    moduleName: "autopi"
+    connectionName: "AutoPi"
+    moduleConfig: |
+      {
+        "chain_id": 137,
+        "aftermarket_contract_addr": "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
+        "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      }
   - connectionId: "0xc4035Fecb1cc906130423EF05f9C20977F643722"
     connectionName: "Tesla"
     moduleName: "tesla"
