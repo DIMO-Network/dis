@@ -38,6 +38,12 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: ruptela
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
+        - check: 'metadata("dimo_cloudevent_source") == "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"'
+          processors:
+            - label: convert_cloudevent_autopi
+              dimo_cloudevent_convert:
+                module_name: autopi
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
         - check: 'metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_cloudevent_tesla
@@ -81,6 +87,12 @@ pipeline:
             - label: convert_signals_ruptela
               dimo_signal_convert:
                 module_name: ruptela
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"'
+          processors:
+            - label: convert_signals_autopi
+              dimo_signal_convert:
+                module_name: autopi
                 module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAiYWZ0ZXJtYXJrZXRfY29udHJhY3RfYWRkciI6ICIweDljOTRDMzk1Y0JjQkRlNjYyMjM1RTBBOWQzYkI4N0FkNzA4NTYxQkEiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
