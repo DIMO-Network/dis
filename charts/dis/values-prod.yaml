@@ -29,11 +29,11 @@ certificate:
   caConfigMap: cae-prod-dimo-ca-certs
 resources:
   limits:
-    cpu: 7000m
-    memory: 4000Mi
+    cpu: 2000m
+    memory: 500Mi
   requests:
-    cpu: 7000m
-    memory: 4000Mi
+    cpu: 2000m
+    memory: 500Mi
 autoscaling:
   enabled: false
   minReplicas: 1
