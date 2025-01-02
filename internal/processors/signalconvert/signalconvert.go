@@ -19,6 +19,11 @@ const (
 	pruneSignalName        = "___prune"
 )
 
+var (
+	errLatLongMismatch = errors.New("latitude and longitude mismatch")
+	errFutureTimestamp = errors.New("future timestamp")
+)
+
 type SignalModule interface {
 	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
 }
@@ -105,7 +110,7 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	latLongPairs := map[int64]LatLngIdx{}
 	for i, signal := range signals {
 		if signal.Timestamp.After(now) {
-			errors.Join(errs, fmt.Errorf("signal %s has a future timestamp %s", signal.Name, signal.Timestamp))
+			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
 			signals[i] = pruneSignal
 			continue
 		}
@@ -123,11 +128,12 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	for _, latLng := range latLongPairs {
 		// check if one of the lat or long is missing
 		if latLng.Latitude == nil && latLng.Longitude != nil {
-			errors.Join(errs, fmt.Errorf("longitude at time %v is misssing matching latitude", signals[*latLng.Longitude].Timestamp))
+			// send errLatLongMismatch if one of the lat or long is missing
+			errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
 			signals[*latLng.Longitude] = pruneSignal
 		}
 		if latLng.Latitude != nil && latLng.Longitude == nil {
-			errors.Join(errs, fmt.Errorf("latitude at time %v is misssing matching longitude", signals[*latLng.Latitude].Timestamp))
+			errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
 			signals[*latLng.Latitude] = pruneSignal
 		}
 	}
