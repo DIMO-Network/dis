@@ -21,6 +21,7 @@ import (
 type MockCloudEventModule struct {
 	ctrl     *gomock.Controller
 	recorder *MockCloudEventModuleMockRecorder
+	isgomock struct{}
 }
 
 // MockCloudEventModuleMockRecorder is the mock recorder for MockCloudEventModule.
