@@ -1,6 +1,6 @@
-# dis
+# DIS
 
-dis (DIMO Ingest Server) is a server that recieves data from data providers and stores the various data.
+DIS (DIMO Ingest Server) is a server that recieves data from data providers and stores the various data.
 
 ## Provider Authentication
 
@@ -12,12 +12,6 @@ Based on the client certificate CN, the server will determine the provider and t
 
 Each provider should be added to the `connections/` files(dev and prod).
 **connectionID** is the CN of the client certificate that the provider will use to authenticate with the server and at the same time it is 0x address of the provider.
-
-### Aftermarket Provider
-
-**chain_id** is the chain id of the provider. This is the chain id of the blockchain that the provider is using.
-
-**aftermarket_contract_addr** and **vehicle_contract_addr** should be the same for all aftermarket devices.
 
 ## Generate Benthos config
 
@@ -33,4 +27,25 @@ make generate
 ```shell
 make build
 make docker
+```
+
+Use `make help` to see all options.
+``` 
+> make help
+Specify a subcommand:
+
+  build-all            Build target for all supported GOOS and GOARCH
+  test                 Run all tests
+  test-go              Run Go tests
+  test-benthos         Run Benthos tests
+  test-prometheus-prepare Prepare Prometheus alert files for testing
+  test-prometheus-alerts Check Prometheus alert rules
+  test-prometheus-rules Run Prometheus rules tests
+  lint-benthos         Run Benthos linter
+  lint                 Run linter for benthos config and go code
+  tools-prometheus     Install Prometheus and promtool
+  tools-mockgen        install mockgen tool
+  tools                Install all tools
+  config-gen           Generate Benthos config files
+  generate             Run all generate commands
 ```
