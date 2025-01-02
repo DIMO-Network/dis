@@ -1,9 +1,9 @@
 
 .PHONY: clean run build install dep test lint format docker test-benthos tools-golangci-lint config-gen generate
 
+SHELL := /bin/sh
 PATHINSTBIN = $(abspath ./bin)
 export PATH := $(PATHINSTBIN):$(PATH)
-SHELL := env PATH=$(PATH) $(SHELL)
 
 BIN_NAME					?= dis
 DEFAULT_INSTALL_DIR			:= $(go env GOPATH)/bin

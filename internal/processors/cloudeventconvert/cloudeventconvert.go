@@ -109,10 +109,16 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
 	messages := make([]*service.Message, len(hdrs))
 	allValues := make([][]any, len(hdrs))
-
+	now := time.Now()
 	var encodedIndex string
 	// First set defaults and calculate indices for all headers
 	for i := range hdrs {
+		if now.Before(hdrs[i].Time) {
+			errMsg := origMsg.Copy()
+			errMsg.SetError(fmt.Errorf("cloud event time is in the future"))
+			messages[i] = errMsg
+			continue
+		}
 		newMsg := origMsg.Copy()
 		setDefaults(&hdrs[i], source)
 
@@ -136,9 +142,14 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 		messages[i] = newMsg
 	}
 
-	// Add index and values to the first message only so we do not get duplicate s3 objects
-	messages[0].MetaSetMut(cloudEventIndexKey, encodedIndex)
-	messages[0].MetaSetMut(CloudEventIndexValueKey, allValues)
+	// Add index and values to the first message without an error only so we do not get duplicate s3 objects
+	for i := range messages {
+		if messages[i].GetError() == nil {
+			messages[i].MetaSetMut(cloudEventIndexKey, encodedIndex)
+			messages[i].MetaSetMut(CloudEventIndexValueKey, allValues)
+			break
+		}
+	}
 
 	return messages, nil
 }

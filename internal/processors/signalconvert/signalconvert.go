@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/dis/internal/processors"
@@ -14,6 +16,12 @@ import (
 
 const (
 	signalValidContentType = "dimo_valid_signal"
+	pruneSignalName        = "___prune"
+)
+
+var (
+	errLatLongMismatch = errors.New("latitude and longitude mismatch")
+	errFutureTimestamp = errors.New("future timestamp")
 )
 
 type SignalModule interface {
@@ -71,6 +79,11 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 			}
 			retBatch = append(retBatch, errMsg)
 		}
+		signals, err = pruneSignals(signals)
+		if err != nil {
+			errMsg.SetError(err)
+			retBatch = append(retBatch, errMsg)
+		}
 
 		for i := range signals {
 			msgCpy := msg.Copy()
@@ -81,4 +94,54 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		retBatches = append(retBatches, retBatch)
 	}
 	return retBatches, nil
+}
+
+type LatLngIdx struct {
+	Latitude  *int `json:"latitude"`
+	Longitude *int `json:"longitude"`
+}
+
+// pruneSignals removes signals that are not valid and returns an error for each invalid signal.
+func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
+	now := time.Now()
+	var errs error
+	pruneSignal := vss.Signal{Name: pruneSignalName}
+	latLongPairs := map[int64]LatLngIdx{}
+	for i, signal := range signals {
+		if signal.Timestamp.After(now) {
+			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
+			signals[i] = pruneSignal
+			continue
+		}
+		timeInMilli := signal.Timestamp.UnixMilli()
+		if signal.Name == vss.FieldCurrentLocationLatitude {
+			latLng := latLongPairs[timeInMilli]
+			latLng.Latitude = &i
+			latLongPairs[timeInMilli] = latLng
+		} else if signal.Name == vss.FieldCurrentLocationLongitude {
+			latLng := latLongPairs[timeInMilli]
+			latLng.Longitude = &i
+			latLongPairs[timeInMilli] = latLng
+		}
+	}
+	for _, latLng := range latLongPairs {
+		// check if one of the lat or long is missing
+		if latLng.Latitude == nil && latLng.Longitude != nil {
+			// send errLatLongMismatch if one of the lat or long is missing
+			errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
+			signals[*latLng.Longitude] = pruneSignal
+		}
+		if latLng.Latitude != nil && latLng.Longitude == nil {
+			errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
+			signals[*latLng.Latitude] = pruneSignal
+		}
+	}
+	// remove all the pruned signals
+	var prunedSignals []vss.Signal
+	for _, signal := range signals {
+		if signal.Name != pruneSignalName {
+			prunedSignals = append(prunedSignals, signal)
+		}
+	}
+	return prunedSignals, errs
 }

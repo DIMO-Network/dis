@@ -62,6 +62,24 @@ func TestProcessBatch(t *testing.T) {
 			},
 		},
 		{
+			name:      "Future timestamp error",
+			inputData: []byte(`{"test": "data"}`),
+			sourceID:  common.HexToAddress("0x").String(),
+			setupMock: func(m *MockCloudEventModule) {
+				event := cloudevent.CloudEventHeader{
+					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
+					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
+					Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+					Time:     time.Now().Add(time.Hour),
+				}
+				data := json.RawMessage(`{"key": "value"}`)
+
+				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]cloudevent.CloudEventHeader{event}, data, nil)
+			},
+			msgLen:        1,
+			expectedError: true,
+		},
+		{
 			name:      "missing source ID",
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "", // Empty source
