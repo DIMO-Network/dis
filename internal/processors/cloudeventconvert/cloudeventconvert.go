@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
@@ -12,7 +13,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer"
-	chindexer "github.com/DIMO-Network/nameindexer/pkg/clickhouse"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
@@ -107,13 +108,18 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 }
 
 func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
+	if len(hdrs) == 0 {
+		return nil, fmt.Errorf("no cloud events headers returned")
+	}
 	messages := make([]*service.Message, len(hdrs))
-	allValues := make([][]any, len(hdrs))
 	now := time.Now()
-	var encodedIndex string
+
+	objectKey := nameindexer.CloudEventToIndexKey(&hdrs[0])
 	// First set defaults and calculate indices for all headers
 	for i := range hdrs {
 		if now.Before(hdrs[i].Time) {
+			// remove invalid headers and create error messages
+			hdrs = slices.Delete(hdrs, i, i+1)
 			errMsg := origMsg.Copy()
 			errMsg.SetError(fmt.Errorf("cloud event time is in the future"))
 			messages[i] = errMsg
@@ -121,18 +127,7 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 		}
 		newMsg := origMsg.Copy()
 		setDefaults(&hdrs[i], source)
-
-		index, valid := getCloudEventIndex(&hdrs[i])
-		if encodedIndex == "" {
-			var err error
-			encodedIndex, err = nameindexer.EncodeIndex(&index)
-			if err != nil {
-				return nil, fmt.Errorf("failed to encode index: %w", err)
-			}
-		}
-		allValues[i] = chindexer.IndexToSliceWithKey(&index, encodedIndex)
-
-		setMetaData(&hdrs[i], newMsg, valid)
+		setMetaData(&hdrs[i], newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: hdrs[i],
@@ -145,8 +140,8 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 	// Add index and values to the first message without an error only so we do not get duplicate s3 objects
 	for i := range messages {
 		if messages[i].GetError() == nil {
-			messages[i].MetaSetMut(cloudEventIndexKey, encodedIndex)
-			messages[i].MetaSetMut(CloudEventIndexValueKey, allValues)
+			messages[i].MetaSetMut(cloudEventIndexKey, objectKey)
+			messages[i].MetaSetMut(CloudEventIndexValueKey, hdrs)
 			break
 		}
 	}
@@ -164,9 +159,9 @@ func setDefaults(event *cloudevent.CloudEventHeader, source string) {
 	}
 }
 
-func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message, valid bool) {
+func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	contentType := cloudEventValidContentType
-	if !valid {
+	if !isValidCloudEventHeader(hdr) {
 		contentType = cloudEventPartialContentType
 	}
 
@@ -177,13 +172,15 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message, valid b
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
 }
 
-// getCloudEventIndex attempts to convert the cloud event headers to a cloud index if the headers are not in the expected format it will create a partial index.
-func getCloudEventIndex(eventHdr *cloudevent.CloudEventHeader) (nameindexer.Index, bool) {
-	index, err := nameindexer.CloudEventToIndex(eventHdr)
-	if err != nil {
-		// if the cloud event headers do not match our specific format we will try to create a partial index
-		return nameindexer.CloudEventToPartialIndex(eventHdr), false
+func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
+	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
+		return false
 	}
-
-	return index, true
+	if _, err := cloudevent.DecodeNFTDID(eventHdr.Producer); err != nil {
+		return false
+	}
+	if !common.IsHexAddress(eventHdr.Source) {
+		return false
+	}
+	return true
 }
