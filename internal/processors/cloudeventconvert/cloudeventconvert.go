@@ -113,9 +113,8 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 	}
 	messages := make([]*service.Message, len(hdrs))
 	now := time.Now()
-
-	objectKey := nameindexer.CloudEventToIndexKey(&hdrs[0])
-	// First set defaults and calculate indices for all headers
+	defaultID := ksuid.New().String()
+	// set defaults and metadata for each header, then create a message for each header
 	for i := range hdrs {
 		if now.Before(hdrs[i].Time) {
 			// remove invalid headers and create error messages
@@ -126,7 +125,7 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 			continue
 		}
 		newMsg := origMsg.Copy()
-		setDefaults(&hdrs[i], source)
+		setDefaults(&hdrs[i], source, defaultID)
 		setMetaData(&hdrs[i], newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
@@ -137,9 +136,10 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 		messages[i] = newMsg
 	}
 
-	// Add index and values to the first message without an error only so we do not get duplicate s3 objects
+	// Add index and values to the first message without an error only, so we do not get duplicate s3 objects
 	for i := range messages {
 		if messages[i].GetError() == nil {
+			objectKey := nameindexer.CloudEventToIndexKey(&hdrs[i])
 			messages[i].MetaSetMut(cloudEventIndexKey, objectKey)
 			messages[i].MetaSetMut(CloudEventIndexValueKey, hdrs)
 			break
@@ -149,13 +149,13 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 	return messages, nil
 }
 
-func setDefaults(event *cloudevent.CloudEventHeader, source string) {
+func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
 	event.Source = source
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
 	if event.ID == "" {
-		event.ID = ksuid.New().String()
+		event.ID = defaultID
 	}
 }
 
