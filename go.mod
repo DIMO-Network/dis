@@ -9,7 +9,7 @@ require (
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
 	github.com/DIMO-Network/devices-api v1.32.26
 	github.com/DIMO-Network/model-garage v0.4.5
-	github.com/DIMO-Network/nameindexer v0.0.13
+	github.com/DIMO-Network/nameindexer v0.0.14-0.20250102172234-5b6c47902928
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/redpanda-data/benthos/v4 v4.42.0
@@ -55,36 +55,36 @@ require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/aws/aws-lambda-go v1.47.0 // indirect
-	github.com/aws/aws-sdk-go-v2 v1.32.3 // indirect
-	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.6 // indirect
+	github.com/aws/aws-sdk-go-v2 v1.32.7 // indirect
+	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.7 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.28.1 // indirect
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.42 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue v1.14.10 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/dynamodb/expression v1.7.32 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.18 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.10 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.22 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.22 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.26 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.26 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.1 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.21 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/v4a v1.3.26 // indirect
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.40.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.34.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.22.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/firehose v1.32.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.0 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.4.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.4.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/endpoint-discovery v1.9.16 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.2 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.7 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.18.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/kinesis v1.29.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/lambda v1.56.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.65.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.71.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.31.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.34.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.32.3 // indirect
-	github.com/aws/smithy-go v1.22.0 // indirect
+	github.com/aws/smithy-go v1.22.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/btnguyen2k/consu/checksum v1.1.0 // indirect
 	github.com/btnguyen2k/consu/g18 v0.1.0 // indirect
@@ -178,7 +178,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/pressly/goose/v3 v3.23.0 // indirect
+	github.com/pressly/goose/v3 v3.24.0 // indirect
 	github.com/prometheus/client_golang v1.20.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
@@ -227,7 +227,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.31.0 // indirect
 	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
-	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/oauth2 v0.23.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect

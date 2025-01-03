@@ -37,7 +37,8 @@ func TestProcessBatch(t *testing.T) {
 			sourceID:  common.HexToAddress("0x").String(),
 			setupMock: func(m *MockCloudEventModule) {
 				event := cloudevent.CloudEventHeader{
-					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
+					ID:       "33",
+					Type:     cloudevent.TypeStatus,
 					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
 					Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 					Time:     timestamp,
@@ -51,13 +52,27 @@ func TestProcessBatch(t *testing.T) {
 			msgLen:        2,
 			expectedError: false,
 			expectedMeta: map[string]any{
-				cloudEventTypeKey:            fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
+				cloudEventTypeKey:            cloudevent.TypeStatus,
 				cloudEventProducerKey:        "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
 				cloudEventSubjectKey:         "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
-				CloudEventIndexValueKey: [][]any{{"000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002", timestamp, "MA",
-					"0000000000000000000000000000000000000000", "!!!!!!!!!!!!!!!!!!!!", "00", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001", "", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002799898000000MA0000000000000000000000000000000000000000!!!!!!!!!!!!!!!!!!!!00000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001",
-				}, {"000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002", timestamp, "ME", "0000000000000000000000000000000000000000", "!!!!!!!!!!!!!!!!!!!!", "00", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001", "", "000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000002799898000000MA0000000000000000000000000000000000000000!!!!!!!!!!!!!!!!!!!!00000000000000000106012c8cf97BEaD5deAe237070F9587f8E7A266d00000001"},
+				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
+					{
+						ID:       "33",
+						Source:   common.HexToAddress("0x").String(),
+						Type:     cloudevent.TypeStatus,
+						Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
+						Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+						Time:     timestamp,
+					},
+					{
+						ID:       "33",
+						Source:   common.HexToAddress("0x").String(),
+						Type:     cloudevent.TypeFingerprint,
+						Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
+						Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+						Time:     timestamp,
+					},
 				},
 			},
 		},
