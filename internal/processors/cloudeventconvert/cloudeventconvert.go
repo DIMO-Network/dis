@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"slices"
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
@@ -100,7 +99,7 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			eventData = msgBytes
 		}
 
-		retBatch, err := createEventMsgs(msg, source, hdrs, eventData)
+		retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 		if err != nil {
 			retBatches = processors.AppendError(retBatches, msg, err)
 			continue
@@ -111,7 +110,7 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 	return retBatches, nil
 }
 
-func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
+func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
 	if len(hdrs) == 0 {
 		return nil, fmt.Errorf("no cloud events headers returned")
 	}
@@ -121,12 +120,7 @@ func createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.
 	// set defaults and metadata for each header, then create a message for each header
 	for i := range hdrs {
 		if now.Before(hdrs[i].Time) {
-			// remove invalid headers and create error messages
-			hdrs = slices.Delete(hdrs, i, i+1)
-			errMsg := origMsg.Copy()
-			errMsg.SetError(fmt.Errorf("cloud event time is in the future"))
-			messages[i] = errMsg
-			continue
+			c.logger.Warnf("Cloud event time is in the future: now() = %s < %s \n %+v", now, hdrs[i].Time, hdrs[i])
 		}
 		newMsg := origMsg.Copy()
 		setDefaults(&hdrs[i], source, defaultID)
