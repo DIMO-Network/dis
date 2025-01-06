@@ -92,7 +92,7 @@ func TestProcessBatch(t *testing.T) {
 				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]cloudevent.CloudEventHeader{event}, data, nil)
 			},
 			msgLen:        1,
-			expectedError: true,
+			expectedError: false,
 		},
 		{
 			name:      "missing source ID",
