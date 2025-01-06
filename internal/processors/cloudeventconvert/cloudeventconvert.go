@@ -95,6 +95,10 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("no cloud events headers returned"))
 			continue
 		}
+		if len(eventData) == 0 {
+			// If the module chooses not to return data, use the original message will be used
+			eventData = msgBytes
+		}
 
 		retBatch, err := createEventMsgs(msg, source, hdrs, eventData)
 		if err != nil {
