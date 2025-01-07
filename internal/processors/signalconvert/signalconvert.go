@@ -128,12 +128,12 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 		// check if one of the lat or long is missing
 		if latLng.Latitude == nil && latLng.Longitude != nil {
 			// send errLatLongMismatch if one of the lat or long is missing
-			errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
-			signals[*latLng.Longitude] = pruneSignal
+			// errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
+			// signals[*latLng.Longitude] = pruneSignal
 		}
 		if latLng.Latitude != nil && latLng.Longitude == nil {
-			errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
-			signals[*latLng.Latitude] = pruneSignal
+			// errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
+			// signals[*latLng.Latitude] = pruneSignal
 		}
 	}
 	// remove all the pruned signals
