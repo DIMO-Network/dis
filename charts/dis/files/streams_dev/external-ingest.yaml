@@ -164,8 +164,8 @@ output:
                 partitioner: murmur2_hash
                 batching:
                   count: 0
-                  byte_size: 0
-                  period: 100ms
+                  byte_size: 1_000_000 # 1MB
+                  period: 50ms
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
@@ -190,8 +190,8 @@ output:
                 partitioner: murmur2_hash
                 batching:
                   count: 0
-                  byte_size: 0
-                  period: 100ms
+                  byte_size: 1_000_000 # 1MB
+                  period: 50ms
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_VALID_CE_TOPIC:topic.device.validcloudevents}'
@@ -217,8 +217,8 @@ output:
                 partitioner: murmur2_hash
                 batching:
                   count: 0
-                  byte_size: 0
-                  period: 100ms
+                  byte_size: 1_000_000 # 1MB
+                  period: 50ms
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_PARTIAL_CE_TOPIC:topic.device.partialcloudevents}'
