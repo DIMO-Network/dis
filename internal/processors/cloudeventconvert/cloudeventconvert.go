@@ -37,7 +37,7 @@ type CloudEventModule interface {
 type cloudeventProcessor struct {
 	cloudEventModule CloudEventModule
 	logger           *service.Logger
-	subjectLoggers   map[string]*ratedlogger.Logger
+	producerLoggers  map[string]*ratedlogger.Logger
 }
 
 // Close to fulfill the service.Processor interface.
@@ -121,10 +121,13 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	// set defaults and metadata for each header, then create a message for each header
 	for i := range hdrs {
 		if processors.IsFutureTimestamp(hdrs[i].Time) {
-			logger, ok := c.subjectLoggers[hdrs[i].Producer]
+			if c.producerLoggers == nil {
+				c.producerLoggers = make(map[string]*ratedlogger.Logger)
+			}
+			logger, ok := c.producerLoggers[hdrs[i].Producer]
 			if !ok {
 				logger = ratedlogger.New(c.logger, time.Hour)
-				c.subjectLoggers[hdrs[i].Producer] = logger
+				c.producerLoggers[hdrs[i].Producer] = logger
 			}
 			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
 		}
