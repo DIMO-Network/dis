@@ -103,25 +103,25 @@ type LatLngIdx struct {
 
 // pruneSignals removes signals that are not valid and returns an error for each invalid signal.
 func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
-	now := time.Now()
 	var errs error
 	pruneSignal := vss.Signal{Name: pruneSignalName}
 	latLongPairs := map[int64]LatLngIdx{}
 	for i, signal := range signals {
-		if signal.Timestamp.After(now) {
+		if processors.IsFutureTimestamp(signal.Timestamp) {
 			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
 			signals[i] = pruneSignal
 			continue
 		}
-		timeInMilli := signal.Timestamp.UnixMilli()
+		// round to half a second
+		timeInHalfSec := signal.Timestamp.Round(time.Second / 2).UnixMilli()
 		if signal.Name == vss.FieldCurrentLocationLatitude {
-			latLng := latLongPairs[timeInMilli]
+			latLng := latLongPairs[timeInHalfSec]
 			latLng.Latitude = &i
-			latLongPairs[timeInMilli] = latLng
+			latLongPairs[timeInHalfSec] = latLng
 		} else if signal.Name == vss.FieldCurrentLocationLongitude {
-			latLng := latLongPairs[timeInMilli]
+			latLng := latLongPairs[timeInHalfSec]
 			latLng.Longitude = &i
-			latLongPairs[timeInMilli] = latLng
+			latLongPairs[timeInHalfSec] = latLng
 		}
 	}
 	for _, latLng := range latLongPairs {

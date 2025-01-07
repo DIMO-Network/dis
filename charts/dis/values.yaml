@@ -41,6 +41,7 @@ env:
   DEVICES_APIGRPC_ADDR: devices-api-dev:8086
   KAFKA_BOOTSTRAP_SERVERS: kafka-dev-dimo-kafka-kafka-brokers
   LOG_LEVEL: INFO
+  ALLOWABLE_TIME_SKEW: 5m
 service:
   type: ClusterIP
   ports:

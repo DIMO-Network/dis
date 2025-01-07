@@ -10,6 +10,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
+	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/nameindexer"
 	"github.com/ethereum/go-ethereum/common"
@@ -36,6 +37,7 @@ type CloudEventModule interface {
 type cloudeventProcessor struct {
 	cloudEventModule CloudEventModule
 	logger           *service.Logger
+	producerLoggers  map[string]*ratedlogger.Logger
 }
 
 // Close to fulfill the service.Processor interface.
@@ -115,12 +117,19 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 		return nil, fmt.Errorf("no cloud events headers returned")
 	}
 	messages := make([]*service.Message, len(hdrs))
-	now := time.Now()
 	defaultID := ksuid.New().String()
 	// set defaults and metadata for each header, then create a message for each header
 	for i := range hdrs {
-		if now.Before(hdrs[i].Time) {
-			c.logger.Warnf("Cloud event time is in the future: now() = %s < %s \n %+v", now, hdrs[i].Time, hdrs[i])
+		if processors.IsFutureTimestamp(hdrs[i].Time) {
+			if c.producerLoggers == nil {
+				c.producerLoggers = make(map[string]*ratedlogger.Logger)
+			}
+			logger, ok := c.producerLoggers[hdrs[i].Producer]
+			if !ok {
+				logger = ratedlogger.New(c.logger, time.Hour)
+				c.producerLoggers[hdrs[i].Producer] = logger
+			}
+			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
 		}
 		newMsg := origMsg.Copy()
 		setDefaults(&hdrs[i], source, defaultID)
