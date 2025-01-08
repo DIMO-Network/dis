@@ -1,11 +1,13 @@
 package signalconvert
 
 import (
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
@@ -22,6 +24,7 @@ const (
 var (
 	errLatLongMismatch = errors.New("latitude and longitude mismatch")
 	errFutureTimestamp = errors.New("future timestamp")
+	pruneSignal        = vss.Signal{Name: pruneSignalName}
 )
 
 type SignalModule interface {
@@ -104,37 +107,57 @@ type LatLngIdx struct {
 // pruneSignals removes signals that are not valid and returns an error for each invalid signal.
 func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	var errs error
-	pruneSignal := vss.Signal{Name: pruneSignalName}
-	latLongPairs := map[int64]LatLngIdx{}
+	slices.SortFunc(signals, func(a, b vss.Signal) int {
+		if a.Timestamp.Before(b.Timestamp) {
+			return -1
+		}
+		if a.Timestamp.After(b.Timestamp) {
+			return 1
+		}
+		return cmp.Compare(a.Name, b.Name)
+	})
+	lastLat := -1
 	for i, signal := range signals {
 		if processors.IsFutureTimestamp(signal.Timestamp) {
 			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
 			signals[i] = pruneSignal
 			continue
 		}
-		// round to half a second
-		timeInHalfSec := signal.Timestamp.Round(time.Second / 2).UnixMilli()
 		if signal.Name == vss.FieldCurrentLocationLatitude {
-			latLng := latLongPairs[timeInHalfSec]
-			latLng.Latitude = &i
-			latLongPairs[timeInHalfSec] = latLng
+			if lastLat != -1 {
+				// We hit another latitude signal before a longitude signal
+				// prune the previous latitude signal it doesn't have a matching longitude signal
+				prevLat := signals[lastLat]
+				errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, prevLat.Timestamp))
+				signals[lastLat] = pruneSignal
+			}
+			lastLat = i
 		} else if signal.Name == vss.FieldCurrentLocationLongitude {
-			latLng := latLongPairs[timeInHalfSec]
-			latLng.Longitude = &i
-			latLongPairs[timeInHalfSec] = latLng
+			if lastLat == -1 {
+				// We hit a longitude signal before a latitude signal
+				// prune this longitude signal it doesn't have a matching latitude signal
+				errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signal.Timestamp))
+				signals[i] = pruneSignal
+			} else {
+				// check that this longitude signals is within half a second of the last latitude signal
+				lat := signals[lastLat]
+				dur := signal.Timestamp.Sub(lat.Timestamp)
+				if dur > time.Second/2 {
+					// prune the latitude signal and this longitude signal they are too far apart
+					errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, lat.Timestamp))
+					errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signal.Timestamp))
+					signals[i] = pruneSignal
+					signals[lastLat] = pruneSignal
+				}
+				lastLat = -1
+			}
 		}
 	}
-	for _, latLng := range latLongPairs {
-		// check if one of the lat or long is missing
-		if latLng.Latitude == nil && latLng.Longitude != nil {
-			// send errLatLongMismatch if one of the lat or long is missing
-			// errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
-			// signals[*latLng.Longitude] = pruneSignal
-		}
-		if latLng.Latitude != nil && latLng.Longitude == nil {
-			// errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
-			// signals[*latLng.Latitude] = pruneSignal
-		}
+	// after the last signal was checked if we still have a latitude signal without a matching longitude signal prune it
+	if lastLat != -1 {
+		prevLat := signals[lastLat]
+		errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, prevLat.Timestamp))
+		signals[lastLat] = pruneSignal
 	}
 	// remove all the pruned signals
 	var prunedSignals []vss.Signal
