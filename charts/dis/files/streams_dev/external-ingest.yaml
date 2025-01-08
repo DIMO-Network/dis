@@ -169,6 +169,15 @@ output:
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
+                metadata:
+                  exclude_prefixes:
+                    - dimo_cloudevent_index_value
+                    - dimo_cloudevent_index
+                    - dimo_cloudevent_producer
+                    - dimo_cloudevent_source
+                    - dimo_cloudevent_subject
+                    - dimo_cloudevent_type
+                    - dimo_cloudevent_id
           # Output for valid cloudevents
           - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
             output:
