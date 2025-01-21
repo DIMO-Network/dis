@@ -220,9 +220,6 @@ func TestSignalConvert(t *testing.T) {
 				},
 				Data: json.RawMessage("{}"),
 			},
-			expectedSignals: []vss.Signal{
-				{TokenID: 33, Timestamp: ts, Name: "obdDTCList", ValueString: "[\"P0101\",\"P0202\"]", Source: "ruptela/TODO"},
-			},
 			expectedError: errors.New("error getting obdDTCList: field not found 'OBDDTCList'"),
 		},
 		{
