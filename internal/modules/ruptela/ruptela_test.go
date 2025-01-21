@@ -74,6 +74,14 @@ func TestCloudEventConvert(t *testing.T) {
 			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 		},
 		{
+			name:             "DTC status payload",
+			input:            []byte(`{ "ds":"r/v0/dtc", "signature":"test","time":"2024-09-26T14:19:14Z", "vehicleTokenId":1, "deviceTokenId":2,"data":{"dtc_codes":[{"id":"7E8","code":"P0101"},{"id":"7E8","code":"P0202"}]}}`),
+			expectError:      false,
+			length:           1,
+			expectedSubject:  "did:nft:1:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_1",
+			expectedProducer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+		},
+		{
 			name:        "Invalid time format",
 			input:       []byte(`{"ds":"r/v0/loc","signature":"test","time":"1727712275"}`),
 			expectError: true,
@@ -127,6 +135,20 @@ func TestSignalConvert(t *testing.T) {
 		]
 	}`
 
+	// Location payload data
+	dtcData := `{
+	 "dtc_codes":[
+         {
+            "id":"7E8",
+            "code":"P0101"
+         },
+         {
+            "id":"7E8",
+            "code":"P0202"
+         }
+      ]
+	}`
+
 	tests := []struct {
 		name            string
 		cloudEvent      cloudevent.CloudEvent[json.RawMessage]
@@ -168,6 +190,40 @@ func TestSignalConvert(t *testing.T) {
 				{TokenID: 33, Timestamp: ts.Add(time.Second), Name: vss.FieldCurrentLocationAltitude, ValueNumber: 1.2, Source: "ruptela/TODO"},
 			},
 			expectedError: nil,
+		},
+		{
+			name: "Valid DTC Payload",
+			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					DataVersion: modelRuptela.DTCEventDS,
+					Type:        cloudevent.TypeStatus,
+					Source:      "ruptela/TODO",
+					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
+					Time:        ts,
+				},
+				Data: json.RawMessage(dtcData),
+			},
+			expectedSignals: []vss.Signal{
+				{TokenID: 33, Timestamp: ts, Name: "obdDTCList", ValueString: "[\"P0101\",\"P0202\"]", Source: "ruptela/TODO"},
+			},
+			expectedError: nil,
+		},
+		{
+			name: "Invalid DTC Payload",
+			cloudEvent: cloudevent.CloudEvent[json.RawMessage]{
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					DataVersion: modelRuptela.DTCEventDS,
+					Type:        cloudevent.TypeStatus,
+					Source:      "ruptela/TODO",
+					Subject:     "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_33",
+					Time:        ts,
+				},
+				Data: json.RawMessage("{}"),
+			},
+			expectedSignals: []vss.Signal{
+				{TokenID: 33, Timestamp: ts, Name: "obdDTCList", ValueString: "[\"P0101\",\"P0202\"]", Source: "ruptela/TODO"},
+			},
+			expectedError: errors.New("error getting obdDTCList: field not found 'OBDDTCList'"),
 		},
 		{
 			name: "Invalid Event DataVersion",
