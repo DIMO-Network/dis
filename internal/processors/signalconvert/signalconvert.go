@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	errLatLongMismatch = errors.New("latitude and longitude mismatch")
+	//errLatLongMismatch = errors.New("latitude and longitude mismatch")
 	errFutureTimestamp = errors.New("future timestamp")
 )
 
@@ -124,18 +124,18 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 			latLongPairs[timeInHalfSec] = latLng
 		}
 	}
-	for _, latLng := range latLongPairs {
-		// check if one of the lat or long is missing
-		if latLng.Latitude == nil && latLng.Longitude != nil {
-			// send errLatLongMismatch if one of the lat or long is missing
-			// errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
-			// signals[*latLng.Longitude] = pruneSignal
-		}
-		if latLng.Latitude != nil && latLng.Longitude == nil {
-			// errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
-			// signals[*latLng.Latitude] = pruneSignal
-		}
-	}
+	//for _, latLng := range latLongPairs {
+	//	// check if one of the lat or long is missing
+	//	if latLng.Latitude == nil && latLng.Longitude != nil {
+	//		// send errLatLongMismatch if one of the lat or long is missing
+	//		// errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
+	//		// signals[*latLng.Longitude] = pruneSignal
+	//	}
+	//	if latLng.Latitude != nil && latLng.Longitude == nil {
+	//		// errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
+	//		// signals[*latLng.Latitude] = pruneSignal
+	//	}
+	//}
 	// remove all the pruned signals
 	var prunedSignals []vss.Signal
 	for _, signal := range signals {
