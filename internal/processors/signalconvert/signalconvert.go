@@ -1,11 +1,13 @@
 package signalconvert
 
 import (
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/modules"
@@ -17,11 +19,13 @@ import (
 const (
 	signalValidContentType = "dimo_valid_signal"
 	pruneSignalName        = "___prune"
+	maxLatLongDur          = time.Second / 2
 )
 
 var (
-	//errLatLongMismatch = errors.New("latitude and longitude mismatch")
+	errLatLongMismatch = errors.New("latitude and longitude mismatch")
 	errFutureTimestamp = errors.New("future timestamp")
+	pruneSignal        = vss.Signal{Name: pruneSignalName}
 )
 
 type SignalModule interface {
@@ -104,38 +108,32 @@ type LatLngIdx struct {
 // pruneSignals removes signals that are not valid and returns an error for each invalid signal.
 func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	var errs error
-	pruneSignal := vss.Signal{Name: pruneSignalName}
-	latLongPairs := map[int64]LatLngIdx{}
-	for i, signal := range signals {
+	slices.SortFunc(signals, func(a, b vss.Signal) int {
+		if a.Timestamp.Before(b.Timestamp) {
+			return -1
+		}
+		if a.Timestamp.After(b.Timestamp) {
+			return 1
+		}
+		return cmp.Compare(a.Name, b.Name)
+	})
+	lastCord := -1
+	for i := range signals {
+		signal := &signals[i]
 		if processors.IsFutureTimestamp(signal.Timestamp) {
 			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
 			signals[i] = pruneSignal
 			continue
 		}
-		// round to half a second
-		timeInHalfSec := signal.Timestamp.Round(time.Second / 2).UnixMilli()
-		if signal.Name == vss.FieldCurrentLocationLatitude {
-			latLng := latLongPairs[timeInHalfSec]
-			latLng.Latitude = &i
-			latLongPairs[timeInHalfSec] = latLng
-		} else if signal.Name == vss.FieldCurrentLocationLongitude {
-			latLng := latLongPairs[timeInHalfSec]
-			latLng.Longitude = &i
-			latLongPairs[timeInHalfSec] = latLng
-		}
+		lastCord, errs = pruneLatLngSignals(&signals, lastCord, i, errs)
 	}
-	//for _, latLng := range latLongPairs {
-	//	// check if one of the lat or long is missing
-	//	if latLng.Latitude == nil && latLng.Longitude != nil {
-	//		// send errLatLongMismatch if one of the lat or long is missing
-	//		// errs = errors.Join(errs, fmt.Errorf("%w, longitude at time %v is misssing matching latitude", errLatLongMismatch, signals[*latLng.Longitude].Timestamp))
-	//		// signals[*latLng.Longitude] = pruneSignal
-	//	}
-	//	if latLng.Latitude != nil && latLng.Longitude == nil {
-	//		// errs = errors.Join(errs, fmt.Errorf("%w, latitude at time %v is misssing matching longitude", errLatLongMismatch, signals[*latLng.Latitude].Timestamp))
-	//		// signals[*latLng.Latitude] = pruneSignal
-	//	}
-	//}
+	// after the last signal was checked if we still have a latitude signal without a matching longitude signal prune it
+	if lastCord != -1 {
+		prevCord := signals[lastCord]
+		errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' at time %v is missing matching coordinate", errLatLongMismatch, prevCord.Name, prevCord.Timestamp))
+		signals[lastCord] = pruneSignal
+	}
+
 	// remove all the pruned signals
 	var prunedSignals []vss.Signal
 	for _, signal := range signals {
@@ -144,4 +142,42 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 		}
 	}
 	return prunedSignals, errs
+}
+
+// pruneLatLngSignals checks if the current signal is a latitude or longitude signal and prunes the previous signal if it isn't a pair.
+// this logic is separated in a function for easier control flow.
+func pruneLatLngSignals(signals *[]vss.Signal, lastCord, currIdx int, errs error) (int, error) {
+	if signals == nil {
+		return lastCord, errs
+	}
+
+	// if the current signal is not a latitude or longitude signal return with no changes
+	currCord := (*signals)[currIdx]
+	if currCord.Name != vss.FieldCurrentLocationLatitude && currCord.Name != vss.FieldCurrentLocationLongitude {
+		return lastCord, errs
+	}
+
+	// if we don't have a previous coordinate signal return the current index
+	if lastCord == -1 {
+		return currIdx, errs
+	}
+	prevCord := (*signals)[lastCord]
+
+	// if we have two lats or two longs prune the previous one
+	if prevCord.Name == currCord.Name {
+		retErr := errors.Join(errs, fmt.Errorf("%w, signal '%s' at time %v is missing matching coordinate", errLatLongMismatch, prevCord.Name, prevCord.Timestamp))
+		(*signals)[lastCord] = pruneSignal
+		return currIdx, retErr
+	}
+
+	// if the two signals are too far apart prune the previous signal it doesn't have a matching signal
+	dur := currCord.Timestamp.Sub(prevCord.Timestamp)
+	if dur > maxLatLongDur {
+		retErr := errors.Join(errs, fmt.Errorf("%w, signal '%s' at time %v is missing matching coordinate within %v", errLatLongMismatch, prevCord.Name, prevCord.Timestamp, maxLatLongDur))
+		(*signals)[lastCord] = pruneSignal
+		return currIdx, retErr
+	}
+
+	// if the two signals are within half a second of each other keep both and reset the lastCord
+	return -1, errs
 }
