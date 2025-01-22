@@ -132,7 +132,7 @@ func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudeve
 func (m Module) determineSubject(event *RuptelaEvent, producer string) (string, error) {
 	var subject string
 	switch event.DS {
-	case ruptela.StatusEventDS, ruptela.LocationEventDS:
+	case ruptela.StatusEventDS, ruptela.LocationEventDS, ruptela.DTCEventDS:
 		if event.VehicleTokenID != nil {
 			subject = cloudevent.NFTDID{
 				ChainID:         m.cfg.ChainID,
