@@ -51,6 +51,42 @@ func TestPruneSignals(t *testing.T) {
 			expectError: nil,
 		},
 		{
+			name: "matching lat/long pairs should be kept with .2 sec diff",
+			signals: []vss.Signal{
+				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
+				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
+				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
+			},
+			expectedSignals: []vss.Signal{
+				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
+				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
+				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
+			},
+			expectError: nil,
+		},
+		{
+			name: "matching long/lat pairs should be kept with .2 sec diff",
+			signals: []vss.Signal{
+				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
+				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
+				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
+			},
+			expectedSignals: []vss.Signal{
+				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
+				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
+				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
+			},
+			expectError: nil,
+		},
+		{
 			name: "missing longitude should prune latitude while keeping other signals",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
@@ -176,27 +212,6 @@ func TestPruneSignals(t *testing.T) {
 			// Verify no pruneSignalName signals in result
 			for i, signal := range result {
 				require.NotEqual(t, pruneSignalName, signal.Name, "found pruned signal at index %d", i)
-			}
-
-			latitudes := make(map[int64]bool)
-			longitudes := make(map[int64]bool)
-			for _, signal := range result {
-				if signal.Name == vss.FieldCurrentLocationLatitude {
-					latitudes[signal.Timestamp.UnixMilli()] = true
-				}
-				if signal.Name == vss.FieldCurrentLocationLongitude {
-					longitudes[signal.Timestamp.UnixMilli()] = true
-				}
-			}
-
-			// Every latitude should have a matching longitude and vice versa
-			for timestamp := range latitudes {
-				require.True(t, longitudes[timestamp],
-					"Found latitude without matching longitude at timestamp %v", timestamp)
-			}
-			for timestamp := range longitudes {
-				require.True(t, latitudes[timestamp],
-					"Found longitude without matching latitude at timestamp %v", timestamp)
 			}
 		})
 	}
