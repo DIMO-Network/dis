@@ -120,11 +120,23 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	lastCord := -1
 	for i := range signals {
 		signal := &signals[i]
+
+		// prune future signals
 		if processors.IsFutureTimestamp(signal.Timestamp) {
 			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
 			signals[i] = pruneSignal
 			continue
 		}
+
+		// prune duplicate signals
+		if i < len(signals)-1 {
+			if signalEqual(signals[i], signals[i+1]) {
+				signals[i] = pruneSignal
+				continue
+			}
+		}
+
+		// prune latitude and longitude signals that don't have a matching signal
 		lastCord, errs = pruneLatLngSignals(&signals, lastCord, i, errs)
 	}
 	// after the last signal was checked if we still have a latitude signal without a matching longitude signal prune it
@@ -180,4 +192,8 @@ func pruneLatLngSignals(signals *[]vss.Signal, lastCord, currIdx int, errs error
 
 	// if the two signals are within half a second of each other keep both and reset the lastCord
 	return -1, errs
+}
+
+func signalEqual(a, b vss.Signal) bool {
+	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
 }
