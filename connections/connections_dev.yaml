@@ -17,12 +17,13 @@ connections:
         "aftermarket_contract_addr": "0x325b45949C833986bC98e98a49F3CA5C5c4643B5",
         "vehicle_contract_addr": "0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8"
       }
-  - connectionId: "sample_integration_id"
+  - connectionId: "0xSampleIntegrationAddr"
     connectionName: "sample"
     moduleName: "sample"
     moduleConfig: |
       {
-        "device_api_url": "http://devices-api-dev:8086"
+        "settingA": "valueA",
+        "settingB": "valueB"
       }
   - connectionId: "0xc4035Fecb1cc906130423EF05f9C20977F643722"
     connectionName: "Tesla"

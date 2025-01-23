@@ -655,8 +655,6 @@ github.com/DIMO-Network/benthos/v4 v4.0.0-20241114162018-a6d7d6d4a681 h1:sYiDURs
 github.com/DIMO-Network/benthos/v4 v4.0.0-20241114162018-a6d7d6d4a681/go.mod h1:A5izknIGyzs16rCU0qliFVgdCLn2yyvLM4Hltx+s+TI=
 github.com/DIMO-Network/clickhouse-infra v0.0.3 h1:B6/4IY9IxLcyydET14IjHUT+A5SDEis7p//DoFzrMk4=
 github.com/DIMO-Network/clickhouse-infra v0.0.3/go.mod h1:NtpQ1btkPzebDvpYYygeqiiBmJ/q5oJb/T/JWzUVRlk=
-github.com/DIMO-Network/devices-api v1.32.27 h1:3VH03OXKEVBNF9DGf+iGQU1XmK4LN9M+uO4aH/MKcO4=
-github.com/DIMO-Network/devices-api v1.32.27/go.mod h1:10DhUAxgS5hKW1I3OXNv0FDvnlZbt6G1tgrEj7M6NI0=
 github.com/DIMO-Network/model-garage v0.4.6 h1:PwjrNA21lik/2cGE2LNOS8KiZHZ+PopJDdZoB5DOQLo=
 github.com/DIMO-Network/model-garage v0.4.6/go.mod h1:n+6Yrh3EewjgBX+AFx45aJso8pnhgJRRcaTjW5Sak38=
 github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=
@@ -1282,8 +1280,6 @@ github.com/ory/dockertest/v3 v3.11.0 h1:OiHcxKAvSDUwsEVh2BjxQQc/5EHz9n0va9awCtNG
 github.com/ory/dockertest/v3 v3.11.0/go.mod h1:VIPxS1gwT9NpPOrfD3rACs8Y9Z7yhzO4SB194iUDnUI=
 github.com/parquet-go/parquet-go v0.23.0 h1:dyEU5oiHCtbASyItMCD2tXtT2nPmoPbKpqf0+nnGrmk=
 github.com/parquet-go/parquet-go v0.23.0/go.mod h1:MnwbUcFHU6uBYMymKAlPPAw9yh3kE1wWl6Gl1uLdkNk=
-github.com/patrickmn/go-cache v2.1.0+incompatible h1:HRMgzkcYKYpi3C8ajMPV8OFXaaRUnok+kx1WdO15EQc=
-github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/paulmach/orb v0.11.1 h1:3koVegMC4X/WeiXYz9iswopaTwMem53NzTJuTF20JzU=
 github.com/paulmach/orb v0.11.1/go.mod h1:5mULz1xQfs3bmQm63QEJA6lNGujuRafwA5S/EnuLaLU=
 github.com/paulmach/protoscan v0.2.1/go.mod h1:SpcSwydNLrxUGSDvXvO0P7g7AuhJ7lcKfDlhJCDw2gY=
@@ -1338,6 +1334,7 @@ github.com/rickb777/period v1.0.6 h1:f4TcHBtL/4qa4D44eqgxs7785/kfLKUjRI7XYI2HCvk
 github.com/rickb777/period v1.0.6/go.mod h1:TKkPHI/WSyjjVdeVCyqwBoQg0Cdb/jRvnc8FFdq2cgw=
 github.com/rickb777/plural v1.4.2 h1:Kl/syFGLFZ5EbuV8c9SVud8s5HI2HpCCtOMw2U1kS+A=
 github.com/rickb777/plural v1.4.2/go.mod h1:kdmXUpmKBJTS0FtG/TFumd//VBWsNTD7zOw7x4umxNw=
+github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.7 h1:WUdvkW8uEhrYfLC4ZzdpI2ztxP1I582+49Oc5Mq64VQ=
 github.com/rivo/uniseg v0.4.7/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
