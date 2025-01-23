@@ -44,12 +44,12 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: autopi
                 module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
-        - check: 'metadata("dimo_cloudevent_source") == "sample_integration_id"'
+        - check: 'metadata("dimo_cloudevent_source") == "0xSampleIntegrationAddr"'
           processors:
             - label: convert_cloudevent_sample
               dimo_cloudevent_convert:
                 module_name: sample
-                module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+                module_config: ewogICJzZXR0aW5nQSI6ICJ2YWx1ZUEiLAogICJzZXR0aW5nQiI6ICJ2YWx1ZUIiCn0K
         - check: 'metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_cloudevent_tesla
@@ -100,12 +100,12 @@ pipeline:
               dimo_signal_convert:
                 module_name: autopi
                 module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "sample_integration_id"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xSampleIntegrationAddr"'
           processors:
             - label: convert_signals_sample
               dimo_signal_convert:
                 module_name: sample
-                module_config: ewogICJkZXZpY2VfYXBpX3VybCI6ICJodHRwOi8vZGV2aWNlcy1hcGktZGV2OjgwODYiCn0K
+                module_config: ewogICJzZXR0aW5nQSI6ICJ2YWx1ZUEiLAogICJzZXR0aW5nQiI6ICJ2YWx1ZUIiCn0K
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_signals_tesla
