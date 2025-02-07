@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/dis/internal/modules/autopi"
+	"github.com/DIMO-Network/dis/internal/modules/macaron"
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/dis/internal/modules/sample"
 	"github.com/DIMO-Network/dis/internal/modules/tesla"
@@ -33,6 +34,7 @@ type CloudEventModule interface {
 
 var signalModules = map[string]func() (SignalModule, error){
 	"autopi":  func() (SignalModule, error) { return autopi.New() },
+	"macaron": func() (SignalModule, error) { return macaron.New() },
 	"sample":  func() (SignalModule, error) { return sample.New() },
 	"ruptela": func() (SignalModule, error) { return ruptela.New() },
 	"tesla":   func() (SignalModule, error) { return tesla.New() },
@@ -40,6 +42,7 @@ var signalModules = map[string]func() (SignalModule, error){
 
 var cloudEventModules = map[string]func() (CloudEventModule, error){
 	"autopi":  func() (CloudEventModule, error) { return autopi.New() },
+	"macaron": func() (CloudEventModule, error) { return macaron.New() },
 	"sample":  func() (CloudEventModule, error) { return sample.New() },
 	"ruptela": func() (CloudEventModule, error) { return ruptela.New() },
 	"tesla":   func() (CloudEventModule, error) { return tesla.New() },

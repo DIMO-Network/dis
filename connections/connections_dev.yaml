@@ -17,6 +17,15 @@ connections:
         "aftermarket_contract_addr": "0x325b45949C833986bC98e98a49F3CA5C5c4643B5",
         "vehicle_contract_addr": "0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8"
       }
+  - connectionId: "0x4c674ddE8189aEF6e3b58F5a36d7438b2b1f6Bc2"
+    moduleName: "macaron"
+    connectionName: "Macaron"
+    moduleConfig: |
+      {
+        "chain_id": 80002,
+        "aftermarket_contract_addr": "0x325b45949C833986bC98e98a49F3CA5C5c4643B5",
+        "vehicle_contract_addr": "0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8"
+      }
   - connectionId: "0xSampleIntegrationAddr"
     connectionName: "sample"
     moduleName: "sample"
