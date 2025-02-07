@@ -655,8 +655,8 @@ github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87 h1:0qWA5eC
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
 github.com/DIMO-Network/clickhouse-infra v0.0.3 h1:B6/4IY9IxLcyydET14IjHUT+A5SDEis7p//DoFzrMk4=
 github.com/DIMO-Network/clickhouse-infra v0.0.3/go.mod h1:NtpQ1btkPzebDvpYYygeqiiBmJ/q5oJb/T/JWzUVRlk=
-github.com/DIMO-Network/model-garage v0.4.6 h1:PwjrNA21lik/2cGE2LNOS8KiZHZ+PopJDdZoB5DOQLo=
-github.com/DIMO-Network/model-garage v0.4.6/go.mod h1:n+6Yrh3EewjgBX+AFx45aJso8pnhgJRRcaTjW5Sak38=
+github.com/DIMO-Network/model-garage v0.4.7-0.20250207154429-5f344b6dfce6 h1:O11EX5G7cxfgs6q5cHCKc9IgXY2AAVprr6IPXrjjuAY=
+github.com/DIMO-Network/model-garage v0.4.7-0.20250207154429-5f344b6dfce6/go.mod h1:n+6Yrh3EewjgBX+AFx45aJso8pnhgJRRcaTjW5Sak38=
 github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=
 github.com/DIMO-Network/nameindexer v0.1.2/go.mod h1:BmonIrd69A4Whe+7WHiyTP6RJf3KQiooOLBISqkeyII=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 h1:oVLqHXhnYtUwM89y9T1fXGaK9wTkXHgNp8/ZNMQzUxE=
