@@ -44,6 +44,12 @@ pipeline:
               dimo_cloudevent_convert:
                 module_name: autopi
                 module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
+        - check: 'metadata("dimo_cloudevent_source") == "0x4c674ddE8189aEF6e3b58F5a36d7438b2b1f6Bc2"'
+          processors:
+            - label: convert_cloudevent_macaron
+              dimo_cloudevent_convert:
+                module_name: macaron
+                module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
         - check: 'metadata("dimo_cloudevent_source") == "0xSampleIntegrationAddr"'
           processors:
             - label: convert_cloudevent_sample
@@ -99,6 +105,12 @@ pipeline:
             - label: convert_signals_autopi
               dimo_signal_convert:
                 module_name: autopi
+                module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0x4c674ddE8189aEF6e3b58F5a36d7438b2b1f6Bc2"'
+          processors:
+            - label: convert_signals_macaron
+              dimo_signal_convert:
+                module_name: macaron
                 module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJhZnRlcm1hcmtldF9jb250cmFjdF9hZGRyIjogIjB4MzI1YjQ1OTQ5QzgzMzk4NmJDOThlOThhNDlGM0NBNUM1YzQ2NDNCNSIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweDQ1ZmJDRDNlZjczNjFkMTU2ZThiMTZGNTUzOEFFMzZERWRmNjFEYTgiCn0K
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xSampleIntegrationAddr"'
           processors:
