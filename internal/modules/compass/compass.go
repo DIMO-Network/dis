@@ -103,11 +103,15 @@ func (m *Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudev
 	}.String()
 
 	// Construct the subject
-	subject := cloudevent.NFTDID{
-		ChainID:         m.cfg.ChainID,
-		ContractAddress: common.HexToAddress(m.cfg.VehicleContractAddr),
-		TokenID:         *event.VehicleTokenID,
-	}.String()
+	// Construct the subject
+	var subject string
+	if event.VehicleTokenID != nil {
+		subject = cloudevent.NFTDID{
+			ChainID:         m.cfg.ChainID,
+			ContractAddress: common.HexToAddress(m.cfg.VehicleContractAddr),
+			TokenID:         *event.VehicleTokenID,
+		}.String()
+	}
 
 	statusHdr, err := createCloudEventHdr(&event, producer, subject, cloudevent.TypeStatus)
 	if err != nil {
