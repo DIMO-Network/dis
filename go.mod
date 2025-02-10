@@ -7,9 +7,9 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.1
 	github.com/DIMO-Network/clickhouse-infra v0.0.3
-	github.com/DIMO-Network/model-garage v0.4.6
+	github.com/DIMO-Network/model-garage v0.4.8
 	github.com/DIMO-Network/nameindexer v0.1.2
-	github.com/ethereum/go-ethereum v1.14.12
+	github.com/ethereum/go-ethereum v1.14.13
 	github.com/redpanda-data/benthos/v4 v4.43.0
 	github.com/redpanda-data/connect/v4 v4.45.1
 	github.com/segmentio/ksuid v1.0.4
@@ -177,7 +177,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/pressly/goose/v3 v3.24.0 // indirect
+	github.com/pressly/goose/v3 v3.24.1 // indirect
 	github.com/prometheus/client_golang v1.20.1 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
