@@ -31,7 +31,7 @@ connections:
     connectionName: "CompassIoT"
     moduleConfig: |
       {
-        "chain_id": 80002,
+        "chain_id": 137,
         "synth_contract_addr": "0x4804e8D1661cd1a1e5dDdE1ff458A7f878c0aC6D",
         "vehicle_contract_addr": "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
       }
