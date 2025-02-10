@@ -12,7 +12,6 @@ require (
 	github.com/DIMO-Network/model-garage v0.4.6
 	github.com/DIMO-Network/nameindexer v0.1.2
 	github.com/ethereum/go-ethereum v1.14.12
-	github.com/golang/mock v1.6.0
 	github.com/redpanda-data/benthos/v4 v4.43.0
 	github.com/redpanda-data/connect/v4 v4.45.1
 	github.com/segmentio/ksuid v1.0.4
