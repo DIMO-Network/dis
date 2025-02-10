@@ -55,7 +55,7 @@ pipeline:
             - label: convert_cloudevent_compassiot
               dimo_cloudevent_convert:
                 module_name: compass
-                module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJzeW50aF9jb250cmFjdF9hZGRyIjogIjB4NDgwNGU4RDE2NjFjZDFhMWU1ZERkRTFmZjQ1OEE3Zjg3OGMwYUM2RCIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAic3ludGhfY29udHJhY3RfYWRkciI6ICIweDQ4MDRlOEQxNjYxY2QxYTFlNWREZEUxZmY0NThBN2Y4NzhjMGFDNkQiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
         - check: 'metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_cloudevent_tesla
@@ -117,7 +117,7 @@ pipeline:
             - label: convert_signals_compassiot
               dimo_signal_convert:
                 module_name: compass
-                module_config: ewogICJjaGFpbl9pZCI6IDgwMDAyLAogICJzeW50aF9jb250cmFjdF9hZGRyIjogIjB4NDgwNGU4RDE2NjFjZDFhMWU1ZERkRTFmZjQ1OEE3Zjg3OGMwYUM2RCIsCiAgInZlaGljbGVfY29udHJhY3RfYWRkciI6ICIweGJBNTczOGExOGQ4M0Q0MTg0N2RmRmJEQzYxMDFkMzdDNjljOUIwY0YiCn0K
+                module_config: ewogICJjaGFpbl9pZCI6IDEzNywKICAic3ludGhfY29udHJhY3RfYWRkciI6ICIweDQ4MDRlOEQxNjYxY2QxYTFlNWREZEUxZmY0NThBN2Y4NzhjMGFDNkQiLAogICJ2ZWhpY2xlX2NvbnRyYWN0X2FkZHIiOiAiMHhiQTU3MzhhMThkODNENDE4NDdkZkZiREM2MTAxZDM3QzY5YzlCMGNGIgp9Cg==
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status" && metadata("dimo_cloudevent_source") == "0xc4035Fecb1cc906130423EF05f9C20977F643722"'
           processors:
             - label: convert_signals_tesla

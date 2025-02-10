@@ -8,7 +8,3 @@ type CompassEvent struct {
 	VehicleTokenID *uint32         `json:"vehicleTokenId"`
 	DeviceTokenID  *uint32         `json:"deviceTokenId"`
 }
-
-//type DataContent struct {
-//	Signals map[string]string `json:"signals"`
-//}

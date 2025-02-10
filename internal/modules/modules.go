@@ -4,9 +4,9 @@ package modules
 import (
 	"context"
 	"fmt"
-	"github.com/DIMO-Network/dis/internal/modules/compass"
 
 	"github.com/DIMO-Network/dis/internal/modules/autopi"
+	"github.com/DIMO-Network/dis/internal/modules/compass"
 	"github.com/DIMO-Network/dis/internal/modules/macaron"
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/dis/internal/modules/sample"
