@@ -203,6 +203,7 @@ func signalEqual(a, b vss.Signal) bool {
 func (v *vssProcessor) setMetaData(signal *vss.Signal, msgData []byte) {
 	var eventHdrs cloudevent.CloudEventHeader
 	if err := json.Unmarshal(msgData, &eventHdrs); err != nil {
+		v.Logger.Warnf("failed to unmarshal event headers during signal convert which expects valid cloudevents: %v", err)
 		return
 	}
 	signal.Source = eventHdrs.Source
