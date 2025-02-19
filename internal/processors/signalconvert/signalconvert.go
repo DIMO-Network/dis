@@ -12,6 +12,7 @@ import (
 
 	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
@@ -90,6 +91,7 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		}
 
 		for i := range signals {
+			v.setMetaData(&signals[i], msgBytes)
 			msgCpy := msg.Copy()
 			msgCpy.SetStructured(signals[i])
 			msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
@@ -196,4 +198,20 @@ func pruneLatLngSignals(signals *[]vss.Signal, lastCord, currIdx int, errs error
 
 func signalEqual(a, b vss.Signal) bool {
 	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
+}
+
+func (v *vssProcessor) setMetaData(signal *vss.Signal, msgData []byte) {
+	var eventHdrs cloudevent.CloudEventHeader
+	if err := json.Unmarshal(msgData, &eventHdrs); err != nil {
+		return
+	}
+	signal.Source = eventHdrs.Source
+	signal.Producer = eventHdrs.Producer
+	signal.CloudEventID = eventHdrs.ID
+	subjectDID, err := cloudevent.DecodeNFTDID(eventHdrs.Subject)
+	if err != nil {
+		v.Logger.Warnf("failed to decode subject DID during signal convert which expects valid cloudevents: %v", err)
+	} else {
+		signal.TokenID = subjectDID.TokenID
+	}
 }

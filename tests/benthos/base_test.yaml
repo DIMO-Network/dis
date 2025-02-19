@@ -55,6 +55,7 @@ tests:
           dimo_cloudevent_source: "0xSampleIntegrationAddr"
           dimo_cloudevent_type: "dimo.status"
          json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "0xSampleIntegrationAddr"
           dataschema: "testschema/v2.0"
           subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
@@ -74,7 +75,7 @@ tests:
     output_batches:
       - # Expected batch
         - {} # replay of original message
-        - json_equals:  '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0xSampleIntegrationAddr"}'
+        - json_equals:  '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0xSampleIntegrationAddr", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
 
   - name: "Test CloudConvert"
     target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
