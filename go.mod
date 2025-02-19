@@ -5,7 +5,7 @@ go 1.24
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87
 
 require (
-	github.com/DIMO-Network/model-garage v0.4.9
+	github.com/DIMO-Network/model-garage v0.4.10-0.20250219214418-8eed2b6a7b0f
 	github.com/DIMO-Network/nameindexer v0.1.2
 	github.com/ethereum/go-ethereum v1.14.13
 	github.com/redpanda-data/benthos/v4 v4.43.0
@@ -37,6 +37,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.1 // indirect
 	github.com/ClickHouse/ch-go v0.63.1 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.1 // indirect
+	github.com/DIMO-Network/tesla-vss v0.0.0-20250214202426-020776dd68b5 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.2 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
@@ -94,7 +95,7 @@ require (
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
 	github.com/danieljoos/wincred v1.2.0 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/denisenkom/go-mssqldb v0.12.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.6.0 // indirect
@@ -189,6 +190,7 @@ require (
 	github.com/sijms/go-ora/v2 v2.8.19 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/snowflakedb/gosnowflake v1.11.0 // indirect
+	github.com/teslamotors/fleet-telemetry v0.6.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
@@ -236,7 +238,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241113202542-65e8d215514f // indirect
 	google.golang.org/grpc v1.69.2 // indirect
-	google.golang.org/protobuf v1.36.0 // indirect
+	google.golang.org/protobuf v1.36.4 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/dnsutils.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/gokrb5.v6 v6.1.1 // indirect
