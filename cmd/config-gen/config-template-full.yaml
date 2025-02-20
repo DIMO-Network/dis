@@ -122,7 +122,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: ${!metadata("subject")} #check if this is still needed
+                key: '${! json("tokenId") }'
                 partitioner: murmur2_hash
                 batching:
                   count: 0
@@ -157,7 +157,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: ${!metadata("subject")} #check if this is still needed
+                key: '${! json("subject") }'
                 partitioner: murmur2_hash
                 batching:
                   count: 0
@@ -184,7 +184,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: ${!metadata("subject")} #check if this is still needed
+                key: '${! json("subject") }'
                 partitioner: murmur2_hash
                 batching:
                   count: 0
