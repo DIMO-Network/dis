@@ -122,7 +122,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: '${! json("tokenId") }'
+                key: ${!metadata("dimo_cloudevent_subject")}
                 partitioner: murmur2_hash
                 batching:
                   count: 0
@@ -157,7 +157,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: '${! json("subject") }'
+                key: ${!metadata("dimo_cloudevent_subject")}
                 partitioner: murmur2_hash
                 batching:
                   count: 0
@@ -184,7 +184,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: '${! json("subject") }'
+                key: ${!metadata("dimo_cloudevent_subject")}
                 partitioner: murmur2_hash
                 batching:
                   count: 0
