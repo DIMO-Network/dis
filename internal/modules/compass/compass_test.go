@@ -163,10 +163,20 @@ func TestSignalConvert(t *testing.T) {
 				Data: json.RawMessage(signalData),
 			},
 			expectedSignals: []vss.Signal{
-				{TokenID: 37, Timestamp: ts, Name: vss.FieldCurrentLocationAltitude, ValueNumber: 277.100006, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldChassisAxleRow1WheelLeftTirePressure, ValueNumber: 282.68516, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldChassisAxleRow1WheelRightTirePressure, ValueNumber: 282.68516, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldChassisAxleRow2WheelLeftTirePressure, ValueNumber: 289.57992, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldChassisAxleRow2WheelRightTirePressure, ValueNumber: 282.68516, Source: compassConnection},
 				{TokenID: 37, Timestamp: ts, Name: vss.FieldCurrentLocationLatitude, ValueNumber: 34.878016, Source: compassConnection},
 				{TokenID: 37, Timestamp: ts, Name: vss.FieldCurrentLocationLongitude, ValueNumber: -82.223566, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldCurrentLocationAltitude, ValueNumber: 277.100006, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldCurrentLocationHeading, ValueNumber: 16, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldIsIgnitionOn, ValueNumber: 0, Source: compassConnection},
 				{TokenID: 37, Timestamp: ts, Name: vss.FieldLowVoltageBatteryCurrentVoltage, ValueNumber: 13, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineECT, ValueNumber: 92, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineEOP, ValueNumber: 4, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineEOT, ValueNumber: 89, Source: compassConnection},
+				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainCombustionEngineSpeed, ValueNumber: 0, Source: compassConnection},
 				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainFuelSystemAbsoluteLevel, ValueNumber: 113.85, Source: compassConnection},
 				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainFuelSystemRelativeLevel, ValueNumber: 99, Source: compassConnection},
 				{TokenID: 37, Timestamp: ts, Name: vss.FieldPowertrainTransmissionTravelledDistance, ValueNumber: 20446, Source: compassConnection},
@@ -191,7 +201,7 @@ func TestSignalConvert(t *testing.T) {
 				require.Contains(t, err.Error(), tt.expectedError.Error())
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tt.expectedSignals, signals)
+				assert.ElementsMatch(t, signals, tt.expectedSignals)
 			}
 		})
 	}
