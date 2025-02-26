@@ -653,12 +653,12 @@ github.com/ClickHouse/clickhouse-go/v2 v2.30.1 h1:Dy0n0l+cMbPXs8hFkeeWGaPKrB+MDB
 github.com/ClickHouse/clickhouse-go/v2 v2.30.1/go.mod h1:szk8BMoQV/NgHXZ20ZbwDyvPWmpfhRKjFkc6wzASGxM=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87 h1:0qWA5eC7sZjQN/kXguX/+zqDe8ebK+aGQMP8+eUEeY8=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
-github.com/DIMO-Network/model-garage v0.4.11 h1:y6J4zbx0bGZXPYOKsOaEGfzAebv7GJh+VPNXX7gYwHU=
-github.com/DIMO-Network/model-garage v0.4.11/go.mod h1:qDCcVsJ//KfYNwElttRCJmwywZnWLp55RwSc0jFKAXI=
+github.com/DIMO-Network/model-garage v0.4.12 h1:clA4I568fAWCNtI8YMVZhWw2OTo+Ah0oDFZ8MVi/LVE=
+github.com/DIMO-Network/model-garage v0.4.12/go.mod h1:N4Tm1X7fU2IewHDfLhmx5aQqOnbxrC4LuhPBZccc25s=
 github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=
 github.com/DIMO-Network/nameindexer v0.1.2/go.mod h1:BmonIrd69A4Whe+7WHiyTP6RJf3KQiooOLBISqkeyII=
-github.com/DIMO-Network/tesla-vss v0.0.0-20250214202426-020776dd68b5 h1:78RxirTdA5zMN5yAR2RxGQSFL1tV9p1LM76F+WJBWm0=
-github.com/DIMO-Network/tesla-vss v0.0.0-20250214202426-020776dd68b5/go.mod h1:0roTap1FF2wOzRYCvT+VDrERISSX7oq6Dq9xUlGqz+M=
+github.com/DIMO-Network/tesla-vss v0.1.0 h1:9yG+NL7jCUEBBIo43N+X/+cwMYsg6XE3lC4bgkIBa84=
+github.com/DIMO-Network/tesla-vss v0.1.0/go.mod h1:0roTap1FF2wOzRYCvT+VDrERISSX7oq6Dq9xUlGqz+M=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 h1:oVLqHXhnYtUwM89y9T1fXGaK9wTkXHgNp8/ZNMQzUxE=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0/go.mod h1:dppbR7CwXD4pgtV9t3wD1812RaLDcBjtblcDF5f1vI0=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.2 h1:cZpsGsWTIFKymTA0je7IIvi1O7Es7apb9CF3EQlOcfE=

@@ -5,7 +5,7 @@ go 1.24
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87
 
 require (
-	github.com/DIMO-Network/model-garage v0.4.11
+	github.com/DIMO-Network/model-garage v0.4.12
 	github.com/DIMO-Network/nameindexer v0.1.2
 	github.com/ethereum/go-ethereum v1.14.13
 	github.com/redpanda-data/benthos/v4 v4.43.0
@@ -37,7 +37,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.1 // indirect
 	github.com/ClickHouse/ch-go v0.63.1 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.1 // indirect
-	github.com/DIMO-Network/tesla-vss v0.0.0-20250214202426-020776dd68b5 // indirect
+	github.com/DIMO-Network/tesla-vss v0.1.0 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.2 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
