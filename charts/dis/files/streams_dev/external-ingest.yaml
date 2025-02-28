@@ -183,7 +183,7 @@ output:
                 batching:
                   count: 1000
                   byte_size: 300_000 # 0.5MB
-                  period: 30ms
+                  period: 10ms
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
