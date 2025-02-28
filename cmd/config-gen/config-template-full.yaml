@@ -120,13 +120,13 @@ output:
                 client_id: ${CONTAINER_NAME:localhost}-signal-output
                 compression: '${KAFKA_COMPRESSION:none}'
                 max_msg_bytes: 52428800
-                max_retries: 2
+                max_retries: 1
                 max_in_flight: 20
                 key: ${!metadata("dimo_cloudevent_subject")}
                 partitioner: murmur2_hash
                 batching:
                   count: 1000
-                  byte_size: 300_000 # 0.5MB
+                  byte_size: 200_000 # 0.5MB
                   period: 10ms
                 target_version: 2.5.0
                 timeout: 5s
