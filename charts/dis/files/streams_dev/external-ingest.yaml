@@ -196,6 +196,12 @@ output:
                     - dimo_cloudevent_subject
                     - dimo_cloudevent_type
                     - dimo_cloudevent_id
+                    - dimo_cloudevent_type
+                    - dimo_message_content
+                    - http_server_remote_ip
+                    - http_server_request_path
+                    - http_server_tls_cipher_suite
+                    - http_server_tls_subject
           # Output for valid cloudevents
           - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
             output:
