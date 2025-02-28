@@ -126,7 +126,7 @@ output:
                 partitioner: murmur2_hash
                 batching:
                   count: 0
-                  byte_size: 500_000 # 0.5MB
+                  byte_size: 300_000 # 0.5MB
                   period: 50ms
                 target_version: 2.5.0
                 timeout: 5s
