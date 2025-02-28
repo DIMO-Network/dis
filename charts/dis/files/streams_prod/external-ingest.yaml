@@ -169,9 +169,9 @@ output:
                 key: ${!metadata("dimo_cloudevent_subject")}
                 partitioner: murmur2_hash
                 batching:
-                  count: 0
+                  count: 1000
                   byte_size: 300_000 # 0.5MB
-                  period: 50ms
+                  period: 30ms
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
