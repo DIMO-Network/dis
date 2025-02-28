@@ -119,7 +119,7 @@ output:
                   max_interval: 5s
                 client_id: ${CONTAINER_NAME:localhost}-signal-output
                 compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 300000
+                max_msg_bytes: 52428800
                 max_retries: 1
                 max_in_flight: 20
                 key: ${!metadata("dimo_cloudevent_subject")}
