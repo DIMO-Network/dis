@@ -105,6 +105,22 @@ func TestModule_CloudEventConvert(t *testing.T) {
 			expectHeaders: 2,
 			expectErr:     false,
 		},
+		{
+			name: "fleet telemetry without payloads",
+			input: []byte(`{
+				"id": "2pcYwspbaBFJ7NPGZ2kivkuJ12a",
+				"source": "0xFFEE022fAb46610EAFe98b87377B42e366364a71",
+				"producer": "did:nft:80003:0x78513c8CB4D6B6079f813850376bc9c7fc8aE67f_12",
+				"specversion": "1.0",
+				"type": "dimo.status",
+				"dataversion": "fleet_telemetry/v1.0.0",
+				"data": {
+					"payloads": []
+				}
+			}`),
+			expectHeaders: 1,
+			expectErr:     false,
+		},
 	}
 
 	module, _ := tesla.New()
