@@ -6,11 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/DIMO-Network/model-garage/pkg/autopi"
-	"github.com/DIMO-Network/model-garage/pkg/autopi/status"
-
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/convert"
+	"github.com/DIMO-Network/model-garage/pkg/lorawan"
+	"github.com/DIMO-Network/model-garage/pkg/lorawan/status"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -85,7 +84,7 @@ func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal
 
 // CloudEventConvert converts a message to cloud events.
 func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
-	events, err := autopi.ConvertToCloudEvents(msgData, m.cfg.ChainID, m.cfg.AftermarketContractAddr, m.cfg.VehicleContractAddr)
+	events, err := lorawan.ConvertToCloudEvents(msgData, m.cfg.ChainID, m.cfg.AftermarketContractAddr, m.cfg.VehicleContractAddr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to convert to cloud events: %w", err)
 	}
