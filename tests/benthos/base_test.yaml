@@ -118,3 +118,66 @@ tests:
               "status": "active"
             }
             signature: "abc123signature"
+
+
+  - name: "Test Default Signal convert"
+    target_processors: "../../charts/dis/files/streams_dev/external-ingest.yaml#convert_signals"
+    input_batch:
+       - metadata:
+          dimo_message_content: 'dimo_valid_cloudevent'
+          dimo_cloudevent_source: "unregisterd-source-id"
+          dimo_cloudevent_type: "dimo.status"
+         json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+          source: "unregisterd-source-id"
+          dataschema: "testschema/v2.0"
+          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          time: "2024-04-18T17:20:46.436008782Z"
+          vehicleTokenId: 123
+          data:
+            signals:
+              - timestamp: "2024-04-18T17:20:26.633Z"
+                name: "powertrainCombustionEngineECT"
+                valueNumber: 107
+    output_batches:
+      - # Expected batch
+        - {} # replay of original message
+        - json_equals:  '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"unregisterd-source-id", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
+
+  - name: "Test Default CloudConvert"
+    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
+    environment: {}
+    input_batch:
+       - metadata:
+          dimo_message_content: 'dimo_valid_cloudevent'
+          dimo_cloudevent_source: "unregisterd-source-id"
+          dimo_cloudevent_type: "dimo.status"
+         json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+          source: "valueThatwillBeOverwritten"
+          dataschema: "testschema/v2.0"
+          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          time: "2024-04-18T17:20:46.436008782Z"
+          vehicleTokenId: 123
+          data:
+            signals:
+              - timestamp: 1713460826633
+                name: "coolantTemp"
+                valueNumber: 107
+    output_batches:
+      - # Expected batch
+        - json_contains:
+            id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+            source: "unregisterd-source-id"
+            dataschema: "testschema/v2.0"
+            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            time: "2024-04-18T17:20:46.436008782Z"
+            vehicleTokenId: 123
+            data:
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  valueNumber: 107
