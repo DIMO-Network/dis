@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/model-garage/pkg/tesla"
 	"github.com/DIMO-Network/model-garage/pkg/tesla/status"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -43,7 +44,16 @@ func (m Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudeve
 		return nil, nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
 	hdrs := []cloudevent.CloudEventHeader{event.CloudEventHeader}
-	if gjson.GetBytes(event.Data, "vin").Exists() {
+	if event.DataVersion == tesla.FleetTelemetryDataVersion {
+		payloads := gjson.GetBytes(event.Data, "payloads")
+		// This check should always pass.
+		if payloads.Exists() && payloads.IsArray() && len(payloads.Array()) != 0 {
+			fpHdr := event.CloudEventHeader
+			fpHdr.Type = cloudevent.TypeFingerprint
+			hdrs = append(hdrs, fpHdr)
+		}
+	} else if gjson.GetBytes(event.Data, "vin").Exists() {
+		// Must be a Fleet API response.
 		fpHdr := event.CloudEventHeader
 		fpHdr.Type = cloudevent.TypeFingerprint
 		hdrs = append(hdrs, fpHdr)
