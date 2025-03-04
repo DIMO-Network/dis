@@ -52,7 +52,6 @@ func TestModule_CloudEventConvert(t *testing.T) {
 				"subject": "did:nft:80003:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_15",
 				"time": "2024-12-01T15:31:12.378075897Z",
 				"type": "dimo.status",
-				"signature": "0x22cca92bb6a16fed01def56d02541427633ff82552bc8c5c2da2fffd69c4436927b256ab0f1352e584deb5394fff2f979699f206691f73fffee547cee1431c",
 				"data": {
 					"signals": [
 						{
@@ -60,7 +59,7 @@ func TestModule_CloudEventConvert(t *testing.T) {
 							"valueNumber": 100,
 							"timestamp": "2024-12-01T15:31:12.378075897Z"
 						}
-					],
+					]
 				}
 			}`),
 			expectHeaders: 1, // Expects only original header
