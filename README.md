@@ -30,12 +30,17 @@ When posting data to the DIS server, you must format your payload according to t
       {
         "name": "powertrainTransmissionTravelledDistance",
         "timestamp": "2025-03-04T12:00:00Z",
-        "valueNumber": 12345.67
+        "value": 12345.67
       },
       {
         "name": "speed",
-        "timestamp": "2025-03-04T12:00:00Z",
-        "valueString": "55"
+        "timestamp": "2025-03-04T12:01:00Z",
+        "value": 55
+      },
+      {
+        "name": "powertrainType",
+        "timestamp": "2025-03-04T12:03:00Z",
+        "value": "COMBUSTION"
       }
     ],
     "vin": "1GGCM82633A123456"
@@ -67,12 +72,11 @@ The `data` field contains the actual vehicle data with the following structure:
    {
      "name": "vssName",
      "timestamp": "ISO-8601 timestamp",
-     "valueNumber": 123.45, // Use for numeric values
-     "valueString": "value" // Use for string values
+     "value": 123.45
    }
    ```
 
-   Note: A signal should have either `valueNumber` or `valueString`, not both.
+   Note: A signal's value can either be a number or a string. If the value is string, a numeric value will not be accepted.
 
 2. **vin**: A string representing the Vehicle Identification Number.
    ```json

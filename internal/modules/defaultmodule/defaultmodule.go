@@ -5,9 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/model-garage/pkg/schema"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/tidwall/gjson"
@@ -24,18 +27,32 @@ type Signal struct {
 	Timestamp time.Time `json:"timestamp"`
 	// Name is the name of the signal collected.
 	Name string `json:"name"`
-	// ValueNumber is the value of the signal collected.
-	ValueNumber *float64 `json:"valueNumber"`
-	// ValueString is the value of the signal collected.
-	ValueString *string `json:"valueString"`
+	// Value is the value of the signal collected. If the signal base type is a number it will be converted to a float64.
+	Value any `json:"value"`
 }
 
 // Module holds dependencies for the default module. At present, there are none.
-type Module struct{}
+type Module struct {
+	signalMap map[string]*schema.SignalInfo
+}
 
 // New creates a new default, uninitialized module.
 func New() (*Module, error) {
-	return &Module{}, nil
+	defs, err := schema.LoadDefinitionFile(strings.NewReader(schema.DefaultDefinitionsYAML()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to load default schema definitions: %w", err)
+	}
+	signalInfo, err := schema.LoadSignalsCSV(strings.NewReader(schema.VssRel42DIMO()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to load default signal info: %w", err)
+	}
+	definedSignals := defs.DefinedSignal(signalInfo)
+	signalMap := make(map[string]*schema.SignalInfo, len(definedSignals))
+	for _, signal := range definedSignals {
+		signalMap[signal.JSONName] = signal
+	}
+
+	return &Module{signalMap: signalMap}, nil
 }
 
 // SetLogger sets the logger for the module.
@@ -45,27 +62,63 @@ func (Module) SetLogger(*service.Logger) {}
 func (Module) SetConfig(string) error { return nil }
 
 // SignalConvert converts a default CloudEvent to DIMO's vss signals.
-func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
+func (m *Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
 	signalEvent := cloudevent.CloudEvent[SignalData]{}
 	err := json.Unmarshal(msgBytes, &signalEvent)
-	vssSignals := make([]vss.Signal, len(signalEvent.Data.Signals))
-	var errs error
-	for i, signal := range signalEvent.Data.Signals {
-		if signal.ValueNumber != nil && signal.ValueString != nil || signal.ValueNumber == nil && signal.ValueString == nil {
-			errs = errors.Join(err, fmt.Errorf("signal %s requires either a valueNumber or valueString but not both", signal.Name))
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal signal data: %w", err)
+	}
+	var decodeErrs error
+	vssSignals := make([]vss.Signal, 0)
+	for _, signal := range signalEvent.Data.Signals {
+		vssSig, err := m.defaultSignalToVSS(signal)
+		if err != nil {
+			// we want to return decoded signals even if some fail
+			decodeErrs = errors.Join(decodeErrs, err)
 			continue
 		}
-		vssSignals[i] = vss.Signal{
-			Timestamp: signal.Timestamp,
-			Name:      signal.Name,
-		}
-		if signal.ValueNumber != nil {
-			vssSignals[i].ValueNumber = *signal.ValueNumber
-		} else if signal.ValueString != nil {
-			vssSignals[i].ValueString = *signal.ValueString
-		}
+		vssSignals = append(vssSignals, vssSig)
 	}
-	return vssSignals, errs
+	return vssSignals, decodeErrs
+}
+
+func (m *Module) defaultSignalToVSS(signal *Signal) (vss.Signal, error) {
+	signalInfo, ok := m.signalMap[signal.Name]
+	if !ok {
+		return vss.Signal{}, fmt.Errorf("signal %s is not a defined signal name", signal.Name)
+	}
+	if signal.Value == nil {
+		return vss.Signal{}, fmt.Errorf("signal %s is missing a value", signal.Name)
+	}
+	vssSig := vss.Signal{
+		Timestamp: signal.Timestamp,
+		Name:      signal.Name,
+	}
+	switch signalInfo.BaseGoType {
+	case "float64":
+		num, ok := signal.Value.(float64)
+		if ok {
+			vssSig.ValueNumber = num
+		} else if str, ok := signal.Value.(string); ok {
+			v, err := strconv.ParseFloat(str, 64)
+			if err != nil {
+				return vss.Signal{}, fmt.Errorf("signal %s can not be converted to a float64: %w", signal.Name, err)
+			}
+			vssSig.ValueNumber = v
+		} else {
+			return vss.Signal{}, fmt.Errorf("signal %s is not a float64", signal.Name)
+		}
+	case "string":
+		str, ok := signal.Value.(string)
+		if !ok {
+			return vss.Signal{}, fmt.Errorf("signal %s is not a string", signal.Name)
+		}
+		vssSig.ValueString = str
+	default:
+		return vss.Signal{}, fmt.Errorf("signal %s has an unsupported base type %s", signal.Name, signalInfo.BaseGoType)
+	}
+
+	return vssSig, nil
 }
 
 // CloudEventConvert marshals the input message to Cloud Events and sets the type based on the message content.
