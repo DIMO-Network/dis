@@ -30,10 +30,10 @@ type Signal struct {
 	ValueString *string `json:"valueString"`
 }
 
-// Module holds dependencies for the Tesla module. At present, there are none.
+// Module holds dependencies for the default module. At present, there are none.
 type Module struct{}
 
-// New creates a new Tesla, uninitialized module.
+// New creates a new default, uninitialized module.
 func New() (*Module, error) {
 	return &Module{}, nil
 }
@@ -44,15 +44,15 @@ func (Module) SetLogger(*service.Logger) {}
 // SetConfig sets the configuration for the module.
 func (Module) SetConfig(string) error { return nil }
 
-// SignalConvert converts a Tesla CloudEvent to DIMO's VSS rows.
+// SignalConvert converts a default CloudEvent to DIMO's vss signals.
 func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, error) {
 	signalEvent := cloudevent.CloudEvent[SignalData]{}
 	err := json.Unmarshal(msgBytes, &signalEvent)
 	vssSignals := make([]vss.Signal, len(signalEvent.Data.Signals))
 	var errs error
 	for i, signal := range signalEvent.Data.Signals {
-		if signal.ValueNumber != nil && signal.ValueString != nil {
-			errs = errors.Join(err, fmt.Errorf("signal %s has both number and string values", signal.Name))
+		if signal.ValueNumber != nil && signal.ValueString != nil || signal.ValueNumber == nil && signal.ValueString == nil {
+			errs = errors.Join(err, fmt.Errorf("signal %s requires either a valueNumber or valueString but not both", signal.Name))
 			continue
 		}
 		vssSignals[i] = vss.Signal{
@@ -68,8 +68,7 @@ func (Module) SignalConvert(_ context.Context, msgBytes []byte) ([]vss.Signal, e
 	return vssSignals, errs
 }
 
-// CloudEventConvert converts an input message to Cloud Events. In the Tesla case
-// there is no conversion to perform.
+// CloudEventConvert marshals the input message to Cloud Events and sets the type based on the message content.
 func (Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
 	var event cloudevent.CloudEvent[json.RawMessage]
 	err := json.Unmarshal(msgData, &event)
