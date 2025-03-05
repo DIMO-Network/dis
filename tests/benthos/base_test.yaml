@@ -139,7 +139,7 @@ tests:
             signals:
               - timestamp: "2024-04-18T17:20:26.633Z"
                 name: "powertrainCombustionEngineECT"
-                valueNumber: 107
+                value: 107
     output_batches:
       - # Expected batch
         - {} # replay of original message
@@ -165,7 +165,7 @@ tests:
             signals:
               - timestamp: 1713460826633
                 name: "coolantTemp"
-                valueNumber: 107
+                value: 107
     output_batches:
       - # Expected batch
         - json_contains:
@@ -180,4 +180,4 @@ tests:
               signals:
                 - timestamp: 1713460826633
                   name: "coolantTemp"
-                  valueNumber: 107
+                  value: 107
