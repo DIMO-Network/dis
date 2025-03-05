@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/DIMO-Network/dis/internal/modules/tesla"
+	"github.com/DIMO-Network/dis/internal/modules/defaultmodule"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -12,10 +12,10 @@ import (
 
 func TestModule_CloudEventConvert(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         []byte
-		expectHeaders int
-		expectErr     bool
+		name              string
+		input             []byte
+		expectHeaderTypes []string
+		expectErr         bool
 	}{
 		{
 			name: "valid cloud event with vin",
@@ -39,8 +39,8 @@ func TestModule_CloudEventConvert(t *testing.T) {
 					"vin": "1N4AL11D75C109151"
 				}
 			}`),
-			expectHeaders: 2, // Expects both original and fingerprint headers
-			expectErr:     false,
+			expectHeaderTypes: []string{cloudevent.TypeFingerprint, cloudevent.TypeStatus},
+			expectErr:         false,
 		},
 		{
 			name: "valid cloud event without vin",
@@ -62,17 +62,17 @@ func TestModule_CloudEventConvert(t *testing.T) {
 					]
 				}
 			}`),
-			expectHeaders: 1, // Expects only original header
-			expectErr:     false,
+			expectHeaderTypes: []string{cloudevent.TypeStatus},
+			expectErr:         false,
 		},
 		{
-			name:          "invalid json",
-			input:         []byte(`{invalid`),
-			expectHeaders: 0,
-			expectErr:     true,
+			name:              "invalid json",
+			input:             []byte(`{invalid`),
+			expectHeaderTypes: nil,
+			expectErr:         true,
 		},
 		{
-			name: "malformed data field",
+			name: "unexpected data field",
 			input: []byte(`{
 				"id": "2pcYwspbaBFJ7NPGZ2kivkuJ12a",
 				"source": "0xFFEE022fAb46610EAFe98b87377B42e366364a71",
@@ -81,12 +81,12 @@ func TestModule_CloudEventConvert(t *testing.T) {
 				"type": "dimo.status",
 				"data": "not an object"
 			}`),
-			expectHeaders: 1,
-			expectErr:     false,
+			expectHeaderTypes: []string{cloudevent.TypeUnknown},
+			expectErr:         false,
 		},
 	}
 
-	module, _ := tesla.New()
+	module, _ := defaultmodule.New()
 	ctx := context.Background()
 
 	for _, tt := range tests {
@@ -99,16 +99,20 @@ func TestModule_CloudEventConvert(t *testing.T) {
 			}
 
 			require.NoError(t, err)
-			assert.Len(t, headers, tt.expectHeaders)
+			assert.Len(t, headers, len(tt.expectHeaderTypes))
+			for i, header := range headers {
+				assert.Equal(t, tt.expectHeaderTypes[i], header.Type)
+			}
 			assert.NotNil(t, data)
 
-			if tt.expectHeaders == 2 {
-				// Verify the fingerprint header
-				assert.Equal(t, cloudevent.TypeFingerprint, headers[1].Type)
-				// Verify original header fields are preserved
-				assert.Equal(t, headers[0].Source, headers[1].Source)
-				assert.Equal(t, headers[0].Subject, headers[1].Subject)
-				assert.Equal(t, headers[0].Producer, headers[1].Producer)
+			if len(tt.expectHeaderTypes) > 1 {
+				first := headers[0]
+				for i := 1; i < len(headers); i++ {
+					// Verify original header fields are preserved
+					assert.Equal(t, first.Source, headers[i].Source)
+					assert.Equal(t, first.Subject, headers[i].Subject)
+					assert.Equal(t, first.Producer, headers[i].Producer)
+				}
 			}
 		})
 	}

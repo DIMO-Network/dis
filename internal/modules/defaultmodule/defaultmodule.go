@@ -88,5 +88,12 @@ func (Module) CloudEventConvert(_ context.Context, msgData []byte) ([]cloudevent
 		hdrs = append(hdrs, statusHdr)
 	}
 
+	// if we can't infer the type, default to unknown so we don't drop the event.
+	if len(hdrs) == 0 {
+		unknownHdr := event.CloudEventHeader
+		unknownHdr.Type = cloudevent.TypeUnknown
+		hdrs = append(hdrs, unknownHdr)
+	}
+
 	return hdrs, event.Data, nil
 }
