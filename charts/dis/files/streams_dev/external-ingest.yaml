@@ -64,8 +64,9 @@ pipeline:
                 module_config: ewp9Cg==
         - check: ''
           processors:
-            - set_error:
-                message: 'unknown connection ${! meta("dimo_cloudevent_source") }'
+            - label: convert_cloudevent_default
+              dimo_cloudevent_convert:
+                module_name: default
     # If label name change, update the alerts
     - label: "convert_cloudevent_errors"
       catch:
@@ -130,6 +131,11 @@ pipeline:
               dimo_signal_convert:
                 module_name: tesla
                 module_config: ewp9Cg==
+        - check: ''
+          processors:
+            - label: convert_signals_default
+              dimo_signal_convert:
+                module_name: default
     # If label name change, update the alerts
     - label: "convert_signal_errors"
       catch:
