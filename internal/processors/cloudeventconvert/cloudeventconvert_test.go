@@ -11,19 +11,27 @@ import (
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	gomock "go.uber.org/mock/gomock"
 )
 
-//go:generate mockgen -source=./cloudeventconvert.go -destination=./cloudeventconvert_mock_test.go -package=cloudeventconvert
+type mockCloudEventModule struct {
+	hdrs []cloudevent.CloudEventHeader
+	data []byte
+	err  error
+}
+
+func (m *mockCloudEventModule) CloudEventConvert(ctx context.Context, data []byte) ([]cloudevent.CloudEventHeader, []byte, error) {
+	return m.hdrs, m.data, m.err
+}
 
 func TestProcessBatch(t *testing.T) {
 	timestamp := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
-		setupMock     func(*MockCloudEventModule)
+		setupMock     func() *mockCloudEventModule
 		expectedMeta  map[string]any
 		name          string
 		sourceID      string
@@ -35,7 +43,7 @@ func TestProcessBatch(t *testing.T) {
 			name:      "successful event conversion",
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  common.HexToAddress("0x").String(),
-			setupMock: func(m *MockCloudEventModule) {
+			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					ID:       "33",
 					Type:     cloudevent.TypeStatus,
@@ -47,7 +55,11 @@ func TestProcessBatch(t *testing.T) {
 				event2.Type = cloudevent.TypeFingerprint
 				data := json.RawMessage(`{"key": "value"}`)
 
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]cloudevent.CloudEventHeader{event, event2}, data, nil)
+				return &mockCloudEventModule{
+					hdrs: []cloudevent.CloudEventHeader{event, event2},
+					data: data,
+					err:  nil,
+				}
 			},
 			msgLen:        2,
 			expectedError: false,
@@ -80,7 +92,7 @@ func TestProcessBatch(t *testing.T) {
 			name:      "Future timestamp error",
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  common.HexToAddress("0x").String(),
-			setupMock: func(m *MockCloudEventModule) {
+			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
 					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
@@ -89,7 +101,11 @@ func TestProcessBatch(t *testing.T) {
 				}
 				data := json.RawMessage(`{"key": "value"}`)
 
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return([]cloudevent.CloudEventHeader{event}, data, nil)
+				return &mockCloudEventModule{
+					hdrs: []cloudevent.CloudEventHeader{event},
+					data: data,
+					err:  nil,
+				}
 			},
 			msgLen:        1,
 			expectedError: false,
@@ -98,8 +114,9 @@ func TestProcessBatch(t *testing.T) {
 			name:      "missing source ID",
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "", // Empty source
-			setupMock: func(m *MockCloudEventModule) {
-				// No mock expectations since it should fail before conversion
+			setupMock: func() *mockCloudEventModule {
+				// Return an empty mock as it should fail before conversion
+				return &mockCloudEventModule{}
 			},
 			msgLen:        1,
 			expectedError: true,
@@ -109,8 +126,12 @@ func TestProcessBatch(t *testing.T) {
 			name:      "conversion error",
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "test-source",
-			setupMock: func(m *MockCloudEventModule) {
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(nil, nil, errors.New("conversion failed"))
+			setupMock: func() *mockCloudEventModule {
+				return &mockCloudEventModule{
+					hdrs: nil,
+					data: nil,
+					err:  errors.New("conversion failed"),
+				}
 			},
 			msgLen:        1,
 			expectedError: true,
@@ -120,8 +141,12 @@ func TestProcessBatch(t *testing.T) {
 			name:      "invalid cloud event format",
 			inputData: []byte(`{"test": "data"}`),
 			sourceID:  "test-source",
-			setupMock: func(m *MockCloudEventModule) {
-				m.EXPECT().CloudEventConvert(gomock.Any(), []byte(`{"test": "data"}`)).Return(nil, []byte(`invalid json`), nil)
+			setupMock: func() *mockCloudEventModule {
+				return &mockCloudEventModule{
+					hdrs: nil,
+					data: json.RawMessage(`invalid json`),
+					err:  nil,
+				}
 			},
 			msgLen:        1,
 			expectedError: true,
@@ -131,15 +156,12 @@ func TestProcessBatch(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup controller and mock
-			ctrl := gomock.NewController(t)
-
-			mockModule := NewMockCloudEventModule(ctrl)
-			tt.setupMock(mockModule)
+			// Setup mock
+			mockModule := tt.setupMock()
+			modules.CloudEventRegistry.Override(tt.sourceID, mockModule)
 
 			processor := &cloudeventProcessor{
-				cloudEventModule: mockModule,
-				logger:           nil,
+				logger: nil,
 			}
 
 			msg := service.NewMessage(tt.inputData)

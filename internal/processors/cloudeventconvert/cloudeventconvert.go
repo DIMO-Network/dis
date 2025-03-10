@@ -2,16 +2,19 @@ package cloudeventconvert
 
 import (
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
+	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/model-garage/pkg/compass"
+	"github.com/DIMO-Network/model-garage/pkg/hashdog"
+	"github.com/DIMO-Network/model-garage/pkg/modules"
+	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/DIMO-Network/nameindexer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -31,13 +34,9 @@ const (
 	cloudEventPartialContentType = "dimo_partial_cloudevent"
 )
 
-type CloudEventModule interface {
-	CloudEventConvert(ctx context.Context, msgData []byte) ([]cloudevent.CloudEventHeader, []byte, error)
-}
 type cloudeventProcessor struct {
-	cloudEventModule CloudEventModule
-	logger           *service.Logger
-	producerLoggers  map[string]*ratedlogger.Logger
+	logger          *service.Logger
+	producerLoggers map[string]*ratedlogger.Logger
 }
 
 // Close to fulfill the service.Processor interface.
@@ -45,24 +44,39 @@ func (*cloudeventProcessor) Close(context.Context) error {
 	return nil
 }
 
-func newCloudConvertProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*cloudeventProcessor, error) {
-	decodedModuelConfig, err := base64.StdEncoding.DecodeString(moduleConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode module config: %w", err)
+func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, aftermarketAddr, syntheticAddr, vehicleAddr common.Address) *cloudeventProcessor {
+	// AutoPi
+	autoPiModule := &autopi.Module{
+		AftermarketContractAddr: aftermarketAddr,
+		VehicleContractAddr:     vehicleAddr,
+		ChainID:                 chainID,
 	}
-	moduleOpts := modules.Options{
-		Logger:       lgr,
-		FilePath:     "",
-		ModuleConfig: string(decodedModuelConfig),
-	}
-	cloudEventModule, err := modules.LoadCloudEventModule(moduleName, moduleOpts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load signal module: %w", err)
-	}
+	modules.CloudEventRegistry.Override(modules.AutoPiSource.String(), autoPiModule)
+
+	// Ruptela
+	ruptelaModule := &ruptela.Module{
+		AftermarketContractAddr: aftermarketAddr,
+		VehicleContractAddr:     vehicleAddr,
+		ChainID:                 chainID}
+	modules.CloudEventRegistry.Override(modules.RuptelaSource.String(), ruptelaModule)
+
+	// HashDog
+	hashDogModule := &hashdog.Module{
+		AftermarketContractAddr: aftermarketAddr,
+		VehicleContractAddr:     vehicleAddr,
+		ChainID:                 chainID}
+	modules.CloudEventRegistry.Override(modules.HashDogSource.String(), hashDogModule)
+
+	// Compass IOT
+	compassModule := &compass.Module{
+		SynthContractAddr:   syntheticAddr,
+		VehicleContractAddr: vehicleAddr,
+		ChainID:             chainID}
+	modules.CloudEventRegistry.Override(modules.CompassSource.String(), compassModule)
+
 	return &cloudeventProcessor{
-		cloudEventModule: cloudEventModule,
-		logger:           lgr,
-	}, nil
+		logger: lgr,
+	}
 }
 
 // ProcessBatch converts a batch of messages to cloud events.
@@ -82,7 +96,7 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			continue
 		}
 
-		hdrs, eventData, err := c.cloudEventModule.CloudEventConvert(ctx, msgBytes)
+		hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
 		if err != nil {
 			// Try to unmarshal convert errors
 			data, marshalErr := json.Marshal(err)

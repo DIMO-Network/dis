@@ -5,17 +5,14 @@ go 1.24
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87
 
 require (
-	github.com/DIMO-Network/model-garage v0.4.18
+	github.com/DIMO-Network/model-garage v0.5.0
 	github.com/DIMO-Network/nameindexer v0.1.2
 	github.com/ethereum/go-ethereum v1.14.13
 	github.com/redpanda-data/benthos/v4 v4.43.0
 	github.com/redpanda-data/connect/v4 v4.45.1
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.10.0
-	github.com/tidwall/gjson v1.18.0
-	go.uber.org/mock v0.5.0
 	golang.org/x/time v0.9.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -191,6 +188,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/snowflakedb/gosnowflake v1.11.0 // indirect
 	github.com/teslamotors/fleet-telemetry v0.7.2 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
@@ -244,6 +242,7 @@ require (
 	gopkg.in/jcmturner/gokrb5.v6 v6.1.1 // indirect
 	gopkg.in/jcmturner/rpc.v1 v1.1.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/gc/v3 v3.0.0-20240107210532-573471604cb6 // indirect
 	modernc.org/libc v1.55.3 // indirect
 	modernc.org/mathutil v1.6.0 // indirect

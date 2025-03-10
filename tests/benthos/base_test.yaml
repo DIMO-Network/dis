@@ -1,11 +1,11 @@
 tests:
-  - name: "Test convert indexing"
-    target_processors: "../../charts/dis/files/streams_dev/external-ingest.yaml#convert_cloudevent"
+  - name: "Test Cloud Event Indexing"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
     input_batch:
        - metadata:
-          example_key: example metadata value
           dimo_cloudevent_source: "0xSampleIntegrationAddr"
          json_content:
+            id: "0123"
             source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
             dataversion: "testschema/v2.0"
             subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
@@ -18,14 +18,14 @@ tests:
               device:
                 rpiUptimeSecs: 218
                 batteryVoltage: 12.28
-              vehicle:
-                signals:
-                  - timestamp: 1713460826633
-                    name: "coolantTemp"
-                    value: 107
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  value: 107
     output_batches:
-      - # Expected batch
-        - json_contains:
+      - - json_contains:
+            id: "0123"
+            specversion: "1.0"
             source: "0xSampleIntegrationAddr"
             dataversion: "testschema/v2.0"
             subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
@@ -38,21 +38,19 @@ tests:
               device:
                 rpiUptimeSecs: 218
                 batteryVoltage: 12.28
-              vehicle:
-                signals:
-                  - timestamp: 1713460826633
-                    name: "coolantTemp"
-                    value: 107
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  value: 107
           metadata_equals:
             dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!0xSampleIntegrationAddr!!!!!testschema_v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
 
-
-  - name: "Test Signal convert"
-    target_processors: "../../charts/dis/files/streams_dev/external-ingest.yaml#convert_signals"
+  - name: "Test Signal Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_valid_cloudevent'
-          dimo_cloudevent_source: "0xSampleIntegrationAddr"
+          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
@@ -67,86 +65,16 @@ tests:
             device:
               rpiUptimeSecs: 218
               batteryVoltage: 12.28
-            vehicle:
-              signals:
-                - timestamp: 1713460826633
-                  name: "coolantTemp"
-                  value: 107
-    output_batches:
-      - # Expected batch
-        - {} # replay of original message
-        - json_equals:  '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0xSampleIntegrationAddr", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
-
-  - name: "Test CloudConvert"
-    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
-    environment: {}
-    input_batch:
-      - metadata:
-          example_key: example metadata value
-          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
-        json_content:
-          ds: "r/v0/s"
-          signature: "abc123signature"
-          time: "2024-10-22T15:30:00Z"
-          data: {
-            "speed": 65.5,
-            "location": {
-              "lat": 54.6872,
-              "lng": 25.2797
-            },
-            "status": "active"
-          }
-          vehicleTokenId: 12
-          deviceTokenId: 392
-    output_batches:
-      - # Expected batch
-        - json_contains:
-            datacontenttype: "application/json"
-            subject: "did:nft:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_12"
-            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
-            specversion: "1.0"
-            time: "2024-10-22T15:30:00Z"
-            type: "dimo.status"
-            dataversion: "r/v0/s"
-            producer: "did:nft:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA_392"
-            data: {
-              "speed": 65.5,
-              "location": {
-                "lat": 54.6872,
-                "lng": 25.2797
-              },
-              "status": "active"
-            }
-            signature: "abc123signature"
-
-
-  - name: "Test Default Signal convert"
-    target_processors: "../../charts/dis/files/streams_dev/external-ingest.yaml#convert_signals"
-    input_batch:
-       - metadata:
-          dimo_message_content: 'dimo_valid_cloudevent'
-          dimo_cloudevent_source: "unregisterd-source-id"
-          dimo_cloudevent_type: "dimo.status"
-         json_content:
-          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-          source: "unregisterd-source-id"
-          dataschema: "testschema/v2.0"
-          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-          time: "2024-04-18T17:20:46.436008782Z"
-          vehicleTokenId: 123
-          data:
             signals:
               - timestamp: "2024-04-18T17:20:26.633Z"
                 name: "powertrainCombustionEngineECT"
                 value: 107
     output_batches:
-      - # Expected batch
-        - {} # replay of original message
-        - json_equals:  '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"unregisterd-source-id", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
+      - - {} # replay of original message
+        - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
 
-  - name: "Test Default CloudConvert"
-    target_processors: "../../charts/dis/files/streams_prod/external-ingest.yaml#convert_cloudevent"
+  - name: "Test Default Cloud Event Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
     environment: {}
     input_batch:
        - metadata:
@@ -167,8 +95,7 @@ tests:
                 name: "coolantTemp"
                 value: 107
     output_batches:
-      - # Expected batch
-        - json_contains:
+      - - json_contains:
             id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
             source: "unregisterd-source-id"
             dataschema: "testschema/v2.0"
@@ -181,3 +108,45 @@ tests:
                 - timestamp: 1713460826633
                   name: "coolantTemp"
                   value: 107
+
+  - name: "Test Ruptela Cloud Event Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
+    environment: {
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",
+      AFTERMARKET_NFT_ADDRESS: "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
+      DIMO_REGISTRY_CHAIN_ID: 137,
+    }
+    input_batch:
+      - metadata:
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+        json_content:
+          ds: "r/v0/s"
+          signature: "abc123signature"
+          time: "2024-10-22T15:30:00Z"
+          data: {
+            "speed": 65.5,
+            "location": {
+              "lat": 54.6872,
+              "lng": 25.2797
+            },
+            "status": "active"
+          }
+          vehicleTokenId: 12
+          deviceTokenId: 392
+    output_batches:
+      - - json_contains:
+            datacontenttype: "application/json"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+            specversion: "1.0"
+            time: "2024-10-22T15:30:00Z"
+            type: "dimo.status"
+            dataversion: "r/v0/s"
+            data: {
+              "speed": 65.5,
+              "location": {
+                "lat": 54.6872,
+                "lng": 25.2797
+              },
+              "status": "active"
+            }
+            signature: "abc123signature"
