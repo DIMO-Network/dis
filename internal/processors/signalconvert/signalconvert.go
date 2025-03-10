@@ -3,16 +3,15 @@ package signalconvert
 import (
 	"cmp"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
 	"time"
 
-	"github.com/DIMO-Network/dis/internal/modules"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
@@ -33,33 +32,12 @@ type SignalModule interface {
 	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
 }
 type vssProcessor struct {
-	signalModule SignalModule
-	Logger       *service.Logger
+	Logger *service.Logger
 }
 
 // Close to fulfill the service.Processor interface.
 func (*vssProcessor) Close(context.Context) error {
 	return nil
-}
-
-func newVSSProcessor(lgr *service.Logger, moduleName, moduleConfig string) (*vssProcessor, error) {
-	decodedModuelConfig, err := base64.StdEncoding.DecodeString(moduleConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode module config: %w", err)
-	}
-	moduleOpts := modules.Options{
-		Logger:       lgr,
-		FilePath:     "",
-		ModuleConfig: string(decodedModuelConfig),
-	}
-	signalModule, err := modules.LoadSignalModule(moduleName, moduleOpts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load signal module: %w", err)
-	}
-	return &vssProcessor{
-		signalModule: signalModule,
-		Logger:       lgr,
-	}, nil
 }
 
 func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
@@ -68,14 +46,20 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		// keep the original message and add any new signal messages to the batch
 		retBatch := service.MessageBatch{msg}
 		errMsg := msg.Copy()
-		msgBytes, err := msg.AsBytes()
+		msgStruct, err := msg.AsStructured()
 		if err != nil {
 			// Add the error to the batch and continue to the next message.
-			errMsg.SetError(fmt.Errorf("failed to get msg bytes: %w", err))
+			errMsg.SetError(fmt.Errorf("failed to get msg struct: %w", err))
 			retBatches = append(retBatches, service.MessageBatch{errMsg})
 			continue
 		}
-		signals, err := v.signalModule.SignalConvert(ctx, msgBytes)
+		rawEvent, ok := msgStruct.(*cloudevent.RawEvent)
+		if !ok {
+			errMsg.SetError(errors.New("failed to cast to cloudevent.RawEvent"))
+			retBatches = append(retBatches, service.MessageBatch{errMsg})
+			continue
+		}
+		signals, err := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
 		if err != nil {
 			errMsg.SetError(err)
 			data, err := json.Marshal(err)
@@ -91,7 +75,7 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		}
 
 		for i := range signals {
-			v.setMetaData(&signals[i], msgBytes)
+			v.setMetaData(&signals[i], rawEvent)
 			msgCpy := msg.Copy()
 			msgCpy.SetStructured(signals[i])
 			msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
@@ -200,16 +184,11 @@ func signalEqual(a, b vss.Signal) bool {
 	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
 }
 
-func (v *vssProcessor) setMetaData(signal *vss.Signal, msgData []byte) {
-	var eventHdrs cloudevent.CloudEventHeader
-	if err := json.Unmarshal(msgData, &eventHdrs); err != nil {
-		v.Logger.Warnf("failed to unmarshal event headers during signal convert which expects valid cloudevents: %v", err)
-		return
-	}
-	signal.Source = eventHdrs.Source
-	signal.Producer = eventHdrs.Producer
-	signal.CloudEventID = eventHdrs.ID
-	subjectDID, err := cloudevent.DecodeNFTDID(eventHdrs.Subject)
+func (v *vssProcessor) setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent) {
+	signal.Source = rawEvent.Source
+	signal.Producer = rawEvent.Producer
+	signal.CloudEventID = rawEvent.ID
+	subjectDID, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
 	if err != nil {
 		v.Logger.Warnf("failed to decode subject DID during signal convert which expects valid cloudevents: %v", err)
 	} else {
