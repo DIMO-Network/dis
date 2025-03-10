@@ -653,8 +653,8 @@ github.com/ClickHouse/clickhouse-go/v2 v2.30.1 h1:Dy0n0l+cMbPXs8hFkeeWGaPKrB+MDB
 github.com/ClickHouse/clickhouse-go/v2 v2.30.1/go.mod h1:szk8BMoQV/NgHXZ20ZbwDyvPWmpfhRKjFkc6wzASGxM=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87 h1:0qWA5eC7sZjQN/kXguX/+zqDe8ebK+aGQMP8+eUEeY8=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
-github.com/DIMO-Network/model-garage v0.4.17-0.20250310203433-ab30812a7f39 h1:5Ulk776j6USc8n6oK7s5x3QSdc/J7Q3r4Mo5mvCGm3E=
-github.com/DIMO-Network/model-garage v0.4.17-0.20250310203433-ab30812a7f39/go.mod h1:N4Tm1X7fU2IewHDfLhmx5aQqOnbxrC4LuhPBZccc25s=
+github.com/DIMO-Network/model-garage v0.5.0 h1:EXcaesfDAWF/rTwR5QVFFPudjsrTaTp5XmI84eWxouQ=
+github.com/DIMO-Network/model-garage v0.5.0/go.mod h1:Hg+G/zbSwh9ymE8q/yO5yazpGb57MOdisqk2OtvzxRg=
 github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=
 github.com/DIMO-Network/nameindexer v0.1.2/go.mod h1:BmonIrd69A4Whe+7WHiyTP6RJf3KQiooOLBISqkeyII=
 github.com/DIMO-Network/tesla-vss v0.1.1 h1:8pyyOMjXykZY/+KZHyfEmODbhmczghtetV5PTS+36Qk=
