@@ -7,6 +7,7 @@ import (
 
 	"github.com/DIMO-Network/dis/internal/modules/autopi"
 	"github.com/DIMO-Network/dis/internal/modules/compass"
+	"github.com/DIMO-Network/dis/internal/modules/defaultmodule"
 	"github.com/DIMO-Network/dis/internal/modules/macaron"
 	"github.com/DIMO-Network/dis/internal/modules/ruptela"
 	"github.com/DIMO-Network/dis/internal/modules/sample"
@@ -40,6 +41,7 @@ var signalModules = map[string]func() (SignalModule, error){
 	"ruptela": func() (SignalModule, error) { return ruptela.New() },
 	"tesla":   func() (SignalModule, error) { return tesla.New() },
 	"compass": func() (SignalModule, error) { return compass.New() },
+	"default": func() (SignalModule, error) { return defaultmodule.New() },
 }
 
 var cloudEventModules = map[string]func() (CloudEventModule, error){
@@ -49,6 +51,7 @@ var cloudEventModules = map[string]func() (CloudEventModule, error){
 	"ruptela": func() (CloudEventModule, error) { return ruptela.New() },
 	"tesla":   func() (CloudEventModule, error) { return tesla.New() },
 	"compass": func() (CloudEventModule, error) { return compass.New() },
+	"default": func() (CloudEventModule, error) { return defaultmodule.New() },
 }
 
 // NotFoundError is an error type for when a module is not found.
