@@ -75,11 +75,7 @@ test-prometheus-rules: test-prometheus-prepare ## Run Prometheus rules tests
 
 lint-benthos: build  ## Run Benthos linter
 	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_SIGNAL_DATABASE="" CLICKHOUSE_INDEX_DATABASE=""  CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
-	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams_dev/*
-
-	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_SIGNAL_DATABASE="" CLICKHOUSE_INDEX_DATABASE=""  CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
-	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams_prod/*
-
+	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
 lint: lint-benthos ## Run linter for benthos config and go code
 	golangci-lint version
 	@golangci-lint run --timeout=30m
@@ -110,8 +106,5 @@ tools-mockgen: ## install mockgen tool
 
 tools: tools-golangci-lint tools-mockgen tools-prometheus## Install all tools
 
-config-gen: ## Generate Benthos config files
-	@go run ./cmd/config-gen -input_prod=./connections/connections_prod.yaml -input_dev=./connections/connections_dev.yaml -output_prod=charts/$(BIN_NAME)/files/streams_prod -output_dev=charts/$(BIN_NAME)/files/streams_dev
-
-generate: config-gen ## Run all generate commands
+generate: ## Run all generate commands
 	@go generate ./...

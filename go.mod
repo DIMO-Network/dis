@@ -5,15 +5,13 @@ go 1.24
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87
 
 require (
-	github.com/DIMO-Network/model-garage v0.4.17-0.20250310163533-7a1390df7c5c
+	github.com/DIMO-Network/model-garage v0.4.17-0.20250310203433-ab30812a7f39
 	github.com/DIMO-Network/nameindexer v0.1.2
 	github.com/ethereum/go-ethereum v1.14.13
 	github.com/redpanda-data/benthos/v4 v4.43.0
 	github.com/redpanda-data/connect/v4 v4.45.1
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.10.0
-	github.com/tidwall/gjson v1.18.0
-	go.uber.org/mock v0.5.0
 	golang.org/x/time v0.9.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -191,6 +189,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/snowflakedb/gosnowflake v1.11.0 // indirect
 	github.com/teslamotors/fleet-telemetry v0.7.2 // indirect
+	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect

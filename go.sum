@@ -653,13 +653,10 @@ github.com/ClickHouse/clickhouse-go/v2 v2.30.1 h1:Dy0n0l+cMbPXs8hFkeeWGaPKrB+MDB
 github.com/ClickHouse/clickhouse-go/v2 v2.30.1/go.mod h1:szk8BMoQV/NgHXZ20ZbwDyvPWmpfhRKjFkc6wzASGxM=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87 h1:0qWA5eC7sZjQN/kXguX/+zqDe8ebK+aGQMP8+eUEeY8=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
-<<<<<<< HEAD
-=======
 github.com/DIMO-Network/model-garage v0.4.17-0.20250310163533-7a1390df7c5c h1:+t/Y7ZzEEzWldXib5ieQrVznRyDmhU7qK8spOEFWaBI=
 github.com/DIMO-Network/model-garage v0.4.17-0.20250310163533-7a1390df7c5c/go.mod h1:N4Tm1X7fU2IewHDfLhmx5aQqOnbxrC4LuhPBZccc25s=
->>>>>>> 80138ee (Update cloudevent conversion)
-github.com/DIMO-Network/model-garage v0.4.18 h1:RrnTN3zwmq6nIB2osLgFp28iIzN38ibHxkyRsSCLhjI=
-github.com/DIMO-Network/model-garage v0.4.18/go.mod h1:Hg+G/zbSwh9ymE8q/yO5yazpGb57MOdisqk2OtvzxRg=
+github.com/DIMO-Network/model-garage v0.4.17-0.20250310203433-ab30812a7f39 h1:5Ulk776j6USc8n6oK7s5x3QSdc/J7Q3r4Mo5mvCGm3E=
+github.com/DIMO-Network/model-garage v0.4.17-0.20250310203433-ab30812a7f39/go.mod h1:N4Tm1X7fU2IewHDfLhmx5aQqOnbxrC4LuhPBZccc25s=
 github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=
 github.com/DIMO-Network/nameindexer v0.1.2/go.mod h1:BmonIrd69A4Whe+7WHiyTP6RJf3KQiooOLBISqkeyII=
 github.com/DIMO-Network/tesla-vss v0.1.1 h1:8pyyOMjXykZY/+KZHyfEmODbhmczghtetV5PTS+36Qk=
@@ -1475,8 +1472,6 @@ go.opentelemetry.io/otel/trace v1.33.0/go.mod h1:uIcdVUZMpTAmz0tI1z04GoVSezK37Cb
 go.opentelemetry.io/proto/otlp v0.7.0/go.mod h1:PqfVotwruBrMGOCsRd/89rSnXhoiJIqeYNgFYFoEGnI=
 go.opentelemetry.io/proto/otlp v0.15.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
 go.opentelemetry.io/proto/otlp v0.19.0/go.mod h1:H7XAot3MsfNsj7EXtrA2q5xSNQ10UqI405h3+duxN4U=
-go.uber.org/mock v0.5.0 h1:KAMbZvZPyBPWgD14IrIQ38QCyjwpvVVV6K/bHl1IwQU=
-go.uber.org/mock v0.5.0/go.mod h1:ge71pBPLYDk7QIi1LupWxdAykm7KIEFchiOqd6z7qMM=
 go.uber.org/multierr v1.11.0 h1:blXXJkSxSSfBVBlC76pxqeO+LN3aDfLQo+309xJstO0=
 go.uber.org/multierr v1.11.0/go.mod h1:20+QtiLqy0Nd6FdQB9TLXag12DsQkrbs3htMFfDN80Y=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
