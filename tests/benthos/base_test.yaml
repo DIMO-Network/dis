@@ -47,6 +47,9 @@ tests:
 
   - name: "Test Signal Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 153
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_valid_cloudevent'

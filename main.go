@@ -23,9 +23,7 @@ import (
 	// Add our custom plugin packages here.
 	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
 	_ "github.com/DIMO-Network/dis/internal/processors/httpinputserver"
-	_ "github.com/DIMO-Network/dis/internal/processors/seterror"
 	_ "github.com/DIMO-Network/dis/internal/processors/signalconvert"
-	_ "github.com/DIMO-Network/dis/internal/processors/splitvalues"
 )
 
 func main() {

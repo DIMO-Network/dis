@@ -13,6 +13,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
@@ -32,7 +33,9 @@ type SignalModule interface {
 	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
 }
 type vssProcessor struct {
-	Logger *service.Logger
+	Logger            *service.Logger
+	vehicleNFTAddress common.Address
+	chainID           uint64
 }
 
 // Close to fulfill the service.Processor interface.
@@ -45,22 +48,21 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 	for _, msg := range msgs {
 		// keep the original message and add any new signal messages to the batch
 		retBatch := service.MessageBatch{msg}
-		errMsg := msg.Copy()
-		msgStruct, err := msg.AsStructured()
+		rawEvent, err := msgToEvent(msg)
 		if err != nil {
-			// Add the error to the batch and continue to the next message.
-			errMsg.SetError(fmt.Errorf("failed to get msg struct: %w", err))
+			errMsg := msg.Copy()
+			errMsg.SetError(err)
 			retBatches = append(retBatches, service.MessageBatch{errMsg})
 			continue
 		}
-		rawEvent, ok := msgStruct.(*cloudevent.RawEvent)
-		if !ok {
-			errMsg.SetError(errors.New("failed to cast to cloudevent.RawEvent"))
-			retBatches = append(retBatches, service.MessageBatch{errMsg})
+		if !v.isVehicleSignalMessage(rawEvent) {
+			// leave the message as is and continue to the next message
+			retBatches = append(retBatches, retBatch)
 			continue
 		}
 		signals, err := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
 		if err != nil {
+			errMsg := msg.Copy()
 			errMsg.SetError(err)
 			data, err := json.Marshal(err)
 			if err == nil {
@@ -70,6 +72,7 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 		}
 		signals, err = pruneSignals(signals)
 		if err != nil {
+			errMsg := msg.Copy()
 			errMsg.SetError(err)
 			retBatch = append(retBatch, errMsg)
 		}
@@ -194,4 +197,33 @@ func (v *vssProcessor) setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawE
 	} else {
 		signal.TokenID = subjectDID.TokenID
 	}
+}
+
+func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {
+	if rawEvent.Type != cloudevent.TypeStatus {
+		return false
+	}
+	did, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
+	if err != nil {
+		// unexpected so log for now
+		v.Logger.Warnf("failed to decode subject DID during signal convert which expects valid cloudevents: %v", err)
+		return false
+	}
+	if did.ChainID != v.chainID || did.ContractAddress.Cmp(v.vehicleNFTAddress) != 0 {
+		return false
+	}
+
+	return true
+}
+
+func msgToEvent(msg *service.Message) (*cloudevent.RawEvent, error) {
+	msgStruct, err := msg.AsStructured()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get structured message: %w", err)
+	}
+	rawEvent, ok := msgStruct.(*cloudevent.RawEvent)
+	if !ok {
+		return nil, fmt.Errorf("unexpected message type: %T", msgStruct)
+	}
+	return rawEvent, nil
 }

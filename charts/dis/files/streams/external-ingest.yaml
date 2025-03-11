@@ -53,16 +53,18 @@ pipeline:
         - resource: "dimo_bad_request_sync_response"
         # Drop the message
         - mapping: root = deleted()
-    # If label name change, update the alerts
-    - label: "convert_signals_switch"
+    - label: "valid_cloudevent_switch"
       switch:
         - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
           processors:
             - resource: "dimo_partial_index_count"
-        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_type").or("") == "dimo.status"'
+        - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
           processors:
+           # If label name change, update the alerts
             - label: convert_signals
-              dimo_signal_convert: {}
+              dimo_signal_convert:
+                chain_id: ${DIMO_REGISTRY_CHAIN_ID:137}
+                vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
     # If label name change, update the alerts
     - label: "convert_signal_errors"
       catch:
