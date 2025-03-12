@@ -83,47 +83,46 @@ func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, aftermarketAd
 func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	retBatches := make([]service.MessageBatch, 0, len(msgs))
 	for _, msg := range msgs {
-		msgBytes, err := msg.AsBytes()
-		if err != nil {
-			// Add the error to the batch and continue to the next message.
-			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to get msg bytes: %w", err))
-			continue
-		}
-
-		source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
-		if !ok {
-			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to get source from connection id"))
-			continue
-		}
-
-		hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
-		if err != nil {
-			// Try to unmarshal convert errors
-			data, marshalErr := json.Marshal(err)
-			if marshalErr == nil {
-				msg.SetBytes(data)
-			}
-			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to convert to cloud event: %w", err))
-			continue
-		}
-		if len(hdrs) == 0 {
-			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("no cloud events headers returned"))
-			continue
-		}
-		if len(eventData) == 0 {
-			// If the module chooses not to return data, use the original message will be used
-			eventData = msgBytes
-		}
-
-		retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
-		if err != nil {
-			retBatches = processors.AppendError(retBatches, msg, processorName, err)
-			continue
-		}
-
-		retBatches = append(retBatches, retBatch)
+		retBatches = append(retBatches, c.processMsg(ctx, msg))
 	}
 	return retBatches, nil
+}
+
+func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Message) service.MessageBatch {
+	msgBytes, err := msg.AsBytes()
+	if err != nil {
+		processors.SetError(msg, processorName, "failed to get message as bytes", err)
+		return service.MessageBatch{msg}
+	}
+	source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
+	if !ok {
+		processors.SetError(msg, processorName, "failed to get source from message metadata", err)
+		return service.MessageBatch{msg}
+	}
+	hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
+	if err != nil {
+		// Try to unmarshal convert errors
+		data, marshalErr := json.Marshal(err)
+		if marshalErr == nil {
+			msg.SetBytes(data)
+		}
+		processors.SetError(msg, processorName, "failed to convert to cloud event", err)
+		return service.MessageBatch{msg}
+	}
+	if len(hdrs) == 0 {
+		processors.SetError(msg, processorName, "no cloud events headers returned", nil)
+		return service.MessageBatch{msg}
+	}
+	if len(eventData) == 0 {
+		// If the module chooses not to return data, use the original message will be used
+		eventData = msgBytes
+	}
+	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
+	if err != nil {
+		processors.SetError(msg, processorName, "failed to create event messages", err)
+		return service.MessageBatch{msg}
+	}
+	return retBatch
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {

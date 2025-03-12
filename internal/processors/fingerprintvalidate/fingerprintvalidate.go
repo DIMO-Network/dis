@@ -2,7 +2,6 @@ package fingerprintvalidate
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 
 	"github.com/DIMO-Network/dis/internal/processors"
@@ -26,26 +25,31 @@ func (*processor) Close(context.Context) error {
 func (v *processor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
-		rawEvent, err := processors.MsgToEvent(msg)
-		if err != nil {
-			retBatches = processors.AppendError(retBatches, msg, processorName, err)
-			continue
-		}
-		if rawEvent.Type != cloudevent.TypeFingerprint {
-			// leave the message as is and continue to the next message
-			retBatches = append(retBatches, service.MessageBatch{msg})
-			continue
-		}
-		fingerprint, err := modules.ConvertToFingerprint(ctx, rawEvent.Source, *rawEvent)
-		if err != nil {
-			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to convert to fingerprint: %w", err))
-			continue
-		}
-		if !vinRegex.MatchString(fingerprint.VIN) {
-			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("invalid VIN in fingerprint: %s", fingerprint.VIN))
-			continue
-		}
-		retBatches = append(retBatches, service.MessageBatch{msg})
+		retBatches = append(retBatches, v.processMsg(ctx, msg))
 	}
 	return retBatches, nil
+}
+
+func (v *processor) processMsg(ctx context.Context, msg *service.Message) service.MessageBatch {
+	// always return the original message
+	batch := service.MessageBatch{msg}
+	rawEvent, err := processors.MsgToEvent(msg)
+	if err != nil {
+		processors.SetError(msg, processorName, "failed to convert to event", err)
+		return batch
+	}
+	if rawEvent.Type != cloudevent.TypeFingerprint {
+		return batch
+	}
+	fingerprint, err := modules.ConvertToFingerprint(ctx, rawEvent.Source, *rawEvent)
+	if err != nil {
+		// Add the error to the batch and continue to the next message.
+		processors.SetError(msg, processorName, "failed to convert to fingerprint", err)
+		return batch
+	}
+	if !vinRegex.MatchString(fingerprint.VIN) {
+		processors.SetError(msg, processorName, "invalid VIN in fingerprint", err)
+		return batch
+	}
+	return batch
 }

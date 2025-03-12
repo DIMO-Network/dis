@@ -1,6 +1,7 @@
 package processors
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -17,11 +18,14 @@ const (
 
 var allowableTimeSkew = getSkew()
 
-// AppendError appends an error message to the batches.
-func AppendError(batches []service.MessageBatch, msg *service.Message, componentName string, err error) []service.MessageBatch {
+// SetError sets an error on a message.
+func SetError(msg *service.Message, componentName, errorMsg string, err error) {
+	if err == nil {
+		err = errors.New(errorMsg)
+	}
 	msg.SetError(err)
+	msg.MetaSetMut("dimo_error_message", errorMsg)
 	msg.MetaSetMut("dimo_component", componentName)
-	return append(batches, service.MessageBatch{msg})
 }
 
 // MsgToEvent converts a message to a cloudevent.

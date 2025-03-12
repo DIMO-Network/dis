@@ -30,7 +30,7 @@ var (
 )
 
 type vssProcessor struct {
-	Logger            *service.Logger
+	logger            *service.Logger
 	vehicleNFTAddress common.Address
 	chainID           uint64
 }
@@ -40,50 +40,55 @@ func (*vssProcessor) Close(context.Context) error {
 	return nil
 }
 
+// ProcessBatch to fulfill the service.BatchProcessor interface.
 func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	var retBatches []service.MessageBatch
 	for _, msg := range msgs {
-		// keep the original message and add any new signal messages to the batch
-		retBatch := service.MessageBatch{msg}
-		rawEvent, err := processors.MsgToEvent(msg)
-		if err != nil {
-			errMsg := msg.Copy()
-			errMsg.SetError(err)
-			retBatches = append(retBatches, service.MessageBatch{errMsg})
-			continue
-		}
-		if !v.isVehicleSignalMessage(rawEvent) {
-			// leave the message as is and continue to the next message
-			retBatches = append(retBatches, retBatch)
-			continue
-		}
-		signals, err := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
-		if err != nil {
-			errMsg := msg.Copy()
-			errMsg.SetError(err)
-			data, err := json.Marshal(err)
-			if err == nil {
-				errMsg.SetBytes(data)
-			}
-			retBatch = append(retBatch, errMsg)
-		}
-		signals, err = pruneSignals(signals)
-		if err != nil {
-			errMsg := msg.Copy()
-			errMsg.SetError(err)
-			retBatch = append(retBatch, errMsg)
-		}
-
-		for i := range signals {
-			v.setMetaData(&signals[i], rawEvent)
-			msgCpy := msg.Copy()
-			msgCpy.SetStructured(signals[i])
-			msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
-			retBatch = append(retBatch, msgCpy)
-		}
-		retBatches = append(retBatches, retBatch)
+		retBatches = append(retBatches, v.processMsg(ctx, msg))
 	}
 	return retBatches, nil
+}
+
+// processMsg processes a single message and returns a batch of signals and or errors.
+func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) service.MessageBatch {
+	// keep the original message and add any new signal messages to the batch
+	retBatch := service.MessageBatch{msg}
+	rawEvent, err := processors.MsgToEvent(msg)
+	if err != nil || !v.isVehicleSignalMessage(rawEvent) {
+		// leave the message as is and continue to the next message
+		return retBatch
+	}
+	subjectDID, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
+	if err != nil {
+		// fail this message if we unexpectedly can't decode the subject DID
+		msg.SetError(fmt.Errorf("failed to decode subject DID during signal convert which expects valid cloudevents: %w", err))
+		return retBatch
+	}
+	signals, partialErr := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
+	if partialErr != nil {
+		errMsg := msg.Copy()
+		errMsg.SetError(partialErr)
+		data, err := json.Marshal(partialErr)
+		if err == nil {
+			errMsg.SetBytes(data)
+		}
+		retBatch = append(retBatch, errMsg)
+	}
+	signals, partialErr = pruneSignals(signals)
+	if partialErr != nil {
+		errMsg := msg.Copy()
+		errMsg.SetError(partialErr)
+		retBatch = append(retBatch, errMsg)
+	}
+
+	for i := range signals {
+		msgCpy := msg.Copy()
+		setMetaData(&signals[i], rawEvent, subjectDID)
+		msgCpy.SetStructured(signals[i])
+		msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
+		retBatch = append(retBatch, msgCpy)
+	}
+	return retBatch
 }
 
 type LatLngIdx struct {
@@ -184,16 +189,11 @@ func signalEqual(a, b vss.Signal) bool {
 	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
 }
 
-func (v *vssProcessor) setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent) {
+func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent, subject cloudevent.NFTDID) {
 	signal.Source = rawEvent.Source
 	signal.Producer = rawEvent.Producer
 	signal.CloudEventID = rawEvent.ID
-	subjectDID, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
-	if err != nil {
-		v.Logger.Warnf("failed to decode subject DID during signal convert which expects valid cloudevents: %v", err)
-	} else {
-		signal.TokenID = subjectDID.TokenID
-	}
+	signal.TokenID = subject.TokenID
 }
 
 func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {
@@ -202,13 +202,10 @@ func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) boo
 	}
 	did, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
 	if err != nil {
-		// unexpected so log for now
-		v.Logger.Warnf("failed to decode subject DID during signal convert which expects valid cloudevents: %v", err)
 		return false
 	}
 	if did.ChainID != v.chainID || did.ContractAddress.Cmp(v.vehicleNFTAddress) != 0 {
 		return false
 	}
-
 	return true
 }
