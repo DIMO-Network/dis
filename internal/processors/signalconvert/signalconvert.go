@@ -29,9 +29,6 @@ var (
 	pruneSignal        = vss.Signal{Name: pruneSignalName}
 )
 
-type SignalModule interface {
-	SignalConvert(ctx context.Context, msgData []byte) ([]vss.Signal, error)
-}
 type vssProcessor struct {
 	Logger            *service.Logger
 	vehicleNFTAddress common.Address
@@ -48,7 +45,7 @@ func (v *vssProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBat
 	for _, msg := range msgs {
 		// keep the original message and add any new signal messages to the batch
 		retBatch := service.MessageBatch{msg}
-		rawEvent, err := msgToEvent(msg)
+		rawEvent, err := processors.MsgToEvent(msg)
 		if err != nil {
 			errMsg := msg.Copy()
 			errMsg.SetError(err)
@@ -214,16 +211,4 @@ func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) boo
 	}
 
 	return true
-}
-
-func msgToEvent(msg *service.Message) (*cloudevent.RawEvent, error) {
-	msgStruct, err := msg.AsStructured()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get structured message: %w", err)
-	}
-	rawEvent, ok := msgStruct.(*cloudevent.RawEvent)
-	if !ok {
-		return nil, fmt.Errorf("unexpected message type: %T", msgStruct)
-	}
-	return rawEvent, nil
 }

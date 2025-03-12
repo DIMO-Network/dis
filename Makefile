@@ -61,7 +61,7 @@ test-go: ## Run Go tests
 	@go test ./...
 
 test-benthos: build ## Run Benthos tests
-	dis test --log debug -r ./charts/dis/files/resources.yaml ./tests/benthos/...
+	dis test --log debug -r ./tests/benthos/resources_mock.yaml ./tests/benthos/*_test.yaml
 
 test-prometheus-prepare: ## Prepare Prometheus alert files for testing
 	@mkdir -p ./charts/dis/tests

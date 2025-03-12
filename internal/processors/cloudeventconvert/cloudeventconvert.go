@@ -86,13 +86,13 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 		msgBytes, err := msg.AsBytes()
 		if err != nil {
 			// Add the error to the batch and continue to the next message.
-			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get msg bytes: %w", err))
+			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to get msg bytes: %w", err))
 			continue
 		}
 
 		source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
 		if !ok {
-			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to get source from connection id"))
+			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to get source from connection id"))
 			continue
 		}
 
@@ -103,11 +103,11 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 			if marshalErr == nil {
 				msg.SetBytes(data)
 			}
-			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("failed to convert to cloud event: %w", err))
+			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("failed to convert to cloud event: %w", err))
 			continue
 		}
 		if len(hdrs) == 0 {
-			retBatches = processors.AppendError(retBatches, msg, fmt.Errorf("no cloud events headers returned"))
+			retBatches = processors.AppendError(retBatches, msg, processorName, fmt.Errorf("no cloud events headers returned"))
 			continue
 		}
 		if len(eventData) == 0 {
@@ -117,7 +117,7 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 
 		retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 		if err != nil {
-			retBatches = processors.AppendError(retBatches, msg, err)
+			retBatches = processors.AppendError(retBatches, msg, processorName, err)
 			continue
 		}
 
