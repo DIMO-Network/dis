@@ -54,13 +54,8 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 	// keep the original message and add any new signal messages to the batch
 	retBatch := service.MessageBatch{msg}
 	rawEvent, err := processors.MsgToEvent(msg)
-	if err != nil {
-		// Add the error to the batch and continue to the next message.
-		errMsg := msg.Copy()
-		processors.SetError(errMsg, processorName, "failed to convert to event", err)
-		return retBatch
-	}
-	if !v.isVehicleSignalMessage(rawEvent) {
+	if err != nil || !v.isVehicleSignalMessage(rawEvent) {
+		// leave the message as is and continue to the next message
 		return retBatch
 	}
 	subjectDID, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
@@ -207,12 +202,10 @@ func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) boo
 	}
 	did, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
 	if err != nil {
-		v.logger.Warnf("failed to decode subject DID for event.ID %s: ", rawEvent.ID, err)
-		return true
+		return false
 	}
 	if did.ChainID != v.chainID || did.ContractAddress.Cmp(v.vehicleNFTAddress) != 0 {
-		v.logger.Warnf("invalid vehicle NFT address or chain ID for event.ID: %s, expected chainID: %d, expected vehicleNFTAddress: %s, got chainID: %d, got vehicleNFTAddress: %s", rawEvent.ID, v.chainID, v.vehicleNFTAddress.String(), did.ChainID, did.ContractAddress.String())
-		return true
+		return false
 	}
 	return true
 }
