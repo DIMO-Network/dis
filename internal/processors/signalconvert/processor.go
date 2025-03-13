@@ -38,7 +38,7 @@ func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProce
 		return nil, fmt.Errorf("invalid vehicle contract address: %s", vehicleAddress)
 	}
 	return &vssProcessor{
-		Logger:            mgr.Logger(),
+		logger:            mgr.Logger(),
 		vehicleNFTAddress: common.HexToAddress(vehicleAddress),
 		chainID:           uint64(chainID),
 	}, nil

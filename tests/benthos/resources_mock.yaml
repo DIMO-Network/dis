@@ -1,0 +1,18 @@
+rate_limit_resources:
+  - label: "connection_rate_limit"
+    local:
+      count: 100000
+      interval: 1s
+
+processor_resources:
+  - label: "dimo_error_count"
+    noop: {}
+
+  - label: "dimo_partial_index_count"
+    noop: {}
+
+  - label: "dimo_bad_request_sync_response"
+    noop: {}
+
+  - label: "dimo_internal_error_sync_response"
+    noop: {}
