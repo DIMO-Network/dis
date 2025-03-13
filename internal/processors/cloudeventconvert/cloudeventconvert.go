@@ -44,7 +44,7 @@ func (*cloudeventProcessor) Close(context.Context) error {
 	return nil
 }
 
-func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, aftermarketAddr, syntheticAddr, vehicleAddr common.Address) *cloudeventProcessor {
+func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, aftermarketAddr, syntheticAddr common.Address) *cloudeventProcessor {
 	// AutoPi
 	autoPiModule := &autopi.Module{
 		AftermarketContractAddr: aftermarketAddr,
