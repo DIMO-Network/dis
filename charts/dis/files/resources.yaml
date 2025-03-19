@@ -14,13 +14,6 @@ processor_resources:
         source: ${! metadata("dimo_cloudevent_source") }
         error: ${! metadata("error") }
 
-  - label: "dimo_provider_input_count"
-    metric:
-      type: counter
-      name: dimo_provider_input_count
-      labels:
-        source: ${! metadata("dimo_cloudevent_source") }
-
   - label: "dimo_partial_index_count"
     metric:
       type: counter
