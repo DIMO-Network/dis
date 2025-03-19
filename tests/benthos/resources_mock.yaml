@@ -16,3 +16,6 @@ processor_resources:
 
   - label: "dimo_internal_error_sync_response"
     noop: {}
+
+  - label: "dimo_provider_input_count"
+    noop: {}
