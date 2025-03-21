@@ -96,9 +96,13 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	}
 	source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
 	if !ok {
-		processors.SetError(msg, processorName, "failed to get source from message metadata", err)
-		return service.MessageBatch{msg}
+		source, ok = msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
+		if !ok {
+			processors.SetError(msg, processorName, "failed to get source from message metadata", err)
+			return service.MessageBatch{msg}
+		}
 	}
+
 	hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
 	if err != nil {
 		// Try to unmarshal convert errors
@@ -117,12 +121,48 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		// If the module chooses not to return data, use the original message will be used
 		eventData = msgBytes
 	}
-	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
+
+	if source == httpinputserver.DIMOAttestationIdKey {
+		validSignature, err := c.validateSignature(msgBytes)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to validate signature", err)
+			return service.MessageBatch{msg}
+		}
+
+		if !validSignature {
+			processors.SetError(msg, processorName, "signature invalid", nil)
+			return service.MessageBatch{msg}
+		}
+	}
+
+	var retBatch []*service.Message
+	retBatch, err = c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
 	return retBatch
+}
+
+func (c *cloudeventProcessor) validateSignature(msg []byte) (bool, error) {
+	var event cloudevent.RawEvent
+	err := json.Unmarshal([]byte(msg), &event)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse cloud event: %w", err)
+	}
+
+	sigStr, ok := event.Extras["signature"].(string)
+	if !ok {
+		return false, fmt.Errorf("failed to get signature from payload")
+	}
+	signature := common.FromHex(sigStr)
+
+	recAddr, err := Ecrecover(event.Data, []byte(signature))
+	if err != nil {
+		return false, fmt.Errorf("failed to recover an address: %w", err)
+	}
+
+	return common.HexToAddress(event.Producer) == recAddr, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
@@ -170,7 +210,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 }
 
 func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
-	event.Source = source
+	event.Source = source //TODO(ae): is this duplicative with what i've added to line 206?
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
@@ -190,17 +230,19 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	msg.MetaSetMut(cloudEventProducerKey, hdr.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
+	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source) //TODO(ae): duplicative for line 186?
 }
 
 func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
 		return false
 	}
+
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Producer); err != nil {
-		return false
+		if _, err = cloudevent.DecodeEthrDID(eventHdr.Producer); err != nil {
+			return false
+		}
 	}
-	if !common.IsHexAddress(eventHdr.Source) {
-		return false
-	}
-	return true
+
+	return common.IsHexAddress(eventHdr.Source)
 }
