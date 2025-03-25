@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/pkg/clickhouse"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
@@ -158,7 +159,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	// Add index and values to the first message without an error only, so we do not get duplicate s3 objects
 	for i := range messages {
 		if messages[i].GetError() == nil {
-			objectKey := hdrs[i].IndexKey()
+			objectKey := clickhouse.CloudEventToObjectKey(&hdrs[i])
 			messages[i].MetaSetMut(cloudEventIndexKey, objectKey)
 			messages[i].MetaSetMut(CloudEventIndexValueKey, hdrs)
 			break
