@@ -17,6 +17,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/DIMO-Network/nameindexer"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
@@ -94,43 +95,49 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		processors.SetError(msg, processorName, "failed to get message as bytes", err)
 		return service.MessageBatch{msg}
 	}
-	source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
+	source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 	if !ok {
-		source, ok = msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
-		if !ok {
-			processors.SetError(msg, processorName, "failed to get source from message metadata", err)
+		processors.SetError(msg, processorName, "failed to get source from message metadata", err)
+		return service.MessageBatch{msg}
+	}
+
+	contentType, ok := msg.MetaGet(processors.MessageContentKey)
+	if !ok {
+		processors.SetError(msg, processorName, "failed to get content type from message metadata", err)
+		return service.MessageBatch{msg}
+	}
+
+	var hdrs []cloudevent.CloudEventHeader
+	var eventData []byte
+	switch contentType {
+	case httpinputserver.ConnectionContent:
+		hdrs, eventData, err = modules.ConvertToCloudEvents(ctx, source, msgBytes)
+		if err != nil {
+			// Try to unmarshal convert errors
+			data, marshalErr := json.Marshal(err)
+			if marshalErr == nil {
+				msg.SetBytes(data)
+			}
+			processors.SetError(msg, processorName, "failed to convert to cloud event", err)
 			return service.MessageBatch{msg}
 		}
-	}
-
-	hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
-	if err != nil {
-		// Try to unmarshal convert errors
-		data, marshalErr := json.Marshal(err)
-		if marshalErr == nil {
-			msg.SetBytes(data)
+		if len(hdrs) == 0 {
+			processors.SetError(msg, processorName, "no cloud events headers returned", nil)
+			return service.MessageBatch{msg}
 		}
-		processors.SetError(msg, processorName, "failed to convert to cloud event", err)
-		return service.MessageBatch{msg}
-	}
-	if len(hdrs) == 0 {
-		processors.SetError(msg, processorName, "no cloud events headers returned", nil)
-		return service.MessageBatch{msg}
-	}
-	if len(eventData) == 0 {
-		// If the module chooses not to return data, use the original message will be used
-		eventData = msgBytes
-	}
-
-	if source == httpinputserver.DIMOAttestationIdKey {
-		validSignature, err := c.validateSignature(msgBytes)
+		if len(eventData) == 0 {
+			// If the module chooses not to return data, use the original message will be used
+			eventData = msgBytes
+		}
+	case httpinputserver.AttestationContent:
+		validSignature, err := c.validateSignature(msgBytes, source)
 		if err != nil {
-			processors.SetError(msg, processorName, "failed to validate signature", err)
+			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
 		}
 
 		if !validSignature {
-			processors.SetError(msg, processorName, "signature invalid", nil)
+			processors.SetError(msg, processorName, "message signature invalid", err)
 			return service.MessageBatch{msg}
 		}
 	}
@@ -144,7 +151,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(msg []byte) (bool, error) {
+func (c *cloudeventProcessor) validateSignature(msg []byte, sourceAddr string) (bool, error) {
 	var event cloudevent.RawEvent
 	err := json.Unmarshal([]byte(msg), &event)
 	if err != nil {
@@ -156,13 +163,14 @@ func (c *cloudeventProcessor) validateSignature(msg []byte) (bool, error) {
 		return false, fmt.Errorf("failed to get signature from payload")
 	}
 	signature := common.FromHex(sigStr)
+	hash := crypto.Keccak256Hash(event.Data)
 
-	recAddr, err := Ecrecover(event.Data, []byte(signature))
+	recAddr, err := Ecrecover(hash.Bytes(), signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to recover an address: %w", err)
 	}
 
-	return common.HexToAddress(event.Producer) == recAddr, nil
+	return common.HexToAddress(sourceAddr) == recAddr, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
