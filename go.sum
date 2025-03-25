@@ -651,8 +651,8 @@ github.com/ClickHouse/ch-go v0.63.1 h1:s2JyZvWLTCSAGdtjMBBmAgQQHMco6pawLJMOXi0FO
 github.com/ClickHouse/ch-go v0.63.1/go.mod h1:I1kJJCL3WJcBMGe1m+HVK0+nREaG+JOYYBWjrDrF3R0=
 github.com/ClickHouse/clickhouse-go/v2 v2.30.1 h1:Dy0n0l+cMbPXs8hFkeeWGaPKrB+MDByUNQBSmRO3W6k=
 github.com/ClickHouse/clickhouse-go/v2 v2.30.1/go.mod h1:szk8BMoQV/NgHXZ20ZbwDyvPWmpfhRKjFkc6wzASGxM=
-github.com/DIMO-Network/benthos/v4 v4.0.0-20250325200919-15b9c9b2d4f2 h1:L602Gam5/aDfLND5Neb5WnAR/hfPiPZPgr5K4szQxEE=
-github.com/DIMO-Network/benthos/v4 v4.0.0-20250325200919-15b9c9b2d4f2/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
+github.com/DIMO-Network/benthos/v4 v4.0.0-20250325203543-689ee52ef418 h1:0ylkYkTg+nzPQ+0/dIpHVa4CNDAe12UeqmOqaDWYtmc=
+github.com/DIMO-Network/benthos/v4 v4.0.0-20250325203543-689ee52ef418/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
 github.com/DIMO-Network/model-garage v0.5.0 h1:EXcaesfDAWF/rTwR5QVFFPudjsrTaTp5XmI84eWxouQ=
 github.com/DIMO-Network/model-garage v0.5.0/go.mod h1:Hg+G/zbSwh9ymE8q/yO5yazpGb57MOdisqk2OtvzxRg=
 github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=

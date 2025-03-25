@@ -2,7 +2,7 @@ module github.com/DIMO-Network/dis
 
 go 1.24
 
-replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250325200919-15b9c9b2d4f2
+replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250325203543-689ee52ef418
 
 require (
 	github.com/DIMO-Network/model-garage v0.5.0
