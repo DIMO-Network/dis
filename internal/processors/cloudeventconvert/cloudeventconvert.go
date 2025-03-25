@@ -107,30 +107,45 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		return service.MessageBatch{msg}
 	}
 
-	var hdrs []cloudevent.CloudEventHeader
-	var eventData []byte
-	switch contentType {
-	case httpinputserver.ConnectionContent:
-		hdrs, eventData, err = modules.ConvertToCloudEvents(ctx, source, msgBytes)
-		if err != nil {
-			// Try to unmarshal convert errors
-			data, marshalErr := json.Marshal(err)
-			if marshalErr == nil {
-				msg.SetBytes(data)
-			}
-			processors.SetError(msg, processorName, "failed to convert to cloud event", err)
+	hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
+	if err != nil {
+		// Try to unmarshal convert errors
+		data, marshalErr := json.Marshal(err)
+		if marshalErr == nil {
+			msg.SetBytes(data)
+		}
+		processors.SetError(msg, processorName, "failed to convert to cloud event", err)
+		return service.MessageBatch{msg}
+	}
+	if len(hdrs) == 0 {
+		processors.SetError(msg, processorName, "no cloud events headers returned", nil)
+		return service.MessageBatch{msg}
+	}
+	if len(eventData) == 0 {
+		// If the module chooses not to return data, use the original message will be used
+		eventData = msgBytes
+	}
+
+	if contentType == httpinputserver.AttestationContent {
+		extras, ok := msg.MetaGetMut("extras")
+		if !ok {
+			processors.SetError(msg, processorName, "failed to get extras from message metadata", err)
 			return service.MessageBatch{msg}
 		}
-		if len(hdrs) == 0 {
-			processors.SetError(msg, processorName, "no cloud events headers returned", nil)
+
+		ext, ok := extras.(map[string]any)
+		if !ok {
+			processors.SetError(msg, processorName, "failed to parse metadata extras as map", err)
 			return service.MessageBatch{msg}
 		}
-		if len(eventData) == 0 {
-			// If the module chooses not to return data, use the original message will be used
-			eventData = msgBytes
+
+		signedPayload, ok := ext["signature"]
+		if !ok {
+			processors.SetError(msg, processorName, "failed to get signed payload", err)
+			return service.MessageBatch{msg}
 		}
-	case httpinputserver.AttestationContent:
-		validSignature, err := c.validateSignature(msgBytes, source)
+
+		validSignature, err := c.validateSignature(msgBytes, signedPayload, source)
 		if err != nil {
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
@@ -151,14 +166,14 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(msg []byte, sourceAddr string) (bool, error) {
+func (c *cloudeventProcessor) validateSignature(msg []byte, signedPayload any, sourceAddr string) (bool, error) {
 	var event cloudevent.RawEvent
 	err := json.Unmarshal([]byte(msg), &event)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse cloud event: %w", err)
 	}
 
-	sigStr, ok := event.Extras["signature"].(string)
+	sigStr, ok := signedPayload.(string)
 	if !ok {
 		return false, fmt.Errorf("failed to get signature from payload")
 	}

@@ -24,17 +24,17 @@ const (
 	ConnectionContent         = "dimo_content_connection"
 	AttestationContent        = "dimo_content_attestation"
 	tokenExchangeIssuer       = "token_exchange_issuer"
-	tokenExchangeJWTKeySetURL = "token_exchange_jwt_kery_set_url"
+	tokenExchangeJWTKeySetURL = "token_exchange_jwt_key_set_url"
 )
 
-var configSpec = service.NewConfigSpec().
-	Summary("handles cloud event inputs to DIS").
-	Field(service.NewIntField(tokenExchangeIssuer).Description("dex token issuer")).
-	Field(service.NewStringField(tokenExchangeJWTKeySetURL).Description("token exchange jwt key set url"))
+var field = service.NewObjectField("jwt",
+	service.NewInterpolatedStringField(tokenExchangeIssuer).Description("token exchange service"),
+	service.NewInterpolatedStringField(tokenExchangeJWTKeySetURL).Description("provides public keys for jwt signature validation"),
+)
 
 func init() {
 	io.RegisterCustomHTTPServerInput("dimo_http_server", CertRoutingMiddlewareConstructor, nil)
-	io.RegisterCustomHTTPServerInput("dimo_attestation_server", AttestationMiddlewareConstructor, &configSpec)
+	io.RegisterCustomHTTPServerInput("dimo_attestation_server", AttestationMiddlewareConstructor, field)
 }
 
 func CertRoutingMiddlewareConstructor(conf *service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
@@ -53,12 +53,17 @@ func CertRoutingMiddlewarefunc(r *http.Request) (map[string]any, error) {
 }
 
 func AttestationMiddlewareConstructor(conf *service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
-	issuer, err := conf.FieldString(tokenExchangeIssuer)
+	return attestationMiddleware(conf)
+}
+
+func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
+	subConf := conf.Namespace("jwt")
+	issuer, err := subConf.FieldString(tokenExchangeIssuer)
 	if err != nil {
 		return nil, err
 	}
 
-	jwksURI, err := conf.FieldString(tokenExchangeJWTKeySetURL)
+	jwksURI, err := subConf.FieldString(tokenExchangeJWTKeySetURL)
 	if err != nil {
 		return nil, err
 	}

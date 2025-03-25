@@ -1,4 +1,50 @@
 tests:
+  - name: "Test Attestation"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
+    environment: {
+      TOKEN_EXCHANGE_ISSUER: "0.0.0.0",
+      TOKEN_EXCHANGE_KEY_SET_URL: "0.0.0.0",
+    }
+    input_batch:
+       - metadata:
+          dimo_message_content: 'dimo_content_attestation'
+          dimo_cloudevent_source: "unregisterd-source-id"
+          dimo_cloudevent_type: "dimo.attesetation"
+          dimo_attestation_source: "unregisterd-source-id"
+          cloud_event_source: "0xD3Cb8baE2C2Ee0e8333D1c0A8E0179a0D1A3922e"
+         json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+          source: "valueThatwillBeOverwritten"
+          dataschema: "testschema/v2.0"
+          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          time: "2024-04-18T17:20:46.436008782Z"
+          vehicleTokenId: 123
+          signature: "0x8341fcddc88c8def986943b2253246a38a13593fd5bc3c379f98a8c4730207c349ee3173c130417e1864ccbc997f3585f54cc9c357fe1f2d582b25a2f369a3e11c"
+          extras: 
+            signature: "0x8341fcddc88c8def986943b2253246a38a13593fd5bc3c379f98a8c4730207c349ee3173c130417e1864ccbc997f3585f54cc9c357fe1f2d582b25a2f369a3e11c"
+          data:
+            signals:
+              - timestamp: 1713460826633
+                name: "coolantTemp"
+                value: 107
+    output_batches:
+      - - json_contains:
+            id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+            source: "0xD3Cb8baE2C2Ee0e8333D1c0A8E0179a0D1A3922e"
+            dataschema: "testschema/v2.0"
+            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            time: "2024-04-18T17:20:46.436008782Z"
+            vehicleTokenId: 123
+            signature: "0x8341fcddc88c8def986943b2253246a38a13593fd5bc3c379f98a8c4730207c349ee3173c130417e1864ccbc997f3585f54cc9c357fe1f2d582b25a2f369a3e11c"
+            extras:
+            data:
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  value: 107
+
   - name: "Test Cloud Event Indexing"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
     input_batch:
