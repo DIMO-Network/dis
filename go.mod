@@ -5,8 +5,8 @@ go 1.24
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87
 
 require (
-	github.com/DIMO-Network/model-garage v0.5.0
-	github.com/DIMO-Network/nameindexer v0.1.2
+	github.com/DIMO-Network/cloudevent v0.0.3
+	github.com/DIMO-Network/model-garage v0.5.2
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/redpanda-data/benthos/v4 v4.44.1
 	github.com/redpanda-data/connect/v4 v4.49.1
@@ -87,6 +87,7 @@ require (
 	github.com/btnguyen2k/consu/semita v0.1.5 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
+	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cncf/xds/go v0.0.0-20240905190251-b4127c9b8d78 // indirect
 	github.com/cockroachdb/apd/v3 v3.2.1 // indirect

@@ -4,8 +4,8 @@ import (
 	"context"
 	"regexp"
 
+	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )

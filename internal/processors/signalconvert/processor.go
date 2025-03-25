@@ -37,6 +37,8 @@ func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProce
 	if !common.IsHexAddress(vehicleAddress) {
 		return nil, fmt.Errorf("invalid vehicle contract address: %s", vehicleAddress)
 	}
+	met := mgr.Metrics()
+	met.NewCounter("signal_convert_errors", "Errors encountered during signal conversion")
 	return &vssProcessor{
 		logger:            mgr.Logger(),
 		vehicleNFTAddress: common.HexToAddress(vehicleAddress),

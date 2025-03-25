@@ -653,10 +653,10 @@ github.com/ClickHouse/clickhouse-go/v2 v2.30.1 h1:Dy0n0l+cMbPXs8hFkeeWGaPKrB+MDB
 github.com/ClickHouse/clickhouse-go/v2 v2.30.1/go.mod h1:szk8BMoQV/NgHXZ20ZbwDyvPWmpfhRKjFkc6wzASGxM=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87 h1:0qWA5eC7sZjQN/kXguX/+zqDe8ebK+aGQMP8+eUEeY8=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
-github.com/DIMO-Network/model-garage v0.5.0 h1:EXcaesfDAWF/rTwR5QVFFPudjsrTaTp5XmI84eWxouQ=
-github.com/DIMO-Network/model-garage v0.5.0/go.mod h1:Hg+G/zbSwh9ymE8q/yO5yazpGb57MOdisqk2OtvzxRg=
-github.com/DIMO-Network/nameindexer v0.1.2 h1:xar3D+fe7RFy887BVWh+B1qhUo/K6tIzK3Ld1NTuRgo=
-github.com/DIMO-Network/nameindexer v0.1.2/go.mod h1:BmonIrd69A4Whe+7WHiyTP6RJf3KQiooOLBISqkeyII=
+github.com/DIMO-Network/cloudevent v0.0.3 h1:pqQBIdSlCeFPvCYTV4XQGWjspAU8u04rBXqQs7xnFt4=
+github.com/DIMO-Network/cloudevent v0.0.3/go.mod h1:XIt86E9/CvJOA4YeP1Dxzu52hMtx95XAtC67hD/P7J0=
+github.com/DIMO-Network/model-garage v0.5.2 h1:pWf8BVdl4ZaNiUo4Ubs1CLYGLKGehkBADq+lCqymYwI=
+github.com/DIMO-Network/model-garage v0.5.2/go.mod h1:8Gd9UKTlbHYRH1eKJqzRDOndTEnZfo+ofb2XuJU2R6c=
 github.com/DIMO-Network/tesla-vss v0.1.1 h1:8pyyOMjXykZY/+KZHyfEmODbhmczghtetV5PTS+36Qk=
 github.com/DIMO-Network/tesla-vss v0.1.1/go.mod h1:jTu3Jfu9HeXPIoXtPY0RPPHj6/hJ1fxCOhO1bQfKnxo=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 h1:oVLqHXhnYtUwM89y9T1fXGaK9wTkXHgNp8/ZNMQzUxE=
@@ -802,6 +802,7 @@ github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA
 github.com/census-instrumentation/opencensus-proto v0.3.0/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/census-instrumentation/opencensus-proto v0.4.1 h1:iKLQ0xPNFxR/2hzXZMrBo8f1j86j5WHzznCCQxV/b8g=
 github.com/census-instrumentation/opencensus-proto v0.4.1/go.mod h1:4T9NM4+4Vw91VeyqjLS6ao50K5bOcLKN6Q42XnYaRYw=
+github.com/cespare/xxhash v1.1.0 h1:a6HrQnmkObjyL+Gs60czilIUGqrzKutQD6XZog3p+ko=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/cespare/xxhash/v2 v2.2.0/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
@@ -1336,6 +1337,8 @@ github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVs
 github.com/snowflakedb/gosnowflake v1.11.0 h1:qyqunGCVyq/Qyx40KQT+6sJ1CAGuuG2qv3WiCTLTctI=
 github.com/snowflakedb/gosnowflake v1.11.0/go.mod h1:WFe+8mpsapDaQjHX6BqJBKtfQCGlGD3lHKeDsKfpx2A=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
+github.com/spaolacci/murmur3 v1.1.0 h1:7c1g84S4BPRrfL5Xrdp6fOJ206sU9y293DDHaoy0bLI=
+github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v1.3.3/go.mod h1:5KUK8ByomD5Ti5Artl0RtHeI5pTF7MIDuXL3yY520V4=
 github.com/spf13/afero v1.6.0/go.mod h1:Ai8FlHk4v/PARR026UzYexafAt9roJ7LcLMAmO6Z93I=
 github.com/spf13/afero v1.9.2/go.mod h1:iUV7ddyEEZPO5gA3zD4fJt6iStLlL+Lg4m2cihcDf8Y=

@@ -43,7 +43,7 @@ tests:
                   name: "coolantTemp"
                   value: 107
           metadata_equals:
-            dimo_cloudevent_index: 0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b759581172046MA!!!!!!!!!!!!!!!!!0xSampleIntegrationAddr!!!!!testschema_v2.0000000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b
+            dimo_cloudevent_index: 9did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123!2024-04-18T17:20:46Z!dimo.status!0xSampleIntegrationAddr!0123
 
   - name: "Test Signal Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
@@ -72,6 +72,7 @@ tests:
               - timestamp: "2024-04-18T17:20:26.633Z"
                 name: "powertrainCombustionEngineECT"
                 value: 107
+            vin: "1HGCM826"
     output_batches:
       - - {} # replay of original message
         - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'

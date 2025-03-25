@@ -6,16 +6,16 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/pkg/clickhouse"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/compass"
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
-	"github.com/DIMO-Network/nameindexer"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
@@ -159,7 +159,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	// Add index and values to the first message without an error only, so we do not get duplicate s3 objects
 	for i := range messages {
 		if messages[i].GetError() == nil {
-			objectKey := nameindexer.CloudEventToIndexKey(&hdrs[i])
+			objectKey := clickhouse.CloudEventToObjectKey(&hdrs[i])
 			messages[i].MetaSetMut(cloudEventIndexKey, objectKey)
 			messages[i].MetaSetMut(CloudEventIndexValueKey, hdrs)
 			break

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"

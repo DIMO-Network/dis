@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/DIMO-Network/model-garage/pkg/cloudevent"
+	"github.com/DIMO-Network/cloudevent"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
