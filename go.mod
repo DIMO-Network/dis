@@ -5,8 +5,8 @@ go 1.24
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87
 
 require (
-	github.com/DIMO-Network/model-garage v0.5.0
-	github.com/DIMO-Network/nameindexer v0.1.2
+	github.com/DIMO-Network/cloudevent v0.0.1
+	github.com/DIMO-Network/model-garage v0.5.2
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/redpanda-data/benthos/v4 v4.44.1
 	github.com/redpanda-data/connect/v4 v4.49.1
