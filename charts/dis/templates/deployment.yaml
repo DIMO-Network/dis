@@ -46,8 +46,6 @@ spec:
           envFrom:
           - configMapRef:
               name: {{ include "dis.fullname" . }}-config
-          - secretRef:
-              name: {{ include "dis.fullname" . }}-secret
           env:
           - name: CONTAINER_NAME
             valueFrom:

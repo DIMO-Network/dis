@@ -38,6 +38,8 @@ input:
 
 pipeline:
   processors:
+    - resource: "dimo_provider_input_count"
+
     # If label name change, update the alerts
     - label: "convert_cloudevent"
       dimo_cloudevent_convert:
