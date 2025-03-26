@@ -11,16 +11,14 @@ tests:
           dimo_cloudevent_source: "unregisterd-source-id"
           dimo_cloudevent_type: "dimo.attesetation"
           dimo_attestation_source: "unregisterd-source-id"
-          cloud_event_source: "0x27fC49Ed57530500EF50a3302Fa77E2234050C25"
+          cloud_event_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "valueThatwillBeOverwritten"
           dataschema: "testschema/v2.0"
-          subject: "did:nft:153:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_123"
-          producer: "did:nft:153:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_123"
-          time: "2024-04-18T17:20:46.436008782Z"
+          subject: "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2"
+          producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
           vehicleTokenId: 123
-          signature: "0x75f459f5612c012d8e2324651b5602798026752b4a9437264c32c5c961910e047c6cc812efb34b4b1c49077176260859a6cb4fabc98fe078406129a2f8a630b400"
           extras: 
             signature: "0x75f459f5612c012d8e2324651b5602798026752b4a9437264c32c5c961910e047c6cc812efb34b4b1c49077176260859a6cb4fabc98fe078406129a2f8a630b400"
           data:
@@ -30,8 +28,8 @@ tests:
             id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
             source: "0x27fC49Ed57530500EF50a3302Fa77E2234050C25"
             dataschema: "testschema/v2.0"
-            subject: "did:nft:153:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_123"
-            producer: "did:nft:153:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_123"
+            subject: "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2"
+            producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
             time: "2024-04-18T17:20:46.436008782Z"
             vehicleTokenId: 123
             signature: "0x75f459f5612c012d8e2324651b5602798026752b4a9437264c32c5c961910e047c6cc812efb34b4b1c49077176260859a6cb4fabc98fe078406129a2f8a630b400"

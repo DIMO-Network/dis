@@ -138,12 +138,11 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		// validRange := 5 * time.Minute
-		// currentTimestamp := time.Now()
-		// if !(currentTimestamp.Sub(event.Time) <= validRange && event.Time.Sub(currentTimestamp) <= validRange) {
-		// 	processors.SetError(msg, processorName, fmt.Sprintf("event timestamp exceeds valid range: %+v", event.Time), nil)
-		// 	return service.MessageBatch{msg}
-		// }
+		currentTimestamp := time.Now().UTC()
+		if !(currentTimestamp.Sub(event.Time).Minutes() <= 5 && event.Time.Sub(currentTimestamp).Minutes() <= 5) {
+			processors.SetError(msg, processorName, fmt.Sprintf("event timestamp %+v exceeds valid range", event.Time), nil)
+			return service.MessageBatch{msg}
+		}
 
 		if event.ID == "" {
 			event.ID = ksuid.New().String()
