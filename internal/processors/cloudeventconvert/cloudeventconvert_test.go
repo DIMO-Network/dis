@@ -30,6 +30,8 @@ func (m *mockCloudEventModule) CloudEventConvert(ctx context.Context, data []byt
 
 func TestProcessBatch(t *testing.T) {
 	timestamp := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	now := time.Now()
+	attestationTimestamp := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
 	tests := []struct {
 		setupMock      func() *mockCloudEventModule
 		expectedMeta   map[string]any
@@ -43,21 +45,18 @@ func TestProcessBatch(t *testing.T) {
 	}{
 		{
 			name:           "successful attestation",
-			inputData:      []byte(`{"extras": {"signature": "0x8341fcddc88c8def986943b2253246a38a13593fd5bc3c379f98a8c4730207c349ee3173c130417e1864ccbc997f3585f54cc9c357fe1f2d582b25a2f369a3e11c", "data": "0xb61d27f60000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000"}}`),
-			sourceID:       common.HexToAddress("0xD3Cb8baE2C2Ee0e8333D1c0A8E0179a0D1A3922e").String(),
+			inputData:      []byte(fmt.Sprintf(`{"time": %s "id": "33", "subject": "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2", "producer": "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0", "data": {"tires":"good"}, "signature": "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01"}`, attestationTimestamp.Format(time.RFC3339))),
+			sourceID:       common.HexToAddress("0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0").String(),
 			messageContent: "dimo_content_attestation",
-			extras: map[string]any{
-				"signature": "0x8341fcddc88c8def986943b2253246a38a13593fd5bc3c379f98a8c4730207c349ee3173c130417e1864ccbc997f3585f54cc9c357fe1f2d582b25a2f369a3e11c",
-			},
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					ID:       "33",
-					Type:     "dimo.attestation", // TODO(ae): move to model garage
-					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-					Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
-					Time:     timestamp,
+					Type:     "dimo.attestation",
+					Producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
+					Subject:  "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
+					Time:     attestationTimestamp,
 				}
-				data := json.RawMessage(`{"key": "value"}`)
+				data := json.RawMessage(`{"tires":"good"}`)
 
 				return &mockCloudEventModule{
 					hdrs: []cloudevent.CloudEventHeader{event},
@@ -69,25 +68,31 @@ func TestProcessBatch(t *testing.T) {
 			expectedError: false,
 			expectedMeta: map[string]any{
 				cloudEventTypeKey:            "dimo.attestation", //TODO(ae), update w const
-				cloudEventProducerKey:        "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-				cloudEventSubjectKey:         "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+				cloudEventProducerKey:        "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
+				cloudEventSubjectKey:         "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
 				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
 					{
 						ID:       "33",
-						Source:   common.HexToAddress("0xD3Cb8baE2C2Ee0e8333D1c0A8E0179a0D1A3922e").String(),
+						Source:   common.HexToAddress("0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0").String(),
 						Type:     "dimo.attestation", //TODO(ae), update w const
-						Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-						Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
-						Time:     timestamp,
+						Producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
+						Subject:  "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
+						Time:     attestationTimestamp,
+						Extras: map[string]any{
+							"signature": "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01",
+						},
+						DataContentType: "application/json",
+						SpecVersion:     "1.0",
 					},
 				},
 			},
 		},
 		{
-			name:      "successful event conversion",
-			inputData: []byte(`{"test": "data"}`),
-			sourceID:  common.HexToAddress("0x").String(),
+			name:           "successful event conversion",
+			inputData:      []byte(`{"test": "data"}`),
+			sourceID:       common.HexToAddress("0x").String(),
+			messageContent: "dimo_content_connection",
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					ID:       "33",
@@ -134,9 +139,10 @@ func TestProcessBatch(t *testing.T) {
 			},
 		},
 		{
-			name:      "Future timestamp error",
-			inputData: []byte(`{"test": "data"}`),
-			sourceID:  common.HexToAddress("0x").String(),
+			name:           "Future timestamp error",
+			inputData:      []byte(`{"test": "data"}`),
+			sourceID:       common.HexToAddress("0x").String(),
+			messageContent: "dimo_content_connection",
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
@@ -216,9 +222,6 @@ func TestProcessBatch(t *testing.T) {
 			}
 			if tt.messageContent != "" {
 				msg.MetaSet("dimo_message_content", tt.messageContent)
-			}
-			if len(tt.extras) != 0 {
-				msg.MetaSetMut("extras", tt.extras)
 			}
 
 			result, err := processor.ProcessBatch(context.Background(), service.MessageBatch{msg})

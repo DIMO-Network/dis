@@ -3,6 +3,7 @@ package cloudeventconvert
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -107,45 +108,66 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		return service.MessageBatch{msg}
 	}
 
-	hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
-	if err != nil {
-		// Try to unmarshal convert errors
-		data, marshalErr := json.Marshal(err)
-		if marshalErr == nil {
-			msg.SetBytes(data)
+	var hdrs []cloudevent.CloudEventHeader
+	var eventData []byte
+	switch contentType {
+	case httpinputserver.ConnectionContent:
+		hdrs, eventData, err = modules.ConvertToCloudEvents(ctx, source, msgBytes)
+		if err != nil {
+			// Try to unmarshal convert errors
+			data, marshalErr := json.Marshal(err)
+			if marshalErr == nil {
+				msg.SetBytes(data)
+			}
+			processors.SetError(msg, processorName, "failed to convert to cloud event", err)
+			return service.MessageBatch{msg}
 		}
-		processors.SetError(msg, processorName, "failed to convert to cloud event", err)
-		return service.MessageBatch{msg}
-	}
-	if len(hdrs) == 0 {
-		processors.SetError(msg, processorName, "no cloud events headers returned", nil)
-		return service.MessageBatch{msg}
-	}
-	if len(eventData) == 0 {
-		// If the module chooses not to return data, use the original message will be used
-		eventData = msgBytes
-	}
-
-	if contentType == httpinputserver.AttestationContent {
-		extras, ok := msg.MetaGetMut("extras")
-		if !ok {
-			processors.SetError(msg, processorName, "failed to get extras from message metadata", err)
+		if len(hdrs) == 0 {
+			processors.SetError(msg, processorName, "no cloud events headers returned", nil)
+			return service.MessageBatch{msg}
+		}
+		if len(eventData) == 0 {
+			// If the module chooses not to return data, use the original message will be used
+			eventData = msgBytes
+		}
+	case httpinputserver.AttestationContent:
+		var event cloudevent.CloudEvent[json.RawMessage]
+		err = json.Unmarshal(msgBytes, &event)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to unmarshal attestation cloud event", err)
 			return service.MessageBatch{msg}
 		}
 
-		ext, ok := extras.(map[string]any)
-		if !ok {
-			processors.SetError(msg, processorName, "failed to parse metadata extras as map", err)
+		// validRange := 5 * time.Minute
+		// currentTimestamp := time.Now()
+		// if !(currentTimestamp.Sub(event.Time) <= validRange && event.Time.Sub(currentTimestamp) <= validRange) {
+		// 	processors.SetError(msg, processorName, fmt.Sprintf("event timestamp exceeds valid range: %+v", event.Time), nil)
+		// 	return service.MessageBatch{msg}
+		// }
+
+		if event.ID == "" {
+			event.ID = ksuid.New().String()
+		}
+
+		if event.DataContentType == "" {
+			event.DataContentType = "application/json"
+		}
+
+		if event.SpecVersion == "" {
+			event.SpecVersion = "1.0"
+		}
+
+		if event.Type == "" {
+			event.Type = "dimo.attestation"
+		}
+
+		if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
+			fmt.Println(111111)
+			processors.SetError(msg, processorName, "invalid attestation subject format", err)
 			return service.MessageBatch{msg}
 		}
 
-		signedPayload, ok := ext["signature"]
-		if !ok {
-			processors.SetError(msg, processorName, "failed to get signed payload", err)
-			return service.MessageBatch{msg}
-		}
-
-		validSignature, err := c.validateSignature(msgBytes, signedPayload, source)
+		validSignature, err := c.validateSignature(msg, event.Producer)
 		if err != nil {
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
@@ -155,6 +177,8 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			processors.SetError(msg, processorName, "message signature invalid", err)
 			return service.MessageBatch{msg}
 		}
+
+		hdrs = append(hdrs, event.CloudEventHeader)
 	}
 
 	var retBatch []*service.Message
@@ -166,26 +190,39 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(msg []byte, signedPayload any, sourceAddr string) (bool, error) {
-	var event cloudevent.RawEvent
-	err := json.Unmarshal([]byte(msg), &event)
+func (c *cloudeventProcessor) validateSignature(msg *service.Message, producer string) (bool, error) {
+	producerDID, err := cloudevent.DecodeEthrDID(producer)
+	if err != nil {
+		return false, errors.New("failed to decode producer did")
+	}
+
+	msgBytes, err := msg.AsBytes()
+	if err != nil {
+		return false, errors.New("failed to parse message as bytes")
+	}
+
+	var event cloudevent.CloudEvent[json.RawMessage]
+	err = json.Unmarshal(msgBytes, &event)
 	if err != nil {
 		return false, fmt.Errorf("failed to parse cloud event: %w", err)
 	}
 
-	sigStr, ok := signedPayload.(string)
+	sig, ok := event.Extras["signature"].(string)
 	if !ok {
-		return false, fmt.Errorf("failed to get signature from payload")
+		return false, errors.New("failed to get signed payload")
 	}
-	signature := common.FromHex(sigStr)
-	hash := crypto.Keccak256Hash(event.Data)
 
-	recAddr, err := Ecrecover(hash.Bytes(), signature)
+	signature := common.FromHex(sig)
+	msgHash := crypto.Keccak256(event.Data)
+	pk, err := crypto.Ecrecover(msgHash, signature)
 	if err != nil {
-		return false, fmt.Errorf("failed to recover an address: %w", err)
+		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
 	}
 
-	return common.HexToAddress(sourceAddr) == recAddr, nil
+	pubKey, err := crypto.UnmarshalPubkey(pk)
+	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
+
+	return recoveredAddress == producerDID.ContractAddress, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
@@ -233,7 +270,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 }
 
 func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
-	event.Source = source //TODO(ae): is this duplicative with what i've added to line 206?
+	event.Source = source
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
@@ -253,7 +290,7 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	msg.MetaSetMut(cloudEventProducerKey, hdr.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
-	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source) //TODO(ae): duplicative for line 186?
+	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source)
 }
 
 func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
