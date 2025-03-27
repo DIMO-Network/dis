@@ -3,6 +3,7 @@ package cloudeventconvert
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
@@ -94,35 +96,98 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		processors.SetError(msg, processorName, "failed to get message as bytes", err)
 		return service.MessageBatch{msg}
 	}
-	source, ok := msg.MetaGet(httpinputserver.DIMOConnectionIdKey)
+	source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 	if !ok {
 		processors.SetError(msg, processorName, "failed to get source from message metadata", err)
 		return service.MessageBatch{msg}
 	}
-	hdrs, eventData, err := modules.ConvertToCloudEvents(ctx, source, msgBytes)
-	if err != nil {
-		// Try to unmarshal convert errors
-		data, marshalErr := json.Marshal(err)
-		if marshalErr == nil {
-			msg.SetBytes(data)
+
+	contentType, ok := msg.MetaGet(processors.MessageContentKey)
+	if !ok {
+		processors.SetError(msg, processorName, "failed to get content type from message metadata", err)
+		return service.MessageBatch{msg}
+	}
+
+	var hdrs []cloudevent.CloudEventHeader
+	var eventData []byte
+	switch contentType {
+	case httpinputserver.ConnectionContent:
+		hdrs, eventData, err = modules.ConvertToCloudEvents(ctx, source, msgBytes)
+		if err != nil {
+			// Try to unmarshal convert errors
+			data, marshalErr := json.Marshal(err)
+			if marshalErr == nil {
+				msg.SetBytes(data)
+			}
+			processors.SetError(msg, processorName, "failed to convert to cloud event", err)
+			return service.MessageBatch{msg}
 		}
-		processors.SetError(msg, processorName, "failed to convert to cloud event", err)
-		return service.MessageBatch{msg}
+		if len(hdrs) == 0 {
+			processors.SetError(msg, processorName, "no cloud events headers returned", nil)
+			return service.MessageBatch{msg}
+		}
+		if len(eventData) == 0 {
+			// If the module chooses not to return data, use the original message will be used
+			eventData = msgBytes
+		}
+	case httpinputserver.AttestationContent:
+		event, err := processAttestation(msgBytes)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to process attestation", err)
+			return service.MessageBatch{msg}
+		}
+
+		setDefaults(&event.CloudEventHeader, source, ksuid.New().String())
+		validSignature, err := c.validateSignature(event, event.Producer)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to validate signature on message", err)
+			return service.MessageBatch{msg}
+		}
+
+		if !validSignature {
+			processors.SetError(msg, processorName, "message signature invalid", err)
+			return service.MessageBatch{msg}
+		}
+
+		hdrs = append(hdrs, event.CloudEventHeader)
+		msg.MetaSetMut(CloudEventIndexValueKey, hdrs)
+		objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
+		msg.MetaSetMut(cloudEventIndexKey, objectKey)
 	}
-	if len(hdrs) == 0 {
-		processors.SetError(msg, processorName, "no cloud events headers returned", nil)
-		return service.MessageBatch{msg}
-	}
-	if len(eventData) == 0 {
-		// If the module chooses not to return data, use the original message will be used
-		eventData = msgBytes
-	}
+
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
 	return retBatch
+}
+
+func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], producer string) (bool, error) {
+	producerDID, err := cloudevent.DecodeEthrDID(producer)
+	if err != nil {
+		return false, errors.New("failed to decode producer did")
+	}
+
+	sig, ok := event.Extras["signature"].(string)
+	if !ok {
+		return false, errors.New("failed to get signed payload")
+	}
+
+	signature := common.FromHex(sig)
+	msgHash := crypto.Keccak256(event.Data)
+	pk, err := crypto.Ecrecover(msgHash, signature)
+	if err != nil {
+		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
+	}
+
+	pubKey, err := crypto.UnmarshalPubkey(pk)
+	if err != nil {
+		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
+	}
+	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
+
+	return producerDID.ContractAddress.Cmp(recoveredAddress) == 0, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
@@ -177,6 +242,14 @@ func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
 	if event.ID == "" {
 		event.ID = defaultID
 	}
+
+	if event.SpecVersion == "" {
+		event.SpecVersion = "1.0"
+	}
+
+	if event.DataContentType == "" {
+		event.DataContentType = "application/json"
+	}
 }
 
 func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
@@ -190,17 +263,37 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	msg.MetaSetMut(cloudEventProducerKey, hdr.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
+	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source)
+}
+
+func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage], error) {
+	var event cloudevent.CloudEvent[json.RawMessage]
+	if err := json.Unmarshal(msgBytes, &event); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal attestation cloud event: %w", err)
+	}
+
+	if processors.IsFutureTimestamp(event.Time) {
+		return nil, fmt.Errorf("event timestamp %v exceeds valid range", event.Time)
+	}
+
+	if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
+		return nil, fmt.Errorf("invalid attestation subject format: %w", err)
+	}
+
+	event.Type = cloudevent.TypeAttestation
+	return &event, nil
 }
 
 func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
 		return false
 	}
+
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Producer); err != nil {
-		return false
+		if _, err = cloudevent.DecodeEthrDID(eventHdr.Producer); err != nil {
+			return false
+		}
 	}
-	if !common.IsHexAddress(eventHdr.Source) {
-		return false
-	}
-	return true
+
+	return common.IsHexAddress(eventHdr.Source)
 }
