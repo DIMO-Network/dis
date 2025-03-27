@@ -76,7 +76,7 @@ func TestProcessBatch(t *testing.T) {
 						Type:     "dimo.attestation", //TODO(ae), update w const
 						Producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
 						Subject:  "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
-						Time:     attestationTimestamp.Local(),
+						Time:     attestationTimestamp,
 						Extras: map[string]any{
 							"signature": "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01",
 						},
