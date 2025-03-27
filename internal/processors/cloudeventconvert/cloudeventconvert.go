@@ -219,6 +219,9 @@ func (c *cloudeventProcessor) validateSignature(msg *service.Message, producer s
 	}
 
 	pubKey, err := crypto.UnmarshalPubkey(pk)
+	if err != nil {
+		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
+	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
 	return recoveredAddress == producerDID.ContractAddress, nil

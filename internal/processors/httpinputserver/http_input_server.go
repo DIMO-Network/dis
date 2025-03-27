@@ -20,16 +20,16 @@ import (
 )
 
 const (
-	DIMOCloudEventSource      = "dimo_cloud_event_source"
-	ConnectionContent         = "dimo_content_connection"
-	AttestationContent        = "dimo_content_attestation"
-	tokenExchangeIssuer       = "token_exchange_issuer"
-	tokenExchangeJWTKeySetURL = "token_exchange_jwt_key_set_url"
+	DIMOCloudEventSource   = "dimo_cloud_event_source"
+	ConnectionContent      = "dimo_content_connection"
+	AttestationContent     = "dimo_content_attestation"
+	tokenExchangeIssuer    = "token_exchange_issuer"
+	tokenExchangeKeySetURL = "token_exchange_key_set_url"
 )
 
 var field = service.NewObjectField("jwt",
-	service.NewInterpolatedStringField(tokenExchangeIssuer).Description("token exchange service"),
-	service.NewInterpolatedStringField(tokenExchangeJWTKeySetURL).Description("provides public keys for jwt signature validation"),
+	service.NewStringField(tokenExchangeIssuer).Description("token exchange service"),
+	service.NewStringField(tokenExchangeKeySetURL).Description("provides public keys for jwt signature validation"),
 )
 
 func init() {
@@ -63,7 +63,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		return nil, err
 	}
 
-	jwksURI, err := subConf.FieldString(tokenExchangeJWTKeySetURL)
+	jwksURI, err := subConf.FieldString(tokenExchangeKeySetURL)
 	if err != nil {
 		return nil, err
 	}
