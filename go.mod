@@ -15,7 +15,6 @@ require (
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/time v0.11.0
-	google.golang.org/protobuf v1.36.5
 )
 
 require (
@@ -240,6 +239,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241113202542-65e8d215514f // indirect
 	google.golang.org/grpc v1.69.2 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/dnsutils.v1 v1.0.1 // indirect
