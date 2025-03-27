@@ -219,7 +219,7 @@ func TestProcessBatch(t *testing.T) {
 				msg.MetaSet(httpinputserver.DIMOCloudEventSource, tt.sourceID)
 			}
 			if tt.messageContent != "" {
-				msg.MetaSet("dimo_message_content", tt.messageContent)
+				msg.MetaSet(processors.MessageContentKey, tt.messageContent)
 			}
 
 			result, err := processor.ProcessBatch(context.Background(), service.MessageBatch{msg})

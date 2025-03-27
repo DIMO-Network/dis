@@ -57,7 +57,7 @@ pipeline:
             level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
-                source = metadata("dimo_cloudevent_source")
+                source = metadata("dimo_cloud_event_source")
                 producer = this.producer.or("unknown")
                 subject = this.subject.or("unknown")
                 type = this.type.or("unknown")
@@ -95,7 +95,7 @@ pipeline:
           level: WARN
           message: "failed to process cloudevent"
           fields_mapping: |
-            cloudevent_source = metadata("dimo_cloudevent_source").or("unknown")
+            cloudevent_source = metadata("dimo_cloud_event_source").or("unknown")
             cloudevent_producer = metadata("dimo_cloudevent_producer").or("unknown")
             cloudevent_subject = metadata("dimo_cloudevent_subject").or("unknown")
             cloudevent_type = metadata("dimo_cloudevent_type").or("unknown")
@@ -148,7 +148,7 @@ output:
                     - dimo_cloudevent_index_value
                     - dimo_cloudevent_index
                     - dimo_cloudevent_producer
-                    - dimo_cloudevent_source
+                    - dimo_cloud_event_source
                     - dimo_cloudevent_subject
                     - dimo_cloudevent_type
                     - dimo_cloudevent_id
@@ -202,7 +202,7 @@ output:
                 max_msg_bytes: 52428800
                 max_retries: 2
                 max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_source")}_${!metadata("dimo_cloudevent_id")}
+                key: ${!metadata("dimo_cloud_event_source")}_${!metadata("dimo_cloudevent_id")}
                 partitioner: murmur2_hash
                 batching:
                   count: 0

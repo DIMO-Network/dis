@@ -8,10 +8,9 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_attestation'
-          dimo_cloudevent_source: "unregisterd-source-id"
+          dimo_cloud_event_source: "unregisterd-source-id"
           dimo_cloudevent_type: "dimo.attesetation"
-          dimo_attestation_source: "unregisterd-source-id"
-          cloud_event_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+          dimo_cloud_event_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
@@ -40,7 +39,8 @@ tests:
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
     input_batch:
        - metadata:
-          dimo_cloudevent_source: "0xSampleIntegrationAddr"
+          dimo_cloud_event_source: "0xSampleIntegrationAddr"
+          dimo_message_content: 'dimo_content_connection'
          json_content:
             id: "0123"
             source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
@@ -90,7 +90,7 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+          dimo_cloud_event_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
@@ -120,7 +120,7 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloudevent_source: "unregisterd-source-id"
+          dimo_cloud_event_source: "unregisterd-source-id"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
@@ -159,7 +159,8 @@ tests:
     }
     input_batch:
       - metadata:
-          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloud_event_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
         json_content:
           ds: "r/v0/s"
           signature: "abc123signature"

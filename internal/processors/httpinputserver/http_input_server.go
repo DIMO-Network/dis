@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	DIMOCloudEventSource      = "cloud_event_source"
+	DIMOCloudEventSource      = "dimo_cloud_event_source"
 	ConnectionContent         = "dimo_content_connection"
 	AttestationContent        = "dimo_content_attestation"
 	tokenExchangeIssuer       = "token_exchange_issuer"
