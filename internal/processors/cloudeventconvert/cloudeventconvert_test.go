@@ -31,7 +31,7 @@ func (m *mockCloudEventModule) CloudEventConvert(ctx context.Context, data []byt
 func TestProcessBatch(t *testing.T) {
 	timestamp := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 	now := time.Now()
-	attestationTimestamp := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.Local)
+	attestationTimestamp := time.Date(now.Year(), now.Month(), now.Day(), now.Hour(), now.Minute(), 0, 0, time.UTC)
 	tests := []struct {
 		setupMock      func() *mockCloudEventModule
 		expectedMeta   map[string]any
