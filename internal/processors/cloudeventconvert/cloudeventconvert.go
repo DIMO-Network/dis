@@ -161,7 +161,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		}
 
 		if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
-			fmt.Println(111111)
 			processors.SetError(msg, processorName, "invalid attestation subject format", err)
 			return service.MessageBatch{msg}
 		}
@@ -178,6 +177,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		}
 
 		hdrs = append(hdrs, event.CloudEventHeader)
+		msg.MetaSetMut(CloudEventIndexValueKey, hdrs)
 	}
 
 	var retBatch []*service.Message
