@@ -131,41 +131,14 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			eventData = msgBytes
 		}
 	case httpinputserver.AttestationContent:
-		var event cloudevent.CloudEvent[json.RawMessage]
-		err = json.Unmarshal(msgBytes, &event)
+		event, err := processAttestation(msgBytes)
 		if err != nil {
-			processors.SetError(msg, processorName, "failed to unmarshal attestation cloud event", err)
+			processors.SetError(msg, processorName, "failed to process attestation", err)
 			return service.MessageBatch{msg}
 		}
 
-		currentTimestamp := time.Now().UTC()
-		if !(currentTimestamp.Sub(event.Time).Minutes() <= 5 && event.Time.Sub(currentTimestamp).Minutes() <= 5) {
-			processors.SetError(msg, processorName, fmt.Sprintf("event timestamp %+v exceeds valid range", event.Time), nil)
-			return service.MessageBatch{msg}
-		}
-
-		if event.ID == "" {
-			event.ID = ksuid.New().String()
-		}
-
-		if event.DataContentType == "" {
-			event.DataContentType = "application/json"
-		}
-
-		if event.SpecVersion == "" {
-			event.SpecVersion = "1.0"
-		}
-
-		if event.Type == "" {
-			event.Type = "dimo.attestation"
-		}
-
-		if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
-			processors.SetError(msg, processorName, "invalid attestation subject format", err)
-			return service.MessageBatch{msg}
-		}
-
-		validSignature, err := c.validateSignature(msg, event.Producer)
+		setDefaults(&event.CloudEventHeader, source, ksuid.New().String())
+		validSignature, err := c.validateSignature(event, event.Producer)
 		if err != nil {
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
@@ -178,10 +151,11 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 		hdrs = append(hdrs, event.CloudEventHeader)
 		msg.MetaSetMut(CloudEventIndexValueKey, hdrs)
+		objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
+		msg.MetaSetMut(cloudEventIndexKey, objectKey)
 	}
 
-	var retBatch []*service.Message
-	retBatch, err = c.createEventMsgs(msg, source, hdrs, eventData)
+	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
@@ -189,21 +163,10 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(msg *service.Message, producer string) (bool, error) {
+func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], producer string) (bool, error) {
 	producerDID, err := cloudevent.DecodeEthrDID(producer)
 	if err != nil {
 		return false, errors.New("failed to decode producer did")
-	}
-
-	msgBytes, err := msg.AsBytes()
-	if err != nil {
-		return false, errors.New("failed to parse message as bytes")
-	}
-
-	var event cloudevent.CloudEvent[json.RawMessage]
-	err = json.Unmarshal(msgBytes, &event)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse cloud event: %w", err)
 	}
 
 	sig, ok := event.Extras["signature"].(string)
@@ -224,7 +187,7 @@ func (c *cloudeventProcessor) validateSignature(msg *service.Message, producer s
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
-	return recoveredAddress == producerDID.ContractAddress, nil
+	return producerDID.ContractAddress.Cmp(recoveredAddress) == 0, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
@@ -279,6 +242,14 @@ func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
 	if event.ID == "" {
 		event.ID = defaultID
 	}
+
+	if event.SpecVersion == "" {
+		event.SpecVersion = "1.0"
+	}
+
+	if event.DataContentType == "" {
+		event.DataContentType = "application/json"
+	}
 }
 
 func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
@@ -293,6 +264,24 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
 	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source)
+}
+
+func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage], error) {
+	var event cloudevent.CloudEvent[json.RawMessage]
+	if err := json.Unmarshal(msgBytes, &event); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal attestation cloud event: %w", err)
+	}
+
+	if processors.IsFutureTimestamp(event.Time) {
+		return nil, fmt.Errorf("event timestamp %v exceeds valid range", event.Time)
+	}
+
+	if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
+		return nil, fmt.Errorf("invalid attestation subject format: %w", err)
+	}
+
+	event.Type = cloudevent.TypeAttestation
+	return &event, nil
 }
 
 func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {

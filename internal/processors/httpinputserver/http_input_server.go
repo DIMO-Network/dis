@@ -1,7 +1,6 @@
 package httpinputserver
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -9,18 +8,16 @@ import (
 	"time"
 
 	"github.com/DIMO-Network/dis/internal/processors"
-	"github.com/DIMO-Network/dis/internal/processors/httpinputserver/dex"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redpanda-data/benthos/v4/public/components/io"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"google.golang.org/protobuf/proto"
 )
 
 const (
-	DIMOCloudEventSource   = "dimo_cloud_event_source"
+	DIMOCloudEventSource   = "dimo_cloudevent_source"
 	ConnectionContent      = "dimo_content_connection"
 	AttestationContent     = "dimo_content_attestation"
 	tokenExchangeIssuer    = "token_exchange_issuer"
@@ -33,11 +30,11 @@ var field = service.NewObjectField("jwt",
 )
 
 func init() {
-	io.RegisterCustomHTTPServerInput("dimo_http_server", CertRoutingMiddlewareConstructor, nil)
-	io.RegisterCustomHTTPServerInput("dimo_attestation_server", AttestationMiddlewareConstructor, field)
+	io.RegisterCustomHTTPServerInput("dimo_http_connection_server", CertRoutingMiddlewareConstructor, nil)
+	io.RegisterCustomHTTPServerInput("dimo_http_attestation_server", AttestationMiddlewareConstructor, field)
 }
 
-func CertRoutingMiddlewareConstructor(conf *service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
+func CertRoutingMiddlewareConstructor(*service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
 	return CertRoutingMiddlewarefunc, nil
 }
 
@@ -107,26 +104,17 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 			return retMeta, fmt.Errorf("unexpted token type")
 		}
 
-		subj, err := token.Claims.GetSubject()
-		if err != nil {
-			return retMeta, fmt.Errorf("failed to get subject from token claims")
+		claims := token.Claims.(jwt.MapClaims)
+		ethAddr, exists := claims["ethereum_address"].(string)
+		if exists {
+			return retMeta, fmt.Errorf("no ethereum address in token")
 		}
 
-		decoded, err := base64.RawURLEncoding.DecodeString(subj)
-		if err != nil {
-			return retMeta, fmt.Errorf("failed to decode subject")
-		}
-
-		var user dex.User
-		if err = proto.Unmarshal(decoded, &user); err != nil {
-			return retMeta, fmt.Errorf("failed to parse subject")
-		}
-
-		if !common.IsHexAddress(subj) {
+		if !common.IsHexAddress(ethAddr) {
 			return retMeta, fmt.Errorf("subject is not valid hex address")
 		}
 
-		retMeta[DIMOCloudEventSource] = common.HexToAddress(subj)
+		retMeta[DIMOCloudEventSource] = common.HexToAddress(ethAddr)
 		retMeta[processors.MessageContentKey] = AttestationContent
 
 		// TODO(ae):

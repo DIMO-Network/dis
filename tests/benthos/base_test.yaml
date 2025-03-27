@@ -8,16 +8,16 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_attestation'
-          dimo_cloud_event_source: "unregisterd-source-id"
+          dimo_cloudevent_source: "unregisterd-source-id"
           dimo_cloudevent_type: "dimo.attesetation"
-          dimo_cloud_event_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+          dimo_cloudevent_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
           dataschema: "testschema/v2.0"
           subject: "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2"
           producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
-          time: "2025-03-27T15:47:46.436008782Z"
+          time: "2025-03-27T18:35:46.436008782Z"
           vehicleTokenId: 2
           signature: "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01"
           data:
@@ -29,7 +29,7 @@ tests:
             dataschema: "testschema/v2.0"
             subject: "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2"
             producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
-            time: "2025-03-27T15:47:46.436008782Z"
+            time: "2025-03-27T18:35:46.436008782Z"
             vehicleTokenId: 2
             signature: "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01"
             data:
@@ -39,7 +39,7 @@ tests:
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
     input_batch:
        - metadata:
-          dimo_cloud_event_source: "0xSampleIntegrationAddr"
+          dimo_cloudevent_source: "0xSampleIntegrationAddr"
           dimo_message_content: 'dimo_content_connection'
          json_content:
             id: "0123"
@@ -90,7 +90,7 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloud_event_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
@@ -120,7 +120,7 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloud_event_source: "unregisterd-source-id"
+          dimo_cloudevent_source: "unregisterd-source-id"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
@@ -160,7 +160,7 @@ tests:
     input_batch:
       - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloud_event_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
         json_content:
           ds: "r/v0/s"
           signature: "abc123signature"

@@ -11,7 +11,7 @@ processor_resources:
       name: dimo_error_count
       labels:
         component: ${! metadata("dimo_component") }
-        source: ${! metadata("dimo_cloud_event_source") }
+        source: ${! metadata("dimo_cloudevent_source") }
         error: ${! metadata("error") }
 
   - label: "dimo_provider_input_count"
@@ -19,14 +19,14 @@ processor_resources:
       type: counter
       name: dimo_provider_input_count
       labels:
-        source: ${! metadata("dimo_cloud_event_source") }
+        source: ${! metadata("dimo_cloudevent_source") }
 
   - label: "dimo_partial_index_count"
     metric:
       type: counter
       name: dimo_partial_index_count
       labels:
-        source: ${! metadata("dimo_cloud_event_source").or("unknown") }
+        source: ${! metadata("dimo_cloudevent_source").or("unknown") }
 
   - label: "dimo_bad_request_sync_response"
     processors:

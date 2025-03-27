@@ -7,7 +7,7 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloud_event_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
@@ -48,7 +48,7 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
-          dimo_cloud_event_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
