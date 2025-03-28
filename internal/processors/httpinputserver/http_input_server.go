@@ -1,6 +1,7 @@
 package httpinputserver
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -57,12 +58,12 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 	subConf := conf.Namespace("jwt")
 	issuer, err := subConf.FieldString(tokenExchangeIssuer)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch token exchange issuer from config: %w", err)
 	}
 
 	jwksURI, err := subConf.FieldString(tokenExchangeKeySetURL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch token exchange key set url from config: %w", err)
 	}
 
 	issuerURL, err := url.Parse(issuer)
@@ -101,17 +102,17 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 
 		token, ok := tkn.(jwt.Token)
 		if !ok {
-			return retMeta, fmt.Errorf("unexpted token type")
+			return retMeta, fmt.Errorf("unexpected token type %T", tkn)
 		}
 
 		claims := token.Claims.(jwt.MapClaims)
 		ethAddr, exists := claims["ethereum_address"].(string)
 		if exists {
-			return retMeta, fmt.Errorf("no ethereum address in token")
+			return retMeta, errors.New("no ethereum address in token")
 		}
 
 		if !common.IsHexAddress(ethAddr) {
-			return retMeta, fmt.Errorf("subject is not valid hex address")
+			return retMeta, errors.New("subject is not valid hex address")
 		}
 
 		retMeta[DIMOCloudEventSource] = common.HexToAddress(ethAddr)

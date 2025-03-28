@@ -12,8 +12,8 @@ env:
   VEHICLE_NFT_ADDRESS: '0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF'
   AFTERMARKET_NFT_ADDRESS: '0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA'
   SYNTHETIC_NFT_ADDRESS: '0x4804e8D1661cd1a1e5dDdE1ff458A7f878c0aC6D'
-  TOKEN_EXCHANGE_KEY_SET_URL: 'https://auth.prod.dimo.zone/dex/keys'
-  TOKEN_EXCHANGE_ISSUER: 'https://auth.prod.dimo.zone/dex'
+  TOKEN_EXCHANGE_KEY_SET_URL: 'https://auth.dimo.zone/dex/keys'
+  TOKEN_EXCHANGE_ISSUER: 'https://auth.dimo.zone/dex'
 ingress:
   enabled: true
   className: nginx-direct

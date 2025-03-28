@@ -127,7 +127,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 		if len(eventData) == 0 {
-			// If the module chooses not to return data, use the original message will be used
+			// If the module chooses not to return data, use the original message
 			eventData = msgBytes
 		}
 	case httpinputserver.AttestationContent:
@@ -145,7 +145,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		}
 
 		if !validSignature {
-			processors.SetError(msg, processorName, "message signature invalid", err)
+			processors.SetError(msg, processorName, "message signature invalid", nil)
 			return service.MessageBatch{msg}
 		}
 
@@ -187,7 +187,7 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
-	return producerDID.ContractAddress.Cmp(recoveredAddress) == 0, nil
+	return producerDID.ContractAddress == recoveredAddress, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
