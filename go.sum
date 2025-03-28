@@ -655,8 +655,8 @@ github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87 h1:0qWA5eC
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250123192050-6af7fb655e87/go.mod h1:2dUKS2373CZQ5lzp1qm6XflDhlm1mbhMGXBVoEuZMFQ=
 github.com/DIMO-Network/cloudevent v0.0.3 h1:pqQBIdSlCeFPvCYTV4XQGWjspAU8u04rBXqQs7xnFt4=
 github.com/DIMO-Network/cloudevent v0.0.3/go.mod h1:XIt86E9/CvJOA4YeP1Dxzu52hMtx95XAtC67hD/P7J0=
-github.com/DIMO-Network/model-garage v0.5.2 h1:pWf8BVdl4ZaNiUo4Ubs1CLYGLKGehkBADq+lCqymYwI=
-github.com/DIMO-Network/model-garage v0.5.2/go.mod h1:8Gd9UKTlbHYRH1eKJqzRDOndTEnZfo+ofb2XuJU2R6c=
+github.com/DIMO-Network/model-garage v0.5.3 h1:FpvwfbkS6fOUoL1Om/EtTnEgmvNE4MhDWG+SqmFwLrg=
+github.com/DIMO-Network/model-garage v0.5.3/go.mod h1:mBqoCeecvWhjY400uekNB1Z9poi1rPeFKmrm+m1hzY4=
 github.com/DIMO-Network/tesla-vss v0.1.1 h1:8pyyOMjXykZY/+KZHyfEmODbhmczghtetV5PTS+36Qk=
 github.com/DIMO-Network/tesla-vss v0.1.1/go.mod h1:jTu3Jfu9HeXPIoXtPY0RPPHj6/hJ1fxCOhO1bQfKnxo=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 h1:oVLqHXhnYtUwM89y9T1fXGaK9wTkXHgNp8/ZNMQzUxE=
