@@ -2,7 +2,7 @@ module github.com/DIMO-Network/dis
 
 go 1.24
 
-replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250325203543-689ee52ef418
+replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250328215254-90da9f641b52
 
 require (
 	github.com/DIMO-Network/cloudevent v0.0.4-0.20250327184649-14d31447d927

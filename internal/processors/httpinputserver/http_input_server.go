@@ -35,7 +35,7 @@ func init() {
 	io.RegisterCustomHTTPServerInput("dimo_http_attestation_server", AttestationMiddlewareConstructor, field)
 }
 
-func CertRoutingMiddlewareConstructor(*service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
+func CertRoutingMiddlewareConstructor(*service.ParsedConfig) (io.HTTPInputMiddlewareMeta, error) {
 	return CertRoutingMiddlewarefunc, nil
 }
 
@@ -50,7 +50,7 @@ func CertRoutingMiddlewarefunc(r *http.Request) (map[string]any, error) {
 	return retMeta, nil
 }
 
-func AttestationMiddlewareConstructor(conf *service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
+func AttestationMiddlewareConstructor(conf *service.ParsedConfig) (io.HTTPInputMiddlewareMeta, error) {
 	return attestationMiddleware(conf)
 }
 
