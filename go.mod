@@ -2,11 +2,11 @@ module github.com/DIMO-Network/dis
 
 go 1.24
 
-replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250328215254-90da9f641b52
+replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250331125744-764db784b997
 
 require (
 	github.com/DIMO-Network/cloudevent v0.0.4-0.20250327184649-14d31447d927
-	github.com/DIMO-Network/model-garage v0.5.2
+	github.com/DIMO-Network/model-garage v0.5.4
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -36,7 +36,6 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.1 // indirect
 	github.com/ClickHouse/ch-go v0.63.1 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.1 // indirect
-	github.com/DIMO-Network/tesla-vss v0.1.1 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.2 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
