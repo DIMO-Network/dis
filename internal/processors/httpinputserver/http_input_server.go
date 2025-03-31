@@ -105,7 +105,11 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 			return retMeta, fmt.Errorf("unexpected token type %T", tkn)
 		}
 
-		claims := token.Claims.(jwt.MapClaims)
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
+		}
+
 		ethAddr, exists := claims["ethereum_address"].(string)
 		if exists {
 			return retMeta, errors.New("no ethereum address in token")

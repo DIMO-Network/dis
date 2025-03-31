@@ -137,8 +137,18 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		setDefaults(&event.CloudEventHeader, source, ksuid.New().String())
-		validSignature, err := c.validateSignature(event, event.Producer)
+		attestorField, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
+		if !ok {
+			processors.SetError(msg, processorName, "failed to get attestor from message metadata", nil)
+			return service.MessageBatch{msg}
+		}
+
+		if !common.IsHexAddress(attestorField) {
+			processors.SetError(msg, processorName, "attestor field is not valid hex address", nil)
+			return service.MessageBatch{msg}
+		}
+
+		validSignature, err := c.validateSignature(event, attestorField)
 		if err != nil {
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
@@ -163,10 +173,9 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], producer string) (bool, error) {
-	producerDID, err := cloudevent.DecodeEthrDID(producer)
-	if err != nil {
-		return false, errors.New("failed to decode producer did")
+func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], attestor string) (bool, error) {
+	if !common.IsHexAddress(attestor) {
+		return false, errors.New("invalid attestor address")
 	}
 
 	sig, ok := event.Extras["signature"].(string)
@@ -187,7 +196,7 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
-	return producerDID.ContractAddress == recoveredAddress, nil
+	return common.HexToAddress(attestor) == recoveredAddress, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
