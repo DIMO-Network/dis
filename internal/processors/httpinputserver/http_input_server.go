@@ -26,8 +26,8 @@ const (
 )
 
 var field = service.NewObjectField("jwt",
-	service.NewStringField(tokenExchangeIssuer).Description("token exchange service"),
-	service.NewStringField(tokenExchangeKeySetURL).Description("provides public keys for jwt signature validation"),
+	service.NewStringField(tokenExchangeIssuer).Description("Specifies issuer url for token exchange service."),
+	service.NewStringField(tokenExchangeKeySetURL).Description("Specified the url that provides public keys for JWT signature validation."),
 )
 
 func init() {
