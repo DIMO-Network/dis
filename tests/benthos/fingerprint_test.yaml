@@ -6,7 +6,7 @@ tests:
       VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
     input_batch:
        - metadata:
-          dimo_message_content: 'dimo_valid_cloudevent'
+          dimo_message_content: 'dimo_content_connection'
           dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
@@ -47,7 +47,7 @@ tests:
       VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
     input_batch:
        - metadata:
-          dimo_message_content: 'dimo_valid_cloudevent'
+          dimo_message_content: 'dimo_content_connection'
           dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
           dimo_cloudevent_type: "dimo.status"
          json_content:
