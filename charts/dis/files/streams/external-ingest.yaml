@@ -47,6 +47,8 @@ pipeline:
         vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
         aftermarket_nft_address: ${AFTERMARKET_NFT_ADDRESS:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA}
         synthetic_nft_address: ${SYNTHETIC_NFT_ADDRESS:0x4804e8D1661cd1a1e5dDdE1ff458A7f878c0aC6D}
+        token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
+        token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/dex/keys}
 
     # If label name change, update the alerts
     - label: "convert_cloudevent_errors"
