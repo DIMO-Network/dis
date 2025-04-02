@@ -59,12 +59,19 @@ service:
       port: 443
       targetPort: 9443
       protocol: TCP
+    attest-https:
+      port: 442
+      targetPort: 9442
+      protocol: TCP
 ports:
   - name: mon-http
     containerPort: 8888
     protocol: TCP
   - name: https
     containerPort: 9443
+    protocol: TCP
+  - name: attest-https
+    containerPort: 9442
     protocol: TCP
 livenessProbe:
   httpGet:
@@ -96,10 +103,12 @@ ingress:
   hosts:
     - host: dis.dev.dimo.zone
       paths:
-        - path: /
-          pathType: ImplementationSpecific
         - path: /attest
           pathType: ImplementationSpecific
+          port: 442
+        - path: /
+          pathType: ImplementationSpecific
+          port: 443
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
