@@ -24,6 +24,9 @@ input:
 
       - label: "dimo_http_attestation_server"
         dimo_http_attestation_server:
+            jwt: 
+              token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
+              token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/dex/keys}
             address: 0.0.0.0:9442 # TODO(ae): confirm
             path: /attest
             allowed_verbs:
