@@ -60,7 +60,7 @@ service:
       targetPort: 9443
       protocol: TCP
     attest-https:
-      port: 8443
+      port: 443
       targetPort: 9442
       protocol: TCP
 ports:
@@ -105,12 +105,12 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
-          port: 443
+          port: https
     - host: attest.dis.dev.dimo.zone
       paths:
         - path: /
           pathType: ImplementationSpecific
-          port: 8443
+          port: attest-https
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
