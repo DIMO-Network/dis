@@ -57,11 +57,11 @@ service:
       protocol: TCP
     https:
       port: 443
-      targetPort: 9443
+      targetPort: https
       protocol: TCP
     attest-https:
       port: 443
-      targetPort: 9442
+      targetPort: attest-https
       protocol: TCP
 ports:
   - name: mon-http
