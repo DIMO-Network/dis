@@ -28,7 +28,7 @@ input:
               token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
               token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/dex/keys}
             address: 0.0.0.0:9442 # TODO(ae): confirm
-            path: /
+            path: /attest
             allowed_verbs:
               - POST
             timeout: 5s

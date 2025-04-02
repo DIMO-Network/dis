@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: 53b0946
+  tag: 93834a2
   command:
     - /dis
   args:
@@ -103,9 +103,12 @@ ingress:
   hosts:
     - host: dis.dev.dimo.zone
       paths:
-        - path: /
+        - path: /attest
           pathType: ImplementationSpecific
           port: 8443
+        - path: /
+          pathType: ImplementationSpecific
+          port: 443
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
