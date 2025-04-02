@@ -106,6 +106,9 @@ ingress:
         - path: /attest
           pathType: ImplementationSpecific
           port: 8443
+        - path: /
+          pathType: ImplementationSpecific
+          port: 443
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
