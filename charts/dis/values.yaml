@@ -98,6 +98,8 @@ ingress:
       paths:
         - path: /
           pathType: ImplementationSpecific
+        - path: /attest
+          pathType: ImplementationSpecific
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
