@@ -60,7 +60,7 @@ service:
       targetPort: 9443
       protocol: TCP
     attest-https:
-      port: 442
+      port: 8443
       targetPort: 9442
       protocol: TCP
 ports:
@@ -105,7 +105,7 @@ ingress:
       paths:
         - path: /attest
           pathType: ImplementationSpecific
-          port: 442
+          port: 8443
         - path: /
           pathType: ImplementationSpecific
           port: 443
