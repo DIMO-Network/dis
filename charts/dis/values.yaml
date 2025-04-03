@@ -96,7 +96,6 @@ ingress:
   className: nginx-direct
   annotations:
     external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
-    external-dns.alpha.kubernetes.io/hostname: dis.dev.dimo.zone
     nginx.ingress.kubernetes.io/limit-rps: '50'
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
   hosts:
