@@ -39,7 +39,7 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    - host: attest.dis.dev.dimo.zone
+    - host: attest.dev.dimo.zone
       http:
         paths:
           - backend:
