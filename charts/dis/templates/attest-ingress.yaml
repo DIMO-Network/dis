@@ -20,7 +20,7 @@ metadata:
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
-    external-dns.alpha.kubernetes.io/hostname: attest.dis.dev.dimo.zone
+    external-dns.alpha.kubernetes.io/hostname: attest.dev.dimo.zone
     nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
     nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
   {{- end }}
