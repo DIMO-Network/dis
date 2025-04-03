@@ -14,13 +14,12 @@ apiVersion: extensions/v1beta1
 {{- end }}
 kind: Ingress
 metadata:
-  name: {{ $fullName }}
+  name: {{ $fullName }}-attest
   labels:
     {{- include "dis.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
-    nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
   {{- end }}
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
@@ -37,25 +36,14 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: attest.dis.dev.dimo.zone
       http:
         paths:
-          {{- range .paths }}
-          - path: {{ .path }}
-            {{- if and .pathType (semverCompare ">=1.18-0" $.Capabilities.KubeVersion.GitVersion) }}
-            pathType: {{ .pathType }}
-            {{- end }}
-            backend:
-              {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
+          - backend:
               service:
-                name: {{ $fullName }}{{.backend.service.suffix}}
+                name: dis-dev-attest
                 port:
-                  number: {{ .backend.service.port.number }}
-              {{- else }}
-              serviceName: {{ $fullName }}{{.backend.service.suffix}}
-              servicePort: {{ .backend.service.port.number }}
-            {{- end}}
-          {{- end }}
-    {{- end }}
+                  number: 443
+            path: /
+            pathType: ImplementationSpecific
 {{- end }}

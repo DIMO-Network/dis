@@ -99,7 +99,6 @@ ingress:
     external-dns.alpha.kubernetes.io/hostname: dis.dev.dimo.zone
     nginx.ingress.kubernetes.io/limit-rps: '50'
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
   hosts:
     - host: dis.dev.dimo.zone
       paths:
@@ -108,15 +107,6 @@ ingress:
           backend:
             service:
               suffix: ''
-              port:
-                number: 443
-    - host: attest.dis.dev.dimo.zone
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              suffix: '-attest'
               port:
                 number: 443
   tls: []
