@@ -107,16 +107,18 @@ ingress:
           pathType: ImplementationSpecific
           backend:
             service:
+              suffix: ''
               port:
-                name: https
+                number: 443
     - host: attest.dis.dev.dimo.zone
       paths:
         - path: /
           pathType: ImplementationSpecific
           backend:
-            service:
+            service: 
+              suffix: '-attest'
               port:
-                name: attest-https
+                number: 443
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
