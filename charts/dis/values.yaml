@@ -103,14 +103,12 @@ ingress:
   hosts:
     - host: dis.dev.dimo.zone
       paths:
+        - path: /attest
+          pathType: ImplementationSpecific
+          port: attest-https
         - path: /
           pathType: ImplementationSpecific
           port: https
-    - host: attest.dis.dev.dimo.zone
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          port: attest-https
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
