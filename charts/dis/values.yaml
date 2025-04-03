@@ -60,7 +60,7 @@ service:
       targetPort: https
       protocol: TCP
     attest-https:
-      port: 443
+      port: 8443
       targetPort: attest-https
       protocol: TCP
 ports:
