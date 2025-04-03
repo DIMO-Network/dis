@@ -46,7 +46,7 @@ spec:
               service:
                 name: dis-dev-attest
                 port:
-                  number: 443
+                  number: 8080
             path: /
             pathType: ImplementationSpecific
 {{- end }}
