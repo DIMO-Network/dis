@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: 6a7a484
+  tag: 832d338
   command:
     - /dis
   args:
@@ -115,7 +115,7 @@ ingress:
         - path: /
           pathType: ImplementationSpecific
           backend:
-            service: 
+            service:
               suffix: '-attest'
               port:
                 number: 443
