@@ -22,6 +22,8 @@ metadata:
     {{- toYaml . | nindent 4 }}
     nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
     external-dns.alpha.kubernetes.io/hostname: dis.dev.dimo.zone
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
   {{- end }}
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}

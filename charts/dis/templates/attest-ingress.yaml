@@ -21,6 +21,8 @@ metadata:
   annotations:
     {{- toYaml . | nindent 4 }}
     external-dns.alpha.kubernetes.io/hostname: attest.dis.dev.dimo.zone
+    nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
+    nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
   {{- end }}
 spec:
   {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}

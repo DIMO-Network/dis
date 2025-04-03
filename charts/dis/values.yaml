@@ -59,10 +59,6 @@ service:
       port: 443
       targetPort: https
       protocol: TCP
-    attest-https:
-      port: 8443
-      targetPort: attest-https
-      protocol: TCP
 ports:
   - name: mon-http
     containerPort: 8888
@@ -70,7 +66,7 @@ ports:
   - name: https
     containerPort: 9443
     protocol: TCP
-  - name: attest-https
+  - name: attest-http
     containerPort: 9442
     protocol: TCP
 livenessProbe:
@@ -95,9 +91,7 @@ ingress:
   enabled: true
   className: nginx-direct
   annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
     nginx.ingress.kubernetes.io/limit-rps: '50'
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
   hosts:
     - host: dis.dev.dimo.zone
       paths:

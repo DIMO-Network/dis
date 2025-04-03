@@ -6,10 +6,10 @@ metadata:
     {{- include "dis.labels" . | nindent 4 }}
 spec:
   ports:
-    - name: https
-      port: 443
+    - name: http
+      port: 8080
       protocol: TCP
-      targetPort: attest-https
+      targetPort: attest-http
   selector:
     {{- include "dis.selectorLabels" . | nindent 4 }}
   type: {{ .Values.service.type }}
