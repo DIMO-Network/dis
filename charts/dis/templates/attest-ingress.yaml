@@ -1,4 +1,5 @@
 {{- if .Values.ingress.enabled -}}
+{{- $isDev := .Values.isDev -}}
 {{- $fullName := include "dis.fullname" . -}}
 {{- if and .Values.ingress.className (not (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion)) }}
   {{- if not (hasKey .Values.ingress.annotations "kubernetes.io/ingress.class") }}
@@ -20,7 +21,11 @@ metadata:
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
+    {{ if $isDev }}
     external-dns.alpha.kubernetes.io/hostname: attest.dev.dimo.zone
+    {{ else }}
+    external-dns.alpha.kubernetes.io/hostname: attest.dimo.zone
+    {{ end }}
     nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
     nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
   {{- end }}
@@ -39,12 +44,20 @@ spec:
     {{- end }}
   {{- end }}
   rules:
+    {{ if $isDev }}
     - host: attest.dev.dimo.zone
+    {{ else }}
+    - host: attest.dimo.zone
+    {{ end }}
       http:
         paths:
           - backend:
               service:
+                {{ if $isDev }}
                 name: dis-dev-attest
+                {{ else }}
+                name: dis-attest
+                {{ end }}
                 port:
                   number: 8080
             path: /
