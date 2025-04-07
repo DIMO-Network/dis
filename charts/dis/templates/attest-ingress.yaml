@@ -21,11 +21,7 @@ metadata:
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
-    {{ if $isDev }}
-    external-dns.alpha.kubernetes.io/hostname: attest.dev.dimo.zone
-    {{ else }}
-    external-dns.alpha.kubernetes.io/hostname: attest.dimo.zone
-    {{ end }}
+    external-dns.alpha.kubernetes.io/hostname: attest{{ if $isDev }}.dev{{ end }}.dimo.zone
     nginx.ingress.kubernetes.io/auth-tls-secret: ingress/cf-origin-ca
     nginx.ingress.kubernetes.io/auth-tls-verify-client: 'on'
   {{- end }}
@@ -44,20 +40,12 @@ spec:
     {{- end }}
   {{- end }}
   rules:
-    {{ if $isDev }}
-    - host: attest.dev.dimo.zone
-    {{ else }}
-    - host: attest.dimo.zone
-    {{ end }}
+    - host: attest{{ if $isDev }}.dev{{ end }}.dimo.zone
       http:
         paths:
           - backend:
               service:
-                {{ if $isDev }}
-                name: dis-dev-attest
-                {{ else }}
-                name: dis-attest
-                {{ end }}
+                name: {{ $fullName }}-attest
                 port:
                   number: 8080
             path: /
