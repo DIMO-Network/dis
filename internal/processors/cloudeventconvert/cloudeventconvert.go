@@ -100,16 +100,17 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	}
 	source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 	if !ok {
-		processors.SetError(msg, processorName, "failed to get source from message metadata", err)
+		processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
 		return service.MessageBatch{msg}
 	}
 	c.logger.Info(fmt.Sprintf("Source: %s", source))
 	contentType, ok := msg.MetaGet(processors.MessageContentKey)
 	if !ok {
-		processors.SetError(msg, processorName, "failed to get content type from message metadata", err)
+		c.logger.Info("failed to get content type")
+		processors.SetError(msg, processorName, "failed to get content type from message metadata", nil)
 		return service.MessageBatch{msg}
 	}
-
+	c.logger.Info(fmt.Sprintf("Content-Type: %s", contentType))
 	var hdrs []cloudevent.CloudEventHeader
 	var eventData []byte
 	switch contentType {
