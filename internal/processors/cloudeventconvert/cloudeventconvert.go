@@ -83,6 +83,7 @@ func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, 
 
 // ProcessBatch converts a batch of messages to cloud events.
 func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
+	c.logger.Info("processing batch")
 	retBatches := make([]service.MessageBatch, 0, len(msgs))
 	for _, msg := range msgs {
 		retBatches = append(retBatches, c.processMsg(ctx, msg))
@@ -91,6 +92,7 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 }
 
 func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Message) service.MessageBatch {
+	c.logger.Info("processing cloud event")
 	msgBytes, err := msg.AsBytes()
 	if err != nil {
 		processors.SetError(msg, processorName, "failed to get message as bytes", err)
@@ -131,6 +133,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			eventData = msgBytes
 		}
 	case httpinputserver.AttestationContent:
+		c.logger.Info("processing attestation")
 		event, err := processAttestation(msgBytes)
 		if err != nil {
 			processors.SetError(msg, processorName, "failed to process attestation", err)
