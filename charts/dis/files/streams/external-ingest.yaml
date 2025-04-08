@@ -3,41 +3,41 @@ input:
     inputs:
       - label: "dimo_http_attestation_server"
         dimo_http_attestation_server:
-            jwt: 
-              token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
-              token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
-            address: 0.0.0.0:9442 # TODO(ae): confirm
-            path: /
-            allowed_verbs:
-              - POST
-            timeout: 5s
-            rate_limit: "connection_rate_limit"
-            sync_response:
-              last_message_only: true
-              status: ${!meta("response_status").or(200)}
-              headers:
-                Content-Type: application/octet-stream
+          jwt:
+            token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
+            token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
+          address: 0.0.0.0:9442 # TODO(ae): confirm
+          path: /
+          allowed_verbs:
+            - POST
+          # timeout: 5s
+          # rate_limit: "connection_rate_limit"
+          # sync_response:
+          #   last_message_only: true
+          #   status: ${!meta("response_status").or(200)}
+          #   headers:
+          #     Content-Type: application/octet-stream
 
       - label: "dimo_http_connection_server"
         dimo_http_connection_server:
-            address: 0.0.0.0:9443
-            path: /
-            allowed_verbs:
-              - POST
-            timeout: 5s
-            rate_limit: "connection_rate_limit"
-            tls:
-              enabled: true
-              client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
-              server_certs:
-                - cert_file: /etc/ssl/certs/dis/tls.crt
-                  key_file: /etc/ssl/certs/dis/tls.key
-              require_mutual_tls: true
-            sync_response:
-              last_message_only: true
-              status: ${!meta("response_status").or(200)}
-              headers:
-                Content-Type: application/octet-stream
+          address: 0.0.0.0:9443
+          path: /
+          allowed_verbs:
+            - POST
+          timeout: 5s
+          rate_limit: "connection_rate_limit"
+          tls:
+            enabled: true
+            client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
+            server_certs:
+              - cert_file: /etc/ssl/certs/dis/tls.crt
+                key_file: /etc/ssl/certs/dis/tls.key
+            require_mutual_tls: true
+          sync_response:
+            last_message_only: true
+            status: ${!meta("response_status").or(200)}
+            headers:
+              Content-Type: application/octet-stream
 
 pipeline:
   processors:
