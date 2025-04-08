@@ -12,11 +12,6 @@ input:
               - POST
             timeout: 5s
             rate_limit: "connection_rate_limit"
-            tls:
-              enabled: true
-              server_certs:
-                - cert_file: /etc/ssl/certs/dis/tls.crt
-                  key_file: /etc/ssl/certs/dis/tls.key
             sync_response:
               last_message_only: true
               status: ${!meta("response_status").or(200)}
