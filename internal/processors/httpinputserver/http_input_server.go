@@ -1,6 +1,7 @@
 package httpinputserver
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -66,8 +67,6 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		return nil, fmt.Errorf("failed to fetch token exchange key set url from config: %w", err)
 	}
 
-	fmt.Println(issuer, jwksURI)
-
 	issuerURL, err := url.Parse(issuer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse issuer URL: %w", err)
@@ -111,7 +110,8 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		if !ok {
 			return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
 		}
-
+		b, err := json.Marshal(claims)
+		fmt.Println(string(b), err, claims)
 		ethAddr, exists := claims["ethereum_address"].(string)
 		if exists {
 			return retMeta, errors.New("no ethereum address in token")
