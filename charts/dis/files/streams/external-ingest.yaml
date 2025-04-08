@@ -2,7 +2,6 @@ input:
   broker:
     inputs:
       - label: "dimo_http_attestation_server"
-      # Common config fields, showing default values
         http_server:
           address: ":8080"
           path: /post
