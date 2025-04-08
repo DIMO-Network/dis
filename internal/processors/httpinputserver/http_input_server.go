@@ -1,7 +1,6 @@
 package httpinputserver
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -98,20 +97,24 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		tokenStr := strings.TrimSpace(strings.Replace(authStr, "Bearer ", "", 1))
 		tkn, err := jwtValidator.ValidateToken(r.Context(), tokenStr)
 		if err != nil {
+			fmt.Println("invalid token str")
 			return retMeta, fmt.Errorf("invalid token string: %w", err)
 		}
 
 		token, ok := tkn.(jwt.Token)
 		if !ok {
+			fmt.Println("unexpected token type")
 			return retMeta, fmt.Errorf("unexpected token type %T", tkn)
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
+			fmt.Println("unexpected claims")
 			return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
 		}
-		b, err := json.Marshal(claims)
-		fmt.Println(string(b), err, claims)
+
+		fmt.Println(claims)
+
 		ethAddr, exists := claims["ethereum_address"].(string)
 		if exists {
 			return retMeta, errors.New("no ethereum address in token")
