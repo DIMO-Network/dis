@@ -60,7 +60,7 @@ pipeline:
     - label: "convert_cloudevent_errors"
       catch:
         - log:
-            level: INFO 
+            level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
                 source = metadata("dimo_cloudevent_source")
@@ -98,7 +98,7 @@ pipeline:
       -  mutation: |
             meta response_message = if metadata("dimo_error_message").or("")  == error() { "failed to process cloudevent: " + error() } else { metadata("dimo_error_message").or("error") +": " + error()}
       - log:
-          level: INFO
+          level: WARN
           message: "failed to process cloudevent"
           fields_mapping: |
             cloudevent_source = metadata("dimo_cloudevent_source").or("unknown")

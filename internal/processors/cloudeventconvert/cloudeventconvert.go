@@ -83,7 +83,6 @@ func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, 
 
 // ProcessBatch converts a batch of messages to cloud events.
 func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
-	c.logger.Info("processing batch")
 	retBatches := make([]service.MessageBatch, 0, len(msgs))
 	for _, msg := range msgs {
 		retBatches = append(retBatches, c.processMsg(ctx, msg))
@@ -92,7 +91,6 @@ func (c *cloudeventProcessor) ProcessBatch(ctx context.Context, msgs service.Mes
 }
 
 func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Message) service.MessageBatch {
-	c.logger.Info("processing cloud event")
 	msgBytes, err := msg.AsBytes()
 	if err != nil {
 		processors.SetError(msg, processorName, "failed to get message as bytes", err)
@@ -103,14 +101,13 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
 		return service.MessageBatch{msg}
 	}
-	c.logger.Info(fmt.Sprintf("Source: %s", source))
+
 	contentType, ok := msg.MetaGet(processors.MessageContentKey)
 	if !ok {
-		c.logger.Info("failed to get content type")
 		processors.SetError(msg, processorName, "failed to get content type from message metadata", nil)
 		return service.MessageBatch{msg}
 	}
-	c.logger.Info(fmt.Sprintf("Content-Type: %s", contentType))
+
 	var hdrs []cloudevent.CloudEventHeader
 	var eventData []byte
 	switch contentType {
@@ -134,31 +131,35 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			eventData = msgBytes
 		}
 	case httpinputserver.AttestationContent:
-		c.logger.Info("processing attestation")
 		event, err := processAttestation(msgBytes)
 		if err != nil {
+			c.logger.Warn("failed to process attestation")
 			processors.SetError(msg, processorName, "failed to process attestation", err)
 			return service.MessageBatch{msg}
 		}
 
 		attestorField, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 		if !ok {
+			c.logger.Warn("failed to get attestor from message metadata")
 			processors.SetError(msg, processorName, "failed to get attestor from message metadata", nil)
 			return service.MessageBatch{msg}
 		}
 
 		if !common.IsHexAddress(attestorField) {
+			c.logger.Warn("attestor field is not valid hex address")
 			processors.SetError(msg, processorName, "attestor field is not valid hex address", nil)
 			return service.MessageBatch{msg}
 		}
 
 		validSignature, err := c.validateSignature(event, attestorField)
 		if err != nil {
+			c.logger.Warn("failed to vlaidate signature on message")
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
 		}
 
 		if !validSignature {
+			c.logger.Warn("invalid signature")
 			processors.SetError(msg, processorName, "message signature invalid", nil)
 			return service.MessageBatch{msg}
 		}
