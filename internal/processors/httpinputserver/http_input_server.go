@@ -32,7 +32,7 @@ var field = service.NewObjectField("jwt",
 
 func init() {
 	io.RegisterCustomHTTPServerInput("dimo_http_connection_server", CertRoutingMiddlewareConstructor, nil)
-	// io.RegisterCustomHTTPServerInput("dimo_http_attestation_server", AttestationMiddlewareConstructor, field)
+	io.RegisterCustomHTTPServerInput("dimo_http_attestation_server", AttestationMiddlewareConstructor, field)
 }
 
 func CertRoutingMiddlewareConstructor(*service.ParsedConfig) (io.HTTPInputMiddlewareMeta, error) {

@@ -2,30 +2,21 @@ input:
   broker:
     inputs:
       - label: "dimo_http_attestation_server"
-        http_server:
-          address: ":8080"
-          path: /post
-          # ws_path: /post/ws
+        dimo_http_attestation_server:
+          jwt:
+            token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
+            token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
+          address: 0.0.0.0:9442 # TODO(ae): confirm
+          path: /
           allowed_verbs:
-            - GET
             - POST
-          # timeout: 5s
-
-        # dimo_http_attestation_server:
-        #   jwt:
-        #     token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
-        #     token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
-        #   address: 0.0.0.0:9442 # TODO(ae): confirm
-        #   path: /
-        #   allowed_verbs:
-        #     - POST
-        #   # timeout: 5s
-        #   # rate_limit: "connection_rate_limit"
-        #   # sync_response:
-        #   #   last_message_only: true
-        #   #   status: ${!meta("response_status").or(200)}
-        #   #   headers:
-        #   #     Content-Type: application/octet-stream
+          timeout: 5s
+          rate_limit: "connection_rate_limit"
+          sync_response:
+            last_message_only: true
+            status: ${!meta("response_status").or(200)}
+            headers:
+              Content-Type: application/octet-stream
 
       - label: "dimo_http_connection_server"
         dimo_http_connection_server:
