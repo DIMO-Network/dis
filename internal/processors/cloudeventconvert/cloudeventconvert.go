@@ -103,7 +103,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		processors.SetError(msg, processorName, "failed to get source from message metadata", err)
 		return service.MessageBatch{msg}
 	}
-
+	c.logger.Info(fmt.Sprintf("Source: %s", source))
 	contentType, ok := msg.MetaGet(processors.MessageContentKey)
 	if !ok {
 		processors.SetError(msg, processorName, "failed to get content type from message metadata", err)
