@@ -66,6 +66,8 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		return nil, fmt.Errorf("failed to fetch token exchange key set url from config: %w", err)
 	}
 
+	fmt.Println(issuer, jwksURI)
+
 	issuerURL, err := url.Parse(issuer)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse issuer URL: %w", err)
