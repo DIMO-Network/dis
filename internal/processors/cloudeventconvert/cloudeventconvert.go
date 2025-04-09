@@ -182,6 +182,8 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 		return false, errors.New("failed to get signed payload")
 	}
 
+	c.logger.Warn(fmt.Sprintf("Signature: %s", sig))
+
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256(event.Data)
 	pk, err := crypto.Ecrecover(msgHash, signature)
