@@ -145,12 +145,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		if !common.IsHexAddress(common.HexToAddress(attestorField).Hex()) {
-			c.logger.Warn(fmt.Sprintf("attestor field is not valid hex address: %s", attestorField))
-			processors.SetError(msg, processorName, fmt.Sprintf("attestor field is not valid hex address: %s", attestorField), nil)
-			return service.MessageBatch{msg}
-		}
-
 		validSignature, err := c.validateSignature(event, attestorField)
 		if err != nil {
 			c.logger.Warn("failed to vlaidate signature on message")
@@ -179,7 +173,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 }
 
 func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], attestor string) (bool, error) {
-	if !common.IsHexAddress(attestor) {
+	if !common.IsHexAddress(common.HexToAddress(attestor).Hex()) {
 		return false, errors.New("invalid attestor address")
 	}
 
