@@ -67,7 +67,7 @@ ports:
   - name: https
     containerPort: 9443
     protocol: TCP
-  - name: attest-http
+  - name: http
     containerPort: 9442
     protocol: TCP
 livenessProbe:
