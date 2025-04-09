@@ -17,8 +17,8 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
+	shared "github.com/DIMO-Network/shared/crypto"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
@@ -185,17 +185,10 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	c.logger.Warn(fmt.Sprintf("Signature: %s", sig))
 
 	signature := common.FromHex(sig)
-	msgHash := crypto.Keccak256(event.Data)
-	pk, err := crypto.Ecrecover(msgHash, signature)
+	recoveredAddress, err := shared.Ecrecover(event.Data, signature)
 	if err != nil {
-		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
+		return false, fmt.Errorf("failed to recover address: %w", err)
 	}
-
-	pubKey, err := crypto.UnmarshalPubkey(pk)
-	if err != nil {
-		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
-	}
-	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
 	return common.HexToAddress(attestor) == recoveredAddress, nil
 }
