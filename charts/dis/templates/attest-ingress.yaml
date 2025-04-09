@@ -47,7 +47,7 @@ spec:
               service:
                 name: {{ $fullName }}-attest
                 port:
-                  number: 8080
+                  number: 9442
             path: /
             pathType: ImplementationSpecific
 {{- end }}

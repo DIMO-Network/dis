@@ -6,7 +6,7 @@ input:
           jwt:
             token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
             token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
-          address: 0.0.0.0:9442 # TODO(ae): confirm
+          address: 0.0.0.0:9442 
           path: /
           allowed_verbs:
             - POST
