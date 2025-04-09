@@ -146,8 +146,8 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		}
 
 		if !common.IsHexAddress(attestorField) {
-			c.logger.Warn("attestor field is not valid hex address")
-			processors.SetError(msg, processorName, "attestor field is not valid hex address", nil)
+			c.logger.Warn(fmt.Sprintf("attestor field is not valid hex address: %s", attestorField))
+			processors.SetError(msg, processorName, fmt.Sprintf("attestor field is not valid hex address: %s", attestorField), nil)
 			return service.MessageBatch{msg}
 		}
 
