@@ -128,7 +128,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		// }
 
 		if !common.IsHexAddress(claims.EthereumAddress.Hex()) {
-			return retMeta, errors.New("subject is not valid hex address")
+			return retMeta, errors.New(fmt.Sprintf("subject is not valid hex address: %s", claims.EthereumAddress.Hex()))
 		}
 
 		retMeta[DIMOCloudEventSource] = common.HexToAddress(claims.EthereumAddress.Hex())
