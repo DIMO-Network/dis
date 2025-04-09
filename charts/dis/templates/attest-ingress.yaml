@@ -50,7 +50,7 @@ spec:
               service:
                 name: {{ $fullName }}-attest
                 port:
-                  number: 9442
+                  number: 8080
             path: /
             pathType: ImplementationSpecific
 {{- end }}
