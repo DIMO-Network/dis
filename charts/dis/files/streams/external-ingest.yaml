@@ -12,6 +12,8 @@ input:
             - POST
           timeout: 5s
           rate_limit: "connection_rate_limit"
+          tls:
+            enabled: false
           sync_response:
             last_message_only: true
             status: ${!meta("response_status").or(200)}
