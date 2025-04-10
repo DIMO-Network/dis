@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: 0e4b5ae
+  tag: b21db62
   command:
     - /dis
   args:
