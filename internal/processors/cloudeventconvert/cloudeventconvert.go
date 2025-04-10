@@ -164,6 +164,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
+		c.logger.Warn(fmt.Sprintf("failed to create event message: %s", contentType))
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
