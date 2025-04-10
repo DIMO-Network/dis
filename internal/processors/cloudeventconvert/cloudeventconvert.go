@@ -179,6 +179,7 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 
 	sig, ok := event.Extras["signature"].(string)
 	if !ok {
+		c.logger.Warn("failed to get signature from payload")
 		return false, errors.New("failed to get signed payload")
 	}
 
@@ -193,10 +194,12 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 
 	pubKey, err := crypto.UnmarshalPubkey(pk)
 	if err != nil {
+		c.logger.Warn(fmt.Sprintf("failed to unmarshal public key: %s", err.Error()))
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
+	c.logger.Warn(fmt.Sprintf("Attestor Address: %s Recovered Address: %s", attestor, recoveredAddress))
 	return common.HexToAddress(attestor) == recoveredAddress, nil
 }
 
