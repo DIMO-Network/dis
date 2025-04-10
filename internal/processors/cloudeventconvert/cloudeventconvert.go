@@ -1,11 +1,11 @@
 package cloudeventconvert
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
@@ -204,8 +204,8 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
-	c.logger.Warn(fmt.Sprintf("Attestor Address: %s Recovered Address: %s", common.HexToAddress(attestor).Hex(), recoveredAddress.Hex()))
-	return bytes.Equal(common.HexToAddress(attestor).Bytes(), recoveredAddress.Bytes()), nil
+	c.logger.Warn(fmt.Sprintf("Attestor Address: %s Recovered Address: %s", common.HexToAddress(strings.TrimSpace(attestor)).Hex(), recoveredAddress.Hex()))
+	return common.HexToAddress(strings.TrimSpace(attestor)) == recoveredAddress, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
