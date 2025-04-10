@@ -160,6 +160,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		msg.MetaSetMut(CloudEventIndexValueKey, hdrs)
 		objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
 		msg.MetaSetMut(cloudEventIndexKey, objectKey)
+		msg.MetaDelete("Authorization")
 	}
 
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)

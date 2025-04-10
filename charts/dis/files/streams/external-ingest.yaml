@@ -148,7 +148,6 @@ output:
                 topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
                 metadata:
                   exclude_prefixes:
-                    - authorization
                     - dimo_cloudevent_index_value
                     - dimo_cloudevent_index
                     - dimo_cloudevent_producer
