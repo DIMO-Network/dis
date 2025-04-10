@@ -186,6 +186,7 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256(event.Data)
 
+	c.logger.Warn(fmt.Sprintf("signature: %s", sig))
 	c.logger.Warn(fmt.Sprintf("rawMsg: %+v", event.Data))
 	c.logger.Warn(fmt.Sprintf("msgHash: %s", common.Bytes2Hex(msgHash)))
 
