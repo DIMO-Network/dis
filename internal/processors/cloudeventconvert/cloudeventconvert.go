@@ -134,27 +134,24 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	case httpinputserver.AttestationContent:
 		event, err := processAttestation(msgBytes)
 		if err != nil {
-			c.logger.Warn("failed to process attestation")
 			processors.SetError(msg, processorName, "failed to process attestation", err)
 			return service.MessageBatch{msg}
 		}
 
 		attestorField, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 		if !ok {
-			c.logger.Warn("failed to get attestor from message metadata")
 			processors.SetError(msg, processorName, "failed to get attestor from message metadata", nil)
 			return service.MessageBatch{msg}
 		}
 
 		validSignature, err := c.validateSignature(event, attestorField)
 		if err != nil {
-			c.logger.Warn("failed to vlaidate signature on message")
+			c.logger.Warn(fmt.Sprintf("failed to vlaidate signature: %s", err.Error()))
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
 		}
 
 		if !validSignature {
-			c.logger.Warn("invalid signature")
 			processors.SetError(msg, processorName, "message signature invalid", nil)
 			return service.MessageBatch{msg}
 		}
@@ -187,24 +184,16 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256(event.Data)
 
-	c.logger.Warn(fmt.Sprintf("signature: %s", sig))
-	c.logger.Warn(fmt.Sprintf("rawMsg: %+v", event.Data))
-	c.logger.Warn(fmt.Sprintf("msgHash: %s", common.Bytes2Hex(msgHash)))
-
 	pk, err := crypto.Ecrecover(msgHash, signature)
 	if err != nil {
-		c.logger.Warn(fmt.Sprintf("message signature invlaid: %s: %s", sig, err.Error()))
 		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
 	}
 
 	pubKey, err := crypto.UnmarshalPubkey(pk)
 	if err != nil {
-		c.logger.Warn(fmt.Sprintf("failed to unmarshal public key: %s", err.Error()))
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-
-	c.logger.Warn(fmt.Sprintf("Attestor Address: %s Recovered Address: %s", common.HexToAddress(strings.TrimSpace(attestor)).Hex(), recoveredAddress.Hex()))
 	return common.HexToAddress(strings.TrimSpace(attestor)) == recoveredAddress, nil
 }
 
