@@ -204,7 +204,7 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
 
 	c.logger.Warn(fmt.Sprintf("Attestor Address: %s Recovered Address: %s", attestor, recoveredAddress))
-	return common.HexToAddress(attestor) == recoveredAddress, nil
+	return common.HexToAddress(attestor).Cmp(recoveredAddress) == 0, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
