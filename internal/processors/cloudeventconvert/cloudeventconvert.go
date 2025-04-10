@@ -182,12 +182,12 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 		return false, errors.New("failed to get signed payload")
 	}
 
-	c.logger.Warn(fmt.Sprintf("Signature: %s", sig))
-
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256(event.Data)
 	pk, err := crypto.Ecrecover(msgHash, signature)
 	if err != nil {
+		c.logger.Warn(fmt.Sprintf("msgHash: %+v", event.Data))
+		c.logger.Warn(fmt.Sprintf("message signature invlaid: %s: %s", sig, err.Error()))
 		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
 	}
 
