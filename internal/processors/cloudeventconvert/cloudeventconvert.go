@@ -146,7 +146,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 		validSignature, err := c.validateSignature(event, attestorField)
 		if err != nil {
-			c.logger.Warn(fmt.Sprintf("failed to vlaidate signature: %s", err.Error()))
+			c.logger.Warn(fmt.Sprintf("failed to validate signature: %s", err.Error()))
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
 			return service.MessageBatch{msg}
 		}
@@ -160,6 +160,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		msg.MetaSetMut(CloudEventIndexValueKey, hdrs)
 		objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
 		msg.MetaSetMut(cloudEventIndexKey, objectKey)
+		msg.MetaDelete("Authorization")
 	}
 
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
@@ -184,7 +185,6 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256(event.Data)
-
 	pk, err := crypto.Ecrecover(msgHash, signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)

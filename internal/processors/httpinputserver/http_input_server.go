@@ -95,7 +95,6 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 	return func(r *http.Request) (map[string]any, error) {
 		retMeta := map[string]any{}
 		authStr := r.Header.Get("Authorization")
-		fmt.Println(authStr)
 		tokenStr := strings.TrimSpace(strings.Replace(authStr, "Bearer ", "", 1))
 
 		jwkResource, err := keyfunc.NewDefaultCtx(r.Context(), []string{jwksURI}) // Context is used to end the refresh goroutine.
