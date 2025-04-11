@@ -119,7 +119,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		}
 		fmt.Println(ethAddr)
 		if !common.IsHexAddress(ethAddr) {
-			return retMeta, errors.New(fmt.Sprintf("subject is not valid hex address: %s", ethAddr))
+			return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
 		}
 
 		retMeta[DIMOCloudEventSource] = ethAddr
