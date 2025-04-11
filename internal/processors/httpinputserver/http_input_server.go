@@ -1,16 +1,17 @@
 package httpinputserver
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/auth0/go-jwt-middleware/v2/jwks"
-	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redpanda-data/benthos/v4/public/components/io"
@@ -56,20 +57,20 @@ func AttestationMiddlewareConstructor(conf *service.ParsedConfig) (io.HTTPInputM
 
 func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map[string]any, error), error) {
 	subConf := conf.Namespace("jwt")
-	issuer, err := subConf.FieldString(tokenExchangeIssuer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch token exchange issuer from config: %w", err)
-	}
+	// issuer, err := subConf.FieldString(tokenExchangeIssuer)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to fetch token exchange issuer from config: %w", err)
+	// }
 
 	jwksURI, err := subConf.FieldString(tokenExchangeKeySetURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch token exchange key set url from config: %w", err)
 	}
 
-	issuerURL, err := url.Parse(issuer)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse issuer URL: %w", err)
-	}
+	// issuerURL, err := url.Parse(issuer)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to parse issuer URL: %w", err)
+	// }
 
 	opts := []any{}
 	if jwksURI != "" {
@@ -77,56 +78,61 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse jwksURI: %w", err)
 		}
-		opts = append(opts, jwks.WithCustomJWKSURI(keysURI)) //nolint:staticcheck,ineffassign
+		opts = append(opts, jwks.WithCustomJWKSURI(keysURI))
 	}
-
-	provider := jwks.NewCachingProvider(issuerURL, 1*time.Minute, opts...)
+	// provider := jwks.NewCachingProvider(issuerURL, 1*time.Minute, opts...)
 
 	// Set up the validator.
-	jwtValidator, err := validator.New(
-		provider.KeyFunc,
-		validator.RS256,
-		issuerURL.String(),
-		[]string{"dimo.zone"},
-	)
+	// jwtValidator, err := validator.New(
+	// 	provider.KeyFunc,
+	// 	validator.RS256,
+	// 	issuerURL.String(),
+	// 	[]string{"dimo.zone"},
+	// )
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to create validator: %w", err)
+	// }
+
+	jwkResource, err := keyfunc.NewDefaultCtx(context.Background(), []string{jwksURI}) // Context is used to end the refresh goroutine.
 	if err != nil {
-		return nil, fmt.Errorf("failed to create validator: %w", err)
+		log.Fatalf("Failed to create a keyfunc.Keyfunc from the server's URL.\nError: %s", err)
 	}
 
 	return func(r *http.Request) (map[string]any, error) {
 		retMeta := map[string]any{}
 		authStr := r.Header.Get("Authorization")
 		tokenStr := strings.TrimSpace(strings.Replace(authStr, "Bearer ", "", 1))
-		fmt.Println(tokenStr)
-		tkn, err := jwtValidator.ValidateToken(r.Context(), tokenStr)
-		if err != nil {
+
+		var claims CustomClaims
+		if _, err := jwt.ParseWithClaims(tokenStr, &claims, jwkResource.Keyfunc); err != nil {
 			return retMeta, fmt.Errorf("invalid token string: %w", err)
 		}
-		fmt.Println(tkn)
-		token, ok := tkn.(jwt.Token)
-		if !ok {
-			return retMeta, fmt.Errorf("unexpected token type %T", tkn)
-		}
-		fmt.Println(token)
-		claims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
-		}
-		fmt.Println(claims)
-		ethAddr, exists := claims["ethereum_address"].(string)
-		if exists {
-			return retMeta, errors.New("no ethereum address in token")
-		}
-		fmt.Println(ethAddr)
-		if !common.IsHexAddress(ethAddr) {
-			return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
+		// tkn, err := jwtValidator.ValidateToken(r.Context(), tokenStr) //
+		// if err != nil {
+		// 	return retMeta, fmt.Errorf("invalid token string: %w", err)
+		// }
+
+		// token, ok := tkn.(jwt.Token)
+		// if !ok {
+		// 	return retMeta, fmt.Errorf("unexpected token type %T", tkn)
+		// }
+
+		// claims, ok := token.Claims.(jwt.MapClaims)
+		// if !ok {
+		// 	return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
+		// }
+
+		// ethAddr, exists := claims["ethereum_address"].(string)
+		// if exists {
+		// 	return retMeta, errors.New("no ethereum address in token")
+		// }
+
+		if !common.IsHexAddress(claims.EthereumAddress.Hex()) {
+			return retMeta, errors.New(fmt.Sprintf("subject is not valid hex address: %s", claims.EthereumAddress.Hex()))
 		}
 
-		retMeta[DIMOCloudEventSource] = ethAddr
+		retMeta[DIMOCloudEventSource] = claims.EthereumAddress.Hex()
 		retMeta[processors.MessageContentKey] = AttestationContent
-		fmt.Println("done")
-		// TODO(ae):
-		// verify audience
 
 		return retMeta, nil
 	}, nil
