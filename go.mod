@@ -7,7 +7,6 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 require (
 	github.com/DIMO-Network/cloudevent v0.0.4-0.20250327184649-14d31447d927
 	github.com/DIMO-Network/model-garage v0.5.4
-	github.com/MicahParks/keyfunc/v3 v3.3.10
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/ethereum/go-ethereum v1.15.5
 	github.com/golang-jwt/jwt/v5 v5.2.2
@@ -46,7 +45,6 @@ require (
 	github.com/Jeffail/shutdown v1.0.0 // indirect
 	github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
-	github.com/MicahParks/jwkset v0.8.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/apache/arrow/go/v15 v15.0.2 // indirect
