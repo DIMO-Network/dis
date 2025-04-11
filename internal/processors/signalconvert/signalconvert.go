@@ -181,6 +181,14 @@ func pruneLatLngSignals(signals *[]vss.Signal, lastCord, currIdx int, errs error
 		return currIdx, retErr
 	}
 
+	// if both signals are lat and long are 0 then prune both the current and previous signal
+	if currCord.ValueNumber == 0 && prevCord.ValueNumber == 0 {
+		retErr := errors.Join(errs, fmt.Errorf("%w, signal '%s' and '%s' are 0 at time %v", errLatLongMismatch, prevCord.Name, currCord.Name, currCord.Timestamp))
+		(*signals)[lastCord] = pruneSignal
+		(*signals)[currIdx] = pruneSignal
+		return -1, retErr
+	}
+	
 	// if the two signals are within half a second of each other keep both and reset the lastCord
 	return -1, errs
 }

@@ -1,7 +1,6 @@
 package httpinputserver
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -77,7 +76,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse jwksURI: %w", err)
 		}
-		opts = append(opts, jwks.WithCustomJWKSURI(keysURI))
+		opts = append(opts, jwks.WithCustomJWKSURI(keysURI)) //nolint:staticcheck,ineffassign
 	}
 	// provider := jwks.NewCachingProvider(issuerURL, 1*time.Minute, opts...)
 
@@ -127,7 +126,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		// }
 
 		if !common.IsHexAddress(claims.EthereumAddress.Hex()) {
-			return retMeta, errors.New(fmt.Sprintf("subject is not valid hex address: %s", claims.EthereumAddress.Hex()))
+			return retMeta, fmt.Errorf("subject is not valid hex address: %s", claims.EthereumAddress.Hex())
 		}
 
 		retMeta[DIMOCloudEventSource] = claims.EthereumAddress.Hex()
