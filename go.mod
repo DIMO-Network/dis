@@ -35,7 +35,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.14.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.10.0 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.4.1 // indirect
-	github.com/ClickHouse/ch-go v0.63.1 // indirect
+	github.com/ClickHouse/ch-go v0.65.0 // indirect
 	github.com/ClickHouse/clickhouse-go/v2 v2.30.1 // indirect
 	github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.2 // indirect
@@ -220,7 +220,7 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
 	go.opentelemetry.io/otel v1.34.0 // indirect
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.31.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.34.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.31.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
