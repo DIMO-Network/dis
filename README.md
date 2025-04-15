@@ -1,8 +1,55 @@
 # DIMO INGEST Server (DIS)
 
-DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data.
+DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data. To learn more about submitting attestations to DIMO, start reading here. To learn more about integrating your data with DIMO, start reading here. 
 
-## Getting Started
+## Getting Started With DIMO Attestations
+
+Storing verifiable claims with DIMO requires two simple steps. 
+
+1. Obtain a valid DIMO JWT.
+2. Post data to https://attest.dimo.zone 
+
+### Attestation Data Format
+
+```json
+{
+  "id": "unique-event-identifier",
+  "source": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+  "producer": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+  "specversion": "1.0",
+  "subject": "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_847",
+  "time": "2025-04-14T15:02:53.83882-04:00",
+  "type": "dimo.attestation",
+  "signature": "0x828b1c357fbab66524aca14f3d7389beedb4d6fb07a1c5df74b28d0081a2ba8b0ee0f886bb8294ed47334ce6130989db0d4f81c91b0e111bcdbb2c7cc8e84f2301",
+  "data": {
+    "subject": "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_847",
+    "attestorAddress": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+    "insured": true,
+    "provider": "State Farm",
+    "policyNumber": "SF-12345678",
+    "policyTerms": "terms-of-insurance",
+    "coverageType": "Liability + Collision",
+    "coverageStartDate": 1744751357,
+    "expirationDate": 1807822654
+  }
+}
+```
+
+### Attestation Cloud Event Header Descriptions
+
+- **source**: Required field. The connection license address. Note that this field will be overwritten with the connection license address pulled from the CN of the certificate used for authentication.
+- **subject**: Required field. The NFT DID which denotes which vehicle token ID is being used. Must follow the format `did:nft:<chainId>:<contractAddress>_<tokenId>`.
+- **signature**: Required field. Signed data payload. Must be signed by the `source` address. 
+- **data**: Required field. Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.  
+- **type**: Required Field, must be: `dimo.attestation`
+- **id**: A unique identifier for the event. Defaults to a random KSUID. The combination of ID and Source must be unique.
+- **specversion**: The version of CloudEvents specification used. Defaults to "1.0".
+- **time**: The time at which the event occurred. Must be within 5 minutes of the upload time. Will default to current timestamp. Format as ISO 8601 timestamp.
+- **datacontenttype**: An optional MIME type for the data field. We almost always serialize to JSON and in that case this field is implicitly "application/json".
+- **dataversion**: An optional way for the data provider to give more information about the type of data in the payload.
+
+
+## Getting Started With DIMO Ingest Server
 
 If you want to integrate your data with DIMO, you can get started quickly by posting data to DIS using our default data Format.
 
