@@ -48,6 +48,7 @@ pipeline:
     # If label name change, update the alerts
     - label: "convert_cloudevent"
       dimo_cloudevent_convert:
+        rpc_url: ${RPC_URL:https://polygon-rpc.com}
         chain_id: ${DIMO_REGISTRY_CHAIN_ID:137}
         vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
         aftermarket_nft_address: ${AFTERMARKET_NFT_ADDRESS:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA}

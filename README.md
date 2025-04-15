@@ -84,8 +84,8 @@ When posting data to the DIS server, you must format your payload according to o
 ### Attestation Cloud Event Header Descriptions
 
 - **id**: A unique identifier for the attestation.
-- **source**: The entity making the attestation. 
-- **producer**: The ETH DID of the entity making the attestation.
+- **source**: The entity submitting the attestation. Note that this is not necessarily the one making the attestation; the field will be overwritten with the connection license address pulled from the CN of the certificate used for authentication. 
+- **producer**: The ETH DID of the entity making the attestation. This does not necessarily match the source but must be either the entity that signed the data or the contract address of the developer license that signed the data. 
 - **specversion**: The version of CloudEvents specification used. This is always hardcoded as "1.0".
 - **subject**: The NFT DID which denotes which vehicle token ID the attestation is being made about. Must follow the format `did:nft:<chainId>:<contractAddress>_<tokenId>`.
 - **time**: The time at which the attestation occurred. In practice, we always set this. Format as ISO 8601 timestamp.

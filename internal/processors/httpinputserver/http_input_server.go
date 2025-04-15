@@ -24,6 +24,7 @@ const (
 	AttestationContent     = "dimo_content_attestation"
 	tokenExchangeIssuer    = "token_exchange_issuer"
 	tokenExchangeKeySetURL = "token_exchange_key_set_url"
+	producer               = "producer"
 )
 
 var field = service.NewObjectField("jwt",
@@ -131,14 +132,20 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 			return retMeta, errors.New(fmt.Sprintf("subject is not valid hex address: %s", claims.EthereumAddress.Hex()))
 		}
 
+		if claims.Producer == nil {
+			return retMeta, errors.New(fmt.Sprintf("invalid jwt, producer field missing"))
+		}
+
 		retMeta[DIMOCloudEventSource] = claims.EthereumAddress.Hex()
 		retMeta[processors.MessageContentKey] = AttestationContent
+		retMeta[producer] = claims.Producer
 
 		return retMeta, nil
 	}, nil
 }
 
 type CustomClaims struct {
+	Producer        *string         `json:"producer,omitempty"`
 	EmailAddress    *string         `json:"email,omitempty"`
 	ProviderID      *string         `json:"provider_id,omitempty"`
 	EthereumAddress *common.Address `json:"ethereum_address,omitempty"`

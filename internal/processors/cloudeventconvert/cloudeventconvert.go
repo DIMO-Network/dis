@@ -13,6 +13,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
+	"github.com/DIMO-Network/dis/internal/web3"
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/compass"
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
@@ -20,6 +21,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
@@ -37,9 +39,12 @@ const (
 	cloudEventPartialContentType = "dimo_partial_cloudevent"
 )
 
+var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
+
 type cloudeventProcessor struct {
 	logger          *service.Logger
 	producerLoggers map[string]*ratedlogger.Logger
+	ethClient       *ethclient.Client
 }
 
 // Close to fulfill the service.Processor interface.
@@ -47,7 +52,7 @@ func (*cloudeventProcessor) Close(context.Context) error {
 	return nil
 }
 
-func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, aftermarketAddr, syntheticAddr common.Address) *cloudeventProcessor {
+func newCloudConvertProcessor(client *ethclient.Client, lgr *service.Logger, chainID uint64, vehicleAddr, aftermarketAddr, syntheticAddr common.Address) *cloudeventProcessor {
 	// AutoPi
 	autoPiModule := &autopi.Module{
 		AftermarketContractAddr: aftermarketAddr,
@@ -78,7 +83,8 @@ func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, 
 	modules.CloudEventRegistry.Override(modules.CompassSource.String(), compassModule)
 
 	return &cloudeventProcessor{
-		logger: lgr,
+		logger:    lgr,
+		ethClient: client,
 	}
 }
 
@@ -138,13 +144,19 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		attestorField, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
-		if !ok {
-			processors.SetError(msg, processorName, "failed to get attestor from message metadata", nil)
+		// source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
+		// if !ok {
+		// 	processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
+		// 	return service.MessageBatch{msg}
+		// }
+
+		attestor, err := cloudevent.DecodeEthrDID(event.CloudEventHeader.Producer)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to get producer from message metadata: %w", err)
 			return service.MessageBatch{msg}
 		}
 
-		validSignature, err := c.validateSignature(event, attestorField)
+		validSignature, err := c.verifySignature(event, attestor.ContractAddress.Hex())
 		if err != nil {
 			c.logger.Warn(fmt.Sprintf("failed to validate signature: %s", err.Error()))
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
@@ -172,7 +184,10 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], attestor string) (bool, error) {
+// verifySignature attempts to verify the signed data
+// first checks if the producer is the signer
+// if the producer is not the signer, check whether the signature is from a dev license where the producer is the contract addr
+func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], attestor string) (bool, error) {
 	if !common.IsHexAddress(common.HexToAddress(attestor).Hex()) {
 		return false, errors.New("invalid attestor address")
 	}
@@ -195,7 +210,25 @@ func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[jso
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-	return common.HexToAddress(strings.TrimSpace(attestor)) == recoveredAddress, nil
+	if common.HexToAddress(strings.TrimSpace(attestor)) != recoveredAddress {
+		return c.verifyERC1271Signature(signature, msgHash, recoveredAddress)
+	}
+
+	return true, nil
+}
+
+func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash []byte, contractAddress common.Address) (bool, error) {
+	contract, err := web3.NewErc1271(contractAddress, c.ethClient)
+	if err != nil {
+		return false, fmt.Errorf("failed to connect to address: %s: %w", contractAddress.Hex(), err)
+	}
+
+	result, err := contract.IsValidSignature(nil, [32]byte(msgHash), signature)
+	if err != nil {
+		return false, fmt.Errorf("failed to validate signature with contract: %w", err)
+	}
+
+	return result != erc1271magicValue, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
