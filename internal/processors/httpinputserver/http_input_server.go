@@ -2,16 +2,13 @@ package httpinputserver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/MicahParks/keyfunc/v3"
-	"github.com/auth0/go-jwt-middleware/v2/jwks"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redpanda-data/benthos/v4/public/components/io"
@@ -73,14 +70,14 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 	// 	return nil, fmt.Errorf("failed to parse issuer URL: %w", err)
 	// }
 
-	opts := []any{}
-	if jwksURI != "" {
-		keysURI, err := url.Parse(jwksURI)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse jwksURI: %w", err)
-		}
-		opts = append(opts, jwks.WithCustomJWKSURI(keysURI))
-	}
+	// opts := []any{}
+	// if jwksURI != "" {
+	// 	keysURI, err := url.Parse(jwksURI)
+	// 	if err != nil {
+	// 		return nil, fmt.Errorf("failed to parse jwksURI: %w", err)
+	// 	}
+	// 	opts = append(opts, jwks.WithCustomJWKSURI(keysURI))
+	// }
 	// provider := jwks.NewCachingProvider(issuerURL, 1*time.Minute, opts...)
 
 	// Set up the validator.
@@ -129,23 +126,17 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		// }
 
 		if !common.IsHexAddress(claims.EthereumAddress.Hex()) {
-			return retMeta, errors.New(fmt.Sprintf("subject is not valid hex address: %s", claims.EthereumAddress.Hex()))
-		}
-
-		if claims.Producer == nil {
-			return retMeta, errors.New(fmt.Sprintf("invalid jwt, producer field missing"))
+			return retMeta, fmt.Errorf("subject is not valid hex address: %s", claims.EthereumAddress.Hex())
 		}
 
 		retMeta[DIMOCloudEventSource] = claims.EthereumAddress.Hex()
 		retMeta[processors.MessageContentKey] = AttestationContent
-		retMeta[producer] = claims.Producer
 
 		return retMeta, nil
 	}, nil
 }
 
 type CustomClaims struct {
-	Producer        *string         `json:"producer,omitempty"`
 	EmailAddress    *string         `json:"email,omitempty"`
 	ProviderID      *string         `json:"provider_id,omitempty"`
 	EthereumAddress *common.Address `json:"ethereum_address,omitempty"`
