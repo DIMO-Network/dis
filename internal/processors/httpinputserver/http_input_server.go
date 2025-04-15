@@ -96,7 +96,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		authStr := r.Header.Get("Authorization")
 		tokenStr := strings.TrimSpace(strings.Replace(authStr, "Bearer ", "", 1))
 		fmt.Println("TokenStr: ", tokenStr)
-		var claims CustomClaims
+		var claims Claims
 		if _, err := jwt.ParseWithClaims(tokenStr, &claims, jwkResource.Keyfunc); err != nil {
 			return retMeta, fmt.Errorf("invalid token string: %w", err)
 		}
@@ -109,47 +109,77 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 			validator.RS256,
 			issuerURL.String(),
 			claims.Audience,
+			validator.WithCustomClaims(
+				func() validator.CustomClaims {
+					return &CustomClaims{}
+				},
+			),
 		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create validator: %w", err)
+			return nil, fmt.Errorf("failed to create jwt validator: %w", err)
 		}
 
 		tkn, err := jwtValidator.ValidateToken(r.Context(), tokenStr) //
 		if err != nil {
-			return retMeta, fmt.Errorf("invalid token string: %w", err)
+			return retMeta, fmt.Errorf("failed to validate token string with validator: %w", err)
 		}
 
-		token, ok := tkn.(jwt.Token)
+		token, ok := tkn.(CustomClaims)
 		if !ok {
+			fmt.Println(tkn)
 			return retMeta, fmt.Errorf("unexpected token type %T", tkn)
 		}
 
-		validClaims, ok := token.Claims.(jwt.MapClaims)
-		if !ok {
-			return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
-		}
+		// fmt.Println("Token: ", token)
+		// if err := token.CustomClaims.Validate(r.Context()); err != nil {
+		// 	return retMeta, fmt.Errorf("failed to validate custom claims: %w", err)
+		// }
 
-		ethAddr, exists := validClaims["ethereum_address"].(string)
-		if exists {
-			return retMeta, errors.New("no ethereum address in token")
-		}
+		// ethAddr := tkn.CustomClaims.GetEthereumAddress
+		fmt.Println(token.EthereumAddress, token)
 
-		fmt.Println(ethAddr, claims.EthereumAddress)
+		// custom, ok := token.CustomClaims.(map[string]any{})
+		// if !ok {
+		// 	return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
+		// }
 
-		if !common.IsHexAddress(ethAddr) || zeroAddress == common.HexToAddress(ethAddr) {
-			return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
-		}
+		fmt.Println(token.EthereumAddress, claims.EthereumAddress)
 
-		retMeta[DIMOCloudEventSource] = strings.TrimSpace(ethAddr)
+		// if !common.IsHexAddress(ethAddr) || zeroAddress == common.HexToAddress(ethAddr) {
+		// 	return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
+		// }
+
+		retMeta[DIMOCloudEventSource] = token.EthereumAddress
 		retMeta[processors.MessageContentKey] = AttestationContent
 
 		return retMeta, nil
 	}, nil
 }
 
-type CustomClaims struct {
+type Claims struct {
 	EmailAddress    *string         `json:"email,omitempty"`
 	ProviderID      *string         `json:"provider_id,omitempty"`
 	EthereumAddress *common.Address `json:"ethereum_address,omitempty"`
 	jwt.RegisteredClaims
+}
+
+type CustomClaims struct {
+	EthereumAddress *common.Address `json:"ethereum_address,omitempty"`
+}
+
+func (cc *CustomClaims) Validate(ctx context.Context) error {
+	fmt.Println("validating")
+	if *cc.EthereumAddress == (zeroAddress) {
+		return errors.New("zero address")
+	}
+
+	if common.IsHexAddress(cc.EthereumAddress.Hex()) {
+		return errors.New("not valid hex address")
+	}
+
+	return nil
+}
+
+func (cc *CustomClaims) GetEthereumAddress() common.Address {
+	return *cc.EthereumAddress
 }
