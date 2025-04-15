@@ -2,7 +2,6 @@ package httpinputserver
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -145,10 +144,6 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 
 		fmt.Println(token.EthereumAddress, claims.EthereumAddress)
 
-		// if !common.IsHexAddress(ethAddr) || zeroAddress == common.HexToAddress(ethAddr) {
-		// 	return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
-		// }
-
 		retMeta[DIMOCloudEventSource] = token.EthereumAddress
 		retMeta[processors.MessageContentKey] = AttestationContent
 
@@ -168,13 +163,13 @@ type CustomClaims struct {
 }
 
 func (cc *CustomClaims) Validate(ctx context.Context) error {
-	fmt.Println("validating")
+	fmt.Println("validating", cc.EthereumAddress)
 	if *cc.EthereumAddress == (zeroAddress) {
-		return errors.New("zero address")
+		fmt.Println("zero address")
 	}
 
-	if common.IsHexAddress(cc.EthereumAddress.Hex()) {
-		return errors.New("not valid hex address")
+	if common.IsHexAddress(strings.TrimSpace(cc.EthereumAddress.Hex())) {
+		fmt.Println("not valid hex address")
 	}
 
 	return nil
