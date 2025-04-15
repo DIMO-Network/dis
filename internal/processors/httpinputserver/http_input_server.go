@@ -168,13 +168,12 @@ type CustomClaims struct {
 }
 
 func (cc *CustomClaims) Validate(ctx context.Context) error {
-	fmt.Println("validating")
-	addr := common.HexToAddress(strings.TrimSpace(cc.EthereumAddress.Hex()))
-	if addr == (zeroAddress) {
+	fmt.Println("validating", cc.EthereumAddress)
+	if common.HexToAddress(strings.TrimSpace(cc.EthereumAddress.Hex())) == (zeroAddress) {
 		return errors.New("zero address")
 	}
 
-	if common.IsHexAddress(addr.Hex()) {
+	if common.IsHexAddress(strings.TrimSpace(cc.EthereumAddress.Hex())) {
 		return errors.New("not valid hex address")
 	}
 
