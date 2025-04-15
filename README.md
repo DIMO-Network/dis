@@ -1,6 +1,6 @@
 # DIMO INGEST Server (DIS)
 
-DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data. 
+DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data.
 
 ## Getting Started
 
@@ -12,9 +12,7 @@ If you want to integrate your data with DIMO, you can get started quickly by pos
 
 ## Data Format
 
-When posting data to the DIS server, you must format your payload according to one of the following CloudEvent specifications for proper processing and storage.
-
-## Example Status payload
+When posting data to the DIS server, you must format your payload according to the following CloudEvent specification for proper processing and storage.
 
 ```json
 {
@@ -50,7 +48,7 @@ When posting data to the DIS server, you must format your payload according to o
 }
 ```
 
-### Status Cloud Event Header Descriptions
+### Cloud Event Header Descriptions
 
 - **id**: A unique identifier for the event. The combination of ID and Source must be unique.
 - **source**: The connection license address. Note that this field will be overwritten with the connection license address pulled from the CN of the certificate used for authentication.
@@ -61,39 +59,6 @@ When posting data to the DIS server, you must format your payload according to o
 - **type**: Describes the type of event one of `dimo.status, dimo.fingerprint`
 - **datacontenttype**: An optional MIME type for the data field. We almost always serialize to JSON and in that case this field is implicitly "application/json".
 - **dataversion**: An optional way for the data provider to give more information about the type of data in the payload.
-
-
-## Example Attestation Payload
-
-```json
-{
-  "id": "unique-event-identifier",
-  "source": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-  "producer": "did:ethr:80002:0x0C0F265c5E7220a6ef1a883C8Ddec6976796eF81",
-  "specversion": "1.0",
-  "subject": "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_847",
-  "time": "2025-04-14T15:02:53.83882-04:00",
-  "type": "dimo.attestation",
-  "signature": "0xf8a23fea5673b9430b617eb88dc95c830f71b1fce4a72fc15832bac2403d072816e4fa657c703e1cbbe9658de07d4aaf0ed7f45f81bbc4a7f84363d85977e93401",
-  "data": {
-    "safeDriver": true
-  }
-}
-```
-
-### Attestation Cloud Event Header Descriptions
-
-- **id**: A unique identifier for the attestation.
-- **source**: The entity submitting the attestation. Note that this is not necessarily the one making the attestation; the field will be overwritten with the connection license address pulled from the CN of the certificate used for authentication. 
-- **producer**: The ETH DID of the entity making the attestation. This does not necessarily match the source but must be either the entity that signed the data or the contract address of the developer license that signed the data. 
-- **specversion**: The version of CloudEvents specification used. This is always hardcoded as "1.0".
-- **subject**: The NFT DID which denotes which vehicle token ID the attestation is being made about. Must follow the format `did:nft:<chainId>:<contractAddress>_<tokenId>`.
-- **time**: The time at which the attestation occurred. In practice, we always set this. Format as ISO 8601 timestamp.
-- **type**: Describes the event type. Must be `dimo.attestation`
-- **datacontenttype**: An optional MIME type for the data field. We almost always serialize to JSON and in that case this field is implicitly "application/json".
-- **dataversion**: An optional way for the data provider to give more information about the type of data in the payload.
-- **signature**: Signed data payload. Must be signed by the `source` address. 
-- **data**: Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.  
 
 ### Data Object Structure
 
@@ -118,15 +83,6 @@ The `data` field contains the actual vehicle data with the following structure:
    "vin": "1GGCM82633A123456"
    ```
 
-3. **attestation**: Any JSON holding the data that is being attested to.
-   ```json
-   {
-     "anyFieldName1": "anyFieldValue1",
-     "anyFieldName2": "anyFieldValue2",
-     "anyFieldName3": "anyFieldValue3",
-   }
-   ```
-
 ### Event Type Processing
 
 The server processes your data payload and determines how it will be stored:
@@ -134,7 +90,6 @@ The server processes your data payload and determines how it will be stored:
 - If the `signals` field is present in the data, a new cloud event will be stored with the type `status`.
 - If the `vin` field is present in the data, it will be stored with the type `fingerprint`.
 - If both are present, then two separate cloud events will be created and stored - one as a `status` payload and one as a `fingerprint`.
-- To store a payload as an attestation, attestation type must be assed directly: `dimo.attestation`.
 
 ### NFT DID Format
 
