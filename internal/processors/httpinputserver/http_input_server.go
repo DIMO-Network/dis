@@ -95,13 +95,11 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		retMeta := map[string]any{}
 		authStr := r.Header.Get("Authorization")
 		tokenStr := strings.TrimSpace(strings.Replace(authStr, "Bearer ", "", 1))
-		fmt.Println("TokenStr: ", tokenStr)
+
 		var claims Claims
 		if _, err := jwt.ParseWithClaims(tokenStr, &claims, jwkResource.Keyfunc); err != nil {
 			return retMeta, fmt.Errorf("invalid token string: %w", err)
 		}
-
-		fmt.Println("claims audience: ", claims.Audience)
 
 		// Set up the validator.
 		jwtValidator, err := validator.New(
@@ -133,21 +131,6 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		if !ok {
 			return retMeta, fmt.Errorf("unexpected type for custom claims: %T", validClaims.CustomClaims)
 		}
-		// fmt.Println("Token: ", token)
-		// if err := token.CustomClaims.Validate(r.Context()); err != nil {
-		// 	return retMeta, fmt.Errorf("failed to validate custom claims: %w", err)
-		// }
-
-		// ethAddr := tkn.CustomClaims.GetEthereumAddress
-
-		// custom, ok := token.CustomClaims.(map[string]any{})
-		// if !ok {
-		// 	return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
-		// }
-
-		// if !common.IsHexAddress(ethAddr) || zeroAddress == common.HexToAddress(ethAddr) {
-		// 	return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
-		// }
 
 		retMeta[DIMOCloudEventSource] = strings.TrimSpace(customClaims.EthereumAddress.Hex())
 		retMeta[processors.MessageContentKey] = AttestationContent
@@ -168,7 +151,6 @@ type CustomClaims struct {
 }
 
 func (cc *CustomClaims) Validate(ctx context.Context) error {
-	fmt.Println("validating")
 	addr := common.HexToAddress(strings.TrimSpace(cc.EthereumAddress.Hex()))
 	if addr == (zeroAddress) {
 		return errors.New("zero address")
@@ -179,8 +161,4 @@ func (cc *CustomClaims) Validate(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (cc *CustomClaims) GetEthereumAddress() common.Address {
-	return cc.EthereumAddress
 }
