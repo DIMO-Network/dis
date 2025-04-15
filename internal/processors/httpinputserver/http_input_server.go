@@ -2,6 +2,7 @@ package httpinputserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -118,33 +119,37 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 			return nil, fmt.Errorf("failed to create jwt validator: %w", err)
 		}
 
-		tkn, err := jwtValidator.ValidateToken(r.Context(), tokenStr) //
+		vClaims, err := jwtValidator.ValidateToken(r.Context(), tokenStr)
 		if err != nil {
 			return retMeta, fmt.Errorf("failed to validate token string with validator: %w", err)
 		}
 
-		token, ok := tkn.(CustomClaims)
+		validClaims, ok := vClaims.(*validator.ValidatedClaims)
 		if !ok {
-			fmt.Println(tkn)
-			return retMeta, fmt.Errorf("unexpected token type %T", tkn)
+			return retMeta, fmt.Errorf("unexpected type for validated claims: %T", vClaims)
 		}
 
+		customClaims, ok := validClaims.CustomClaims.(*CustomClaims)
+		if !ok {
+			return retMeta, fmt.Errorf("unexpected type for custom claims: %T", validClaims.CustomClaims)
+		}
 		// fmt.Println("Token: ", token)
 		// if err := token.CustomClaims.Validate(r.Context()); err != nil {
 		// 	return retMeta, fmt.Errorf("failed to validate custom claims: %w", err)
 		// }
 
 		// ethAddr := tkn.CustomClaims.GetEthereumAddress
-		fmt.Println(token.EthereumAddress, token)
 
 		// custom, ok := token.CustomClaims.(map[string]any{})
 		// if !ok {
 		// 	return retMeta, fmt.Errorf("unexpected claims type %T", token.Claims)
 		// }
 
-		fmt.Println(token.EthereumAddress, claims.EthereumAddress)
+		// if !common.IsHexAddress(ethAddr) || zeroAddress == common.HexToAddress(ethAddr) {
+		// 	return retMeta, fmt.Errorf("subject is not valid hex address: %s", ethAddr)
+		// }
 
-		retMeta[DIMOCloudEventSource] = token.EthereumAddress
+		retMeta[DIMOCloudEventSource] = strings.TrimSpace(customClaims.EthereumAddress.Hex())
 		retMeta[processors.MessageContentKey] = AttestationContent
 
 		return retMeta, nil
@@ -159,22 +164,23 @@ type Claims struct {
 }
 
 type CustomClaims struct {
-	EthereumAddress *common.Address `json:"ethereum_address,omitempty"`
+	EthereumAddress common.Address `json:"ethereum_address,omitempty"`
 }
 
 func (cc *CustomClaims) Validate(ctx context.Context) error {
-	fmt.Println("validating", cc.EthereumAddress)
-	if *cc.EthereumAddress == (zeroAddress) {
-		fmt.Println("zero address")
+	fmt.Println("validating")
+	addr := common.HexToAddress(strings.TrimSpace(cc.EthereumAddress.Hex()))
+	if addr == (zeroAddress) {
+		return errors.New("zero address")
 	}
 
-	if common.IsHexAddress(strings.TrimSpace(cc.EthereumAddress.Hex())) {
-		fmt.Println("not valid hex address")
+	if common.IsHexAddress(addr.Hex()) {
+		return errors.New("not valid hex address")
 	}
 
 	return nil
 }
 
 func (cc *CustomClaims) GetEthereumAddress() common.Address {
-	return *cc.EthereumAddress
+	return cc.EthereumAddress
 }
