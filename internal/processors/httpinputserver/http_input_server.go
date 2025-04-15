@@ -21,13 +21,14 @@ const (
 	AttestationContent     = "dimo_content_attestation"
 	tokenExchangeIssuer    = "token_exchange_issuer"
 	tokenExchangeKeySetURL = "token_exchange_key_set_url"
-	producer               = "producer"
 )
 
 var field = service.NewObjectField("jwt",
 	service.NewStringField(tokenExchangeIssuer).Description("Specifies issuer url for token exchange service."),
 	service.NewStringField(tokenExchangeKeySetURL).Description("Specified the url that provides public keys for JWT signature validation."),
 )
+
+var zeroAddress common.Address
 
 func init() {
 	io.RegisterCustomHTTPServerInput("dimo_http_connection_server", CertRoutingMiddlewareConstructor, nil)
@@ -125,11 +126,11 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 		// 	return retMeta, errors.New("no ethereum address in token")
 		// }
 
-		if !common.IsHexAddress(claims.EthereumAddress.Hex()) {
+		if !common.IsHexAddress(claims.EthereumAddress.Hex()) || zeroAddress == *claims.EthereumAddress {
 			return retMeta, fmt.Errorf("subject is not valid hex address: %s", claims.EthereumAddress.Hex())
 		}
 
-		retMeta[DIMOCloudEventSource] = claims.EthereumAddress.Hex()
+		retMeta[DIMOCloudEventSource] = strings.TrimSpace(claims.EthereumAddress.Hex())
 		retMeta[processors.MessageContentKey] = AttestationContent
 
 		return retMeta, nil

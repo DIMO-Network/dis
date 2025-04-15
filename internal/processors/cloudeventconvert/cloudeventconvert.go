@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
@@ -144,19 +143,13 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		// source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
-		// if !ok {
-		// 	processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
-		// 	return service.MessageBatch{msg}
-		// }
-
-		attestor, err := cloudevent.DecodeEthrDID(event.CloudEventHeader.Producer)
-		if err != nil {
-			processors.SetError(msg, processorName, "failed to get producer from message metadata: %w", err)
+		source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
+		if !ok {
+			processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
 			return service.MessageBatch{msg}
 		}
 
-		validSignature, err := c.verifySignature(event, attestor.ContractAddress.Hex())
+		validSignature, err := c.verifySignature(event, common.HexToAddress(source))
 		if err != nil {
 			c.logger.Warn(fmt.Sprintf("failed to validate signature: %s", err.Error()))
 			processors.SetError(msg, processorName, "failed to validate signature on message", err)
@@ -185,13 +178,9 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 }
 
 // verifySignature attempts to verify the signed data
-// first checks if the producer is the signer
-// if the producer is not the signer, check whether the signature is from a dev license where the producer is the contract addr
-func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], attestor string) (bool, error) {
-	if !common.IsHexAddress(common.HexToAddress(attestor).Hex()) {
-		return false, errors.New("invalid attestor address")
-	}
-
+// first check if the source is the signer
+// if the source is not the signer, check whether the signature is from a dev license where the source is the contract addr
+func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
 	sig, ok := event.Extras["signature"].(string)
 	if !ok {
 		c.logger.Warn("failed to get signature from payload")
@@ -210,17 +199,17 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-	if common.HexToAddress(strings.TrimSpace(attestor)) != recoveredAddress {
-		return c.verifyERC1271Signature(signature, msgHash, recoveredAddress)
+	if source != recoveredAddress {
+		return c.verifyERC1271Signature(signature, msgHash, source)
 	}
 
 	return true, nil
 }
 
-func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash []byte, contractAddress common.Address) (bool, error) {
-	contract, err := web3.NewErc1271(contractAddress, c.ethClient)
+func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash []byte, source common.Address) (bool, error) {
+	contract, err := web3.NewErc1271(source, c.ethClient)
 	if err != nil {
-		return false, fmt.Errorf("failed to connect to address: %s: %w", contractAddress.Hex(), err)
+		return false, fmt.Errorf("failed to connect to address: %s: %w", source, err)
 	}
 
 	result, err := contract.IsValidSignature(nil, [32]byte(msgHash), signature)
