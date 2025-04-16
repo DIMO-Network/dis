@@ -151,8 +151,8 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 		validSignature, err := c.verifySignature(event, common.HexToAddress(source))
 		if err != nil {
-			c.logger.Warn(fmt.Sprintf("failed to validate signature: %s", err.Error()))
-			processors.SetError(msg, processorName, "failed to validate signature on message", err)
+			c.logger.Warn(fmt.Sprintf("failed to check message signature: %s", err.Error()))
+			processors.SetError(msg, processorName, "failed to check message signature", err)
 			return service.MessageBatch{msg}
 		}
 
