@@ -1,13 +1,21 @@
 # DIMO INGEST Server (DIS)
 
-DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data. To learn more about submitting attestations to DIMO, start reading here. To learn more about integrating your data with DIMO, start reading here. 
+DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data. <br><br> 
+
+To learn more about submitting attestations to DIMO, [start reading here](#getting-started-with-dimo-attestations). <br> 
+
+To learn more about integrating general vehicle data with DIMO, [start reading here](#getting-started-with-dimo-ingest-server). 
 
 ## Getting Started With DIMO Attestations
 
 Storing verifiable claims with DIMO requires two simple steps. 
 
 1. Obtain a valid DIMO JWT.
-2. Post data to https://attest.dimo.zone 
+2. Compile a payload using the information below. Be sure to include all required headers.  <br> Data must be passed as a JSON. Remember that once an attestation is made, the subject of the attestation can choose to share the data with whoever they choose. Do not include information that you would not want to be accessible by a third party.<br><br> Although there are no required data fields, we recommend employing the following best practices: 
+    - <b>Who is the attestation about. </b> <br>Although the subject of the attestation is included as a header, if the statement you are making is unique to a specific user or vehicle, it is recommended to include this information in the signed message. <br><br>
+    - <b>Who is making the attestation. </b> <br>The producer field may represent the entity making an attestation or it may be a signed on a developer license making an attestation. If the attesting party is uniquely capable of providing this information or if a third party reading the attestation would interpret the message differently if it came from the attestor or a different individual, it is recommended to include this information in the signed message. <br><br>
+    - <b>How long is this attestation valid for?</b> <br>If the information included in the attestation is invalid after a certain date, it is recommended to include this information in the signed message. <br>
+3. Post data to https://attest.dimo.zone 
 
 ### Attestation Data Format
 
@@ -15,7 +23,7 @@ Storing verifiable claims with DIMO requires two simple steps.
 {
   "id": "unique-event-identifier",
   "source": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-  "producer": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+  "producer": "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
   "specversion": "1.0",
   "subject": "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_847",
   "time": "2025-04-14T15:02:53.83882-04:00",
@@ -38,10 +46,11 @@ Storing verifiable claims with DIMO requires two simple steps.
 ### Attestation Cloud Event Header Descriptions
 
 - **source**: Required field. The connection license address. Note that this field will be overwritten with the connection license address pulled from the CN of the certificate used for authentication.
-- **subject**: Required field. The NFT DID which denotes which vehicle token ID is being used. Must follow the format `did:nft:<chainId>:<contractAddress>_<tokenId>`.
+- **subject**: Required field. The NFT DID which denotes which vehicle token ID is being used. Must follow the format `did:<chain>:<chainId>:<contractAddress>`.
 - **signature**: Required field. Signed data payload. Must be signed by the `source` address. 
 - **data**: Required field. Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.  
 - **type**: Required Field, must be: `dimo.attestation`
+- **producer**: The ETH DID of the paired device that produced the payload. Must follow the format did:nft:<chainId>:<contractAddress>_<tokenId>.
 - **id**: A unique identifier for the event. Defaults to a random KSUID. The combination of ID and Source must be unique.
 - **specversion**: The version of CloudEvents specification used. Defaults to "1.0".
 - **time**: The time at which the event occurred. Must be within 5 minutes of the upload time. Will default to current timestamp. Format as ISO 8601 timestamp.
