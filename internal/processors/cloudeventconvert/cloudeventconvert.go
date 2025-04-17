@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -293,6 +294,11 @@ func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage
 }
 
 func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
+	validCharacters := regexp.MustCompile("^[a-zA-Z0-9]+$")
+	if !validCharacters.MatchString(eventHdr.ID) {
+		return false
+	}
+
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
 		return false
 	}
