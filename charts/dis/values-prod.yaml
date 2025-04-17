@@ -14,7 +14,7 @@ env:
   SYNTHETIC_NFT_ADDRESS: '0x4804e8D1661cd1a1e5dDdE1ff458A7f878c0aC6D'
   TOKEN_EXCHANGE_KEY_SET_URL: 'https://auth.dimo.zone/dex/keys'
   TOKEN_EXCHANGE_ISSUER: 'https://auth.dimo.zone/dex'
-  RPC_URL: https://polygon-rpc.com
+  RPC_URL: https://polygon-mainnet.g.alchemy.com/v2/0bMxcUPiffYJE04EqW3BJ5tjepO-uSUW
 ingress:
   enabled: true
   className: nginx-direct
