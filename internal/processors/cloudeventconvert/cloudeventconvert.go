@@ -151,7 +151,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 		validSignature, err := c.verifySignature(event, common.HexToAddress(source))
 		if err != nil {
-			c.logger.Warn(fmt.Sprintf("failed to check message signature: %s", err.Error()))
 			processors.SetError(msg, processorName, "failed to check message signature", err)
 			return service.MessageBatch{msg}
 		}
@@ -170,7 +169,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
-		c.logger.Warn(fmt.Sprintf("failed to create event message: %s", contentType))
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
@@ -183,7 +181,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
 	sig, ok := event.Extras["signature"].(string)
 	if !ok {
-		c.logger.Warn("failed to get signature from payload")
 		return false, errors.New("failed to get signed payload")
 	}
 
@@ -217,7 +214,7 @@ func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash [
 		return false, fmt.Errorf("failed to validate signature with contract: %w", err)
 	}
 
-	return result != erc1271magicValue, nil
+	return result == erc1271magicValue, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
