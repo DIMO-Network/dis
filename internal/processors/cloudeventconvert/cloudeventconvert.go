@@ -220,6 +220,9 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 		}
 		newMsg := origMsg.Copy()
 		setDefaults(&hdrs[i], source, defaultID)
+		if err := validHeaderStrings(&hdrs[i]); err != nil {
+			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
+		}
 		setMetaData(&hdrs[i], newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
@@ -293,12 +296,26 @@ func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage
 	return &event, nil
 }
 
-func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
-	validCharacters := regexp.MustCompile("^[a-zA-Z0-9]+$")
+func validHeaderStrings(eventHdr *cloudevent.CloudEventHeader) error {
+	validCharacters := regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
 	if !validCharacters.MatchString(eventHdr.ID) {
-		return false
+		return errors.New("invalid header ID")
 	}
 
+	validSpec := regexp.MustCompile(`^[0-9.]+$`)
+	if !validSpec.MatchString(eventHdr.SpecVersion) {
+		return errors.New("invalid spec version")
+	}
+
+	validContentType := regexp.MustCompile(`^[a-zA-Z0-9\-_/]+$`)
+	if !validContentType.MatchString(eventHdr.DataContentType) {
+		return errors.New("invalid data content type")
+	}
+
+	return nil
+}
+
+func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
 		return false
 	}
