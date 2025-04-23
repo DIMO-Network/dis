@@ -186,12 +186,16 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256Hash(event.Data)
-	pk, err := crypto.Ecrecover(msgHash.Bytes(), signature)
-	if err != nil {
-		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
+	if len(signature) != 65 {
+		return false, fmt.Errorf("signature has length %d != 65", len(signature))
 	}
 
-	pubKey, err := crypto.UnmarshalPubkey(pk)
+	signature[64] -= 27
+	if signature[64] != 0 && signature[64] != 1 {
+		return false, fmt.Errorf("invalid v byte: %d", signature[64])
+	}
+
+	pubKey, err := crypto.SigToPub(msgHash.Bytes(), signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
