@@ -290,6 +290,7 @@ func validHeaderStrings(eventHdr *cloudevent.CloudEventHeader) error {
 
 func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
+
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
@@ -297,33 +298,36 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 	if event.ID == "" {
 		event.ID = defaultID
 	}
-
-	if !validCharacters.MatchString(event.ID) {
-		return errors.New("invalid header ID")
-	}
-
 	if event.SpecVersion == "" {
 		event.SpecVersion = "1.0"
 	}
-
-	if !validCharacters.MatchString(event.SpecVersion) {
-		return errors.New("invalid header spec version")
-	}
-
 	if event.DataContentType == "" {
 		event.DataContentType = "application/json"
 	}
 
+	if !validCharacters.MatchString(event.ID) {
+		return errors.New("invalid header ID")
+	}
+	if !validCharacters.MatchString(event.SpecVersion) {
+		return errors.New("invalid spec version")
+	}
 	if !validCharacters.MatchString(event.DataContentType) {
 		return errors.New("invalid data content type")
 	}
-
-	if !validCharacters.MatchString(event.Subject) {
-		return errors.New("invalid header subject")
+	if event.DataSchema != "" && !validCharacters.MatchString(event.DataSchema) {
+		return errors.New("invalid data schema")
 	}
-
-	if !validCharacters.MatchString(event.Producer) {
-		return errors.New("invalid header producer")
+	if event.DataVersion != "" && !validCharacters.MatchString(event.DataVersion) {
+		return errors.New("invalid data version")
+	}
+	if event.Type != "" && !validCharacters.MatchString(event.Type) {
+		return errors.New("invalid data type")
+	}
+	if event.Subject != "" && !validCharacters.MatchString(event.Subject) {
+		return errors.New("invalid subject")
+	}
+	if event.Producer != "" && !validCharacters.MatchString(event.Producer) {
+		return errors.New("invalid producer")
 	}
 
 	return nil
