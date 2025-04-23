@@ -185,8 +185,8 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 	}
 
 	signature := common.FromHex(sig)
-	msgHash := crypto.Keccak256(event.Data)
-	pk, err := crypto.Ecrecover(msgHash, signature)
+	msgHash := crypto.Keccak256Hash(event.Data)
+	pk, err := crypto.Ecrecover(msgHash.Bytes(), signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
 	}
@@ -203,13 +203,13 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 	return true, nil
 }
 
-func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash []byte, source common.Address) (bool, error) {
+func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
 	contract, err := web3.NewErc1271(source, c.ethClient)
 	if err != nil {
 		return false, fmt.Errorf("failed to connect to address: %s: %w", source, err)
 	}
 
-	result, err := contract.IsValidSignature(nil, [32]byte(msgHash), signature)
+	result, err := contract.IsValidSignature(nil, msgHash, signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to validate signature with contract: %w", err)
 	}
