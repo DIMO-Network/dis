@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
@@ -14,6 +15,7 @@ const (
 	aftermarketAddressFieldName = "aftermarket_nft_address"
 	syntheticAddressFieldName   = "synthetic_nft_address"
 	chainIDFieldName            = "chain_id"
+	rpcURLFieldName             = "rpc_url"
 )
 
 var configSpec = service.NewConfigSpec().
@@ -21,7 +23,8 @@ var configSpec = service.NewConfigSpec().
 	Field(service.NewIntField(chainIDFieldName).Description("Chain Id for the Ethereum network")).
 	Field(service.NewStringField(vehicleAddressFieldName).Description("Ethereum address for the vehicles contract")).
 	Field(service.NewStringField(aftermarketAddressFieldName).Description("Ethereum address for the aftermarket contract")).
-	Field(service.NewStringField(syntheticAddressFieldName).Description("Ethereum address for the synthetic device contract"))
+	Field(service.NewStringField(syntheticAddressFieldName).Description("Ethereum address for the synthetic device contract")).
+	Field(service.NewStringField(rpcURLFieldName).Description("RPC URL"))
 
 func init() {
 	err := service.RegisterBatchProcessor(processorName, configSpec, ctor)
@@ -56,8 +59,17 @@ func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProce
 	if err != nil {
 		return nil, fmt.Errorf("failed to get %s: %w", chainIDFieldName, err)
 	}
+	rpcUrl, err := cfg.FieldString(rpcURLFieldName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get %s: %w", rpcURLFieldName, err)
+	}
 
-	return newCloudConvertProcessor(mgr.Logger(), uint64(chainID),
+	client, err := ethclient.Dial(rpcUrl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to rpc url %s: %w", rpcURLFieldName, err)
+	}
+
+	return newCloudConvertProcessor(client, mgr.Logger(), uint64(chainID),
 		common.HexToAddress(vehicleAddress),
 		common.HexToAddress(aftermarketAddress),
 		common.HexToAddress(syntheticAddress)), nil

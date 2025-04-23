@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
@@ -14,6 +13,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
+	"github.com/DIMO-Network/dis/internal/web3"
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/compass"
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
@@ -21,6 +21,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
@@ -38,9 +39,13 @@ const (
 	cloudEventPartialContentType = "dimo_partial_cloudevent"
 )
 
+var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
+
 type cloudeventProcessor struct {
 	logger          *service.Logger
 	producerLoggers map[string]*ratedlogger.Logger
+	ethClient       *ethclient.Client
 }
 
 // Close to fulfill the service.Processor interface.
@@ -48,7 +53,7 @@ func (*cloudeventProcessor) Close(context.Context) error {
 	return nil
 }
 
-func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, aftermarketAddr, syntheticAddr common.Address) *cloudeventProcessor {
+func newCloudConvertProcessor(client *ethclient.Client, lgr *service.Logger, chainID uint64, vehicleAddr, aftermarketAddr, syntheticAddr common.Address) *cloudeventProcessor {
 	// AutoPi
 	autoPiModule := &autopi.Module{
 		AftermarketContractAddr: aftermarketAddr,
@@ -79,7 +84,8 @@ func newCloudConvertProcessor(lgr *service.Logger, chainID uint64, vehicleAddr, 
 	modules.CloudEventRegistry.Override(modules.CompassSource.String(), compassModule)
 
 	return &cloudeventProcessor{
-		logger: lgr,
+		logger:    lgr,
+		ethClient: client,
 	}
 }
 
@@ -139,16 +145,15 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		attestorField, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
+		source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 		if !ok {
-			processors.SetError(msg, processorName, "failed to get attestor from message metadata", nil)
+			processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
 			return service.MessageBatch{msg}
 		}
 
-		validSignature, err := c.validateSignature(event, attestorField)
+		validSignature, err := c.verifySignature(event, common.HexToAddress(source))
 		if err != nil {
-			c.logger.Warn(fmt.Sprintf("failed to validate signature: %s", err.Error()))
-			processors.SetError(msg, processorName, "failed to validate signature on message", err)
+			processors.SetError(msg, processorName, "failed to check message signature", err)
 			return service.MessageBatch{msg}
 		}
 
@@ -166,37 +171,56 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
-		c.logger.Warn(fmt.Sprintf("failed to create event message: %s", contentType))
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
 	return retBatch
 }
 
-func (c *cloudeventProcessor) validateSignature(event *cloudevent.CloudEvent[json.RawMessage], attestor string) (bool, error) {
-	if !common.IsHexAddress(common.HexToAddress(attestor).Hex()) {
-		return false, errors.New("invalid attestor address")
-	}
-
+// verifySignature attempts to verify the signed data
+// first check if the source is the signer
+// if the source is not the signer, check whether the signature is from a dev license where the source is the contract addr
+func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
 	sig, ok := event.Extras["signature"].(string)
 	if !ok {
-		c.logger.Warn("failed to get signature from payload")
 		return false, errors.New("failed to get signed payload")
 	}
 
 	signature := common.FromHex(sig)
-	msgHash := crypto.Keccak256(event.Data)
-	pk, err := crypto.Ecrecover(msgHash, signature)
-	if err != nil {
-		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
+	msgHash := crypto.Keccak256Hash(event.Data)
+	if len(signature) != 65 {
+		return false, fmt.Errorf("signature has length %d != 65", len(signature))
 	}
 
-	pubKey, err := crypto.UnmarshalPubkey(pk)
+	signature[64] -= 27
+	if signature[64] != 0 && signature[64] != 1 {
+		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64]+27)
+	}
+
+	pubKey, err := crypto.SigToPub(msgHash.Bytes(), signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-	return common.HexToAddress(strings.TrimSpace(attestor)) == recoveredAddress, nil
+	if source != recoveredAddress {
+		return c.verifyERC1271Signature(signature, msgHash, source)
+	}
+
+	return true, nil
+}
+
+func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
+	contract, err := web3.NewErc1271(source, c.ethClient)
+	if err != nil {
+		return false, fmt.Errorf("failed to connect to address: %s: %w", source, err)
+	}
+
+	result, err := contract.IsValidSignature(nil, msgHash, signature)
+	if err != nil {
+		return false, fmt.Errorf("failed to validate signature with contract: %w", err)
+	}
+
+	return result == erc1271magicValue, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
@@ -219,8 +243,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
 		}
 		newMsg := origMsg.Copy()
-		setDefaults(&hdrs[i], source, defaultID)
-		if err := validHeaderStrings(&hdrs[i]); err != nil {
+		if err := validateHeadersAndSetDefaults(&hdrs[i], source, defaultID); err != nil {
 			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
 		}
 		setMetaData(&hdrs[i], newMsg)
@@ -246,22 +269,64 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	return messages, nil
 }
 
-func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
+func validHeaderStrings(eventHdr *cloudevent.CloudEventHeader) error {
+
+	if !validCharacters.MatchString(eventHdr.ID) {
+		return errors.New("invalid header ID")
+	}
+
+	validSpec := regexp.MustCompile(`^[0-9.]+$`)
+	if !validSpec.MatchString(eventHdr.SpecVersion) {
+		return errors.New("invalid spec version")
+	}
+
+	validContentType := regexp.MustCompile(`^[a-zA-Z0-9\-_/]+$`)
+	if !validContentType.MatchString(eventHdr.DataContentType) {
+		return errors.New("invalid data content type")
+	}
+
+	return nil
+}
+
+func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
+
 	if event.ID == "" {
 		event.ID = defaultID
+	}
+
+	if !validCharacters.MatchString(event.ID) {
+		return errors.New("invalid header ID")
 	}
 
 	if event.SpecVersion == "" {
 		event.SpecVersion = "1.0"
 	}
 
+	if !validCharacters.MatchString(event.SpecVersion) {
+		return errors.New("invalid header spec version")
+	}
+
 	if event.DataContentType == "" {
 		event.DataContentType = "application/json"
 	}
+
+	if !validCharacters.MatchString(event.DataContentType) {
+		return errors.New("invalid data content type")
+	}
+
+	if !validCharacters.MatchString(event.Subject) {
+		return errors.New("invalid header subject")
+	}
+
+	if !validCharacters.MatchString(event.Producer) {
+		return errors.New("invalid header producer")
+	}
+
+	return nil
 }
 
 func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
@@ -294,25 +359,6 @@ func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage
 
 	event.Type = cloudevent.TypeAttestation
 	return &event, nil
-}
-
-func validHeaderStrings(eventHdr *cloudevent.CloudEventHeader) error {
-	validCharacters := regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
-	if !validCharacters.MatchString(eventHdr.ID) {
-		return errors.New("invalid header ID")
-	}
-
-	validSpec := regexp.MustCompile(`^[0-9.]+$`)
-	if !validSpec.MatchString(eventHdr.SpecVersion) {
-		return errors.New("invalid spec version")
-	}
-
-	validContentType := regexp.MustCompile(`^[a-zA-Z0-9\-_/]+$`)
-	if !validContentType.MatchString(eventHdr.DataContentType) {
-		return errors.New("invalid data content type")
-	}
-
-	return nil
 }
 
 func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {

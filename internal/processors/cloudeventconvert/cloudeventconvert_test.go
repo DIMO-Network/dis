@@ -45,15 +45,15 @@ func TestProcessBatch(t *testing.T) {
 	}{
 		{
 			name:           "successful attestation",
-			inputData:      []byte(fmt.Sprintf(`{"time": "%s", "id": "33", "subject": "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2", "producer": "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0", "data": {"tires":"good"}, "signature": "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01"}`, attestationTimestamp.Format(time.RFC3339))),
-			sourceID:       common.HexToAddress("0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0").String(),
+			inputData:      []byte(fmt.Sprintf(`{"id":"848","source":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","producer":"did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","specversion":"1.0","subject":"did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848","time":"%s","type":"dimo.attestation","signature":"0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b","data":{"goodTires":true}}`, attestationTimestamp.Format(time.RFC3339))),
+			sourceID:       common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
 			messageContent: "dimo_content_attestation",
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
-					ID:       "33",
+					ID:       "848",
 					Type:     cloudevent.TypeAttestation,
-					Producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
-					Subject:  "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
+					Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+					Subject:  "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848",
 					Time:     attestationTimestamp,
 				}
 
@@ -66,19 +66,19 @@ func TestProcessBatch(t *testing.T) {
 			expectedError: false,
 			expectedMeta: map[string]any{
 				cloudEventTypeKey:            cloudevent.TypeAttestation,
-				cloudEventProducerKey:        "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
-				cloudEventSubjectKey:         "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
+				cloudEventProducerKey:        "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+				cloudEventSubjectKey:         "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
 				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
 					{
-						ID:       "33",
-						Source:   common.HexToAddress("0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0").String(),
+						ID:       "848",
+						Source:   common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
 						Type:     cloudevent.TypeAttestation,
-						Producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0",
-						Subject:  "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2",
+						Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+						Subject:  "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848",
 						Time:     attestationTimestamp,
 						Extras: map[string]any{
-							"signature": "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01",
+							"signature": "0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b",
 						},
 						DataContentType: "application/json",
 						SpecVersion:     "1.0",
