@@ -13,27 +13,27 @@ tests:
           dimo_cloudevent_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
          json_content:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-          source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+          source: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
           dataschema: "testschema/v2.0"
-          subject: "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2"
-          producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+          subject: "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848"
+          producer:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
           time: "2025-03-27T18:35:46.436008782Z"
           vehicleTokenId: 2
-          signature: "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01"
+          signature: "0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b"
           data:
-            - tires: good
+            - goodTires: true
     output_batches:
       - - json_contains:
             id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-            source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+            source: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
             dataschema: "testschema/v2.0"
-            subject: "did:nft:1:0x27fC49Ed57530500EF50a3302Fa77E2234050C25_2"
-            producer: "did:ethr:1:0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+            subject: "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848"
+            producer:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
             time: "2025-03-27T18:35:46.436008782Z"
             vehicleTokenId: 2
-            signature: "0xb73909b0f66963b0dd0d604636ca791b7af3996ae14295d04cb4e1563ea22505582447f618475e04380690a8d1b2ae71738de228ee14c1a87d31aaa5c50dea3b01"
+            signature: "0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b"
             data:
-              - tires: good
+              - goodTires: true
 
   - name: "Test Cloud Event Indexing"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
@@ -87,6 +87,7 @@ tests:
     environment:
       DIMO_REGISTRY_CHAIN_ID: 153
       VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      RPC_URL: https://rpc-amoy.polygon.technology/
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_connection'
@@ -156,6 +157,7 @@ tests:
       VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF",
       AFTERMARKET_NFT_ADDRESS: "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA",
       DIMO_REGISTRY_CHAIN_ID: 137,
+      RPC_URL: https://rpc-amoy.polygon.technology/
     }
     input_batch:
       - metadata:
