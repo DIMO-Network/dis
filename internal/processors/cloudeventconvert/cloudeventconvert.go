@@ -145,6 +145,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
+		eventData = event.Data
 		source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 		if !ok {
 			processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
