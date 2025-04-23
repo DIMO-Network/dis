@@ -192,7 +192,7 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 
 	signature[64] -= 27
 	if signature[64] != 0 && signature[64] != 1 {
-		return false, fmt.Errorf("invalid v byte: %d", signature[64])
+		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64]+27)
 	}
 
 	pubKey, err := crypto.SigToPub(msgHash.Bytes(), signature)
