@@ -40,7 +40,7 @@ const (
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
-var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.: ]+$`)
 
 type cloudeventProcessor struct {
 	logger          *service.Logger
@@ -269,25 +269,6 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	return messages, nil
 }
 
-func validHeaderStrings(eventHdr *cloudevent.CloudEventHeader) error {
-
-	if !validCharacters.MatchString(eventHdr.ID) {
-		return errors.New("invalid header ID")
-	}
-
-	validSpec := regexp.MustCompile(`^[0-9.]+$`)
-	if !validSpec.MatchString(eventHdr.SpecVersion) {
-		return errors.New("invalid spec version")
-	}
-
-	validContentType := regexp.MustCompile(`^[a-zA-Z0-9\-_/]+$`)
-	if !validContentType.MatchString(eventHdr.DataContentType) {
-		return errors.New("invalid data content type")
-	}
-
-	return nil
-}
-
 func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
 
@@ -306,28 +287,28 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 	}
 
 	if !validCharacters.MatchString(event.ID) {
-		return errors.New("invalid header ID")
+		return fmt.Errorf("invalid id: %s", event.ID)
 	}
 	if !validCharacters.MatchString(event.SpecVersion) {
-		return errors.New("invalid spec version")
+		return fmt.Errorf("invalid specversion: %s", event.SpecVersion)
 	}
 	if !validCharacters.MatchString(event.DataContentType) {
-		return errors.New("invalid data content type")
+		return fmt.Errorf("invalid data content type: %s", event.DataContentType)
 	}
 	if event.DataSchema != "" && !validCharacters.MatchString(event.DataSchema) {
-		return errors.New("invalid data schema")
+		return fmt.Errorf("invalid data schema: %s", event.DataSchema)
 	}
 	if event.DataVersion != "" && !validCharacters.MatchString(event.DataVersion) {
-		return errors.New("invalid data version")
+		return fmt.Errorf("invalid data version: %s", event.DataVersion)
 	}
 	if event.Type != "" && !validCharacters.MatchString(event.Type) {
-		return errors.New("invalid data type")
+		return fmt.Errorf("invalid data type: %s", event.Type)
 	}
 	if event.Subject != "" && !validCharacters.MatchString(event.Subject) {
-		return errors.New("invalid subject")
+		return fmt.Errorf("invalid subject: %s", event.Subject)
 	}
 	if event.Producer != "" && !validCharacters.MatchString(event.Producer) {
-		return errors.New("invalid producer")
+		return fmt.Errorf("invalid producer: %s", event.Producer)
 	}
 
 	return nil
