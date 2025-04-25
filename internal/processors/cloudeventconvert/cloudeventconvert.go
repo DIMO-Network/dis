@@ -284,25 +284,6 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	return messages, nil
 }
 
-func validHeaderStrings(eventHdr *cloudevent.CloudEventHeader) error {
-
-	if !validCharacters.MatchString(eventHdr.ID) {
-		return errors.New("invalid header ID")
-	}
-
-	validSpec := regexp.MustCompile(`^[0-9.]+$`)
-	if !validSpec.MatchString(eventHdr.SpecVersion) {
-		return errors.New("invalid spec version")
-	}
-
-	validContentType := regexp.MustCompile(`^[a-zA-Z0-9\-_/]+$`)
-	if !validContentType.MatchString(eventHdr.DataContentType) {
-		return errors.New("invalid data content type")
-	}
-
-	return nil
-}
-
 func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
 	if event.Time.IsZero() {
