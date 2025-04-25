@@ -40,7 +40,7 @@ const (
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
-var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
 
 type cloudeventProcessor struct {
 	logger          *service.Logger
@@ -286,6 +286,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 
 func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
+
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
@@ -293,33 +294,36 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 	if event.ID == "" {
 		event.ID = defaultID
 	}
-
-	if !validCharacters.MatchString(event.ID) {
-		return errors.New("invalid header ID")
-	}
-
 	if event.SpecVersion == "" {
 		event.SpecVersion = "1.0"
 	}
-
-	if !validCharacters.MatchString(event.SpecVersion) {
-		return errors.New("invalid header spec version")
-	}
-
 	if event.DataContentType == "" {
 		event.DataContentType = "application/json"
 	}
 
+	if !validCharacters.MatchString(event.ID) {
+		return fmt.Errorf("invalid id: %s", event.ID)
+	}
+	if !validCharacters.MatchString(event.SpecVersion) {
+		return fmt.Errorf("invalid specversion: %s", event.SpecVersion)
+	}
 	if !validCharacters.MatchString(event.DataContentType) {
-		return errors.New("invalid data content type")
+		return fmt.Errorf("invalid data content type: %s", event.DataContentType)
 	}
-
-	if !validCharacters.MatchString(event.Subject) {
-		return errors.New("invalid header subject")
+	if event.DataSchema != "" && !validCharacters.MatchString(event.DataSchema) {
+		return fmt.Errorf("invalid data schema: %s", event.DataSchema)
 	}
-
-	if !validCharacters.MatchString(event.Producer) {
-		return errors.New("invalid header producer")
+	if event.DataVersion != "" && !validCharacters.MatchString(event.DataVersion) {
+		return fmt.Errorf("invalid data version: %s", event.DataVersion)
+	}
+	if event.Type != "" && !validCharacters.MatchString(event.Type) {
+		return fmt.Errorf("invalid data type: %s", event.Type)
+	}
+	if event.Subject != "" && !validCharacters.MatchString(event.Subject) {
+		return fmt.Errorf("invalid subject: %s", event.Subject)
+	}
+	if event.Producer != "" && !validCharacters.MatchString(event.Producer) {
+		return fmt.Errorf("invalid producer: %s", event.Producer)
 	}
 
 	return nil
