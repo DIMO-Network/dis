@@ -40,7 +40,7 @@ const (
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
-var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.: ]+$`)
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
 
 type cloudeventProcessor struct {
 	logger          *service.Logger
@@ -145,6 +145,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
+		eventData = event.Data
 		source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 		if !ok {
 			processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
@@ -188,25 +189,39 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 
 	signature := common.FromHex(sig)
 	msgHash := crypto.Keccak256Hash(event.Data)
+
+	eoaSigner, errEoa := c.verifyEOASignature(signature, msgHash, source)
+	if errEoa != nil || !eoaSigner {
+		erc1271Signer, errErc := c.verifyERC1271Signature(signature, msgHash, source)
+		if errErc != nil {
+			return false, errors.Join(errEoa, errErc)
+		}
+
+		return erc1271Signer, nil
+	}
+
+	return true, nil
+}
+
+func (c *cloudeventProcessor) verifyEOASignature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
 	if len(signature) != 65 {
 		return false, fmt.Errorf("signature has length %d != 65", len(signature))
 	}
 
-	signature[64] -= 27
-	if signature[64] != 0 && signature[64] != 1 {
-		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64]+27)
+	sigCopy := make([]byte, len(signature))
+	copy(sigCopy, signature)
+
+	sigCopy[64] -= 27
+	if sigCopy[64] != 0 && sigCopy[64] != 1 {
+		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64])
 	}
 
-	pubKey, err := crypto.SigToPub(msgHash.Bytes(), signature)
+	pubKey, err := crypto.SigToPub(msgHash.Bytes(), sigCopy)
 	if err != nil {
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}
 	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-	if source != recoveredAddress {
-		return c.verifyERC1271Signature(signature, msgHash, source)
-	}
-
-	return true, nil
+	return source == recoveredAddress, nil
 }
 
 func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
