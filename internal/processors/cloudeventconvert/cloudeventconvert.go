@@ -40,7 +40,7 @@ const (
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
-var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,.:]+$`)
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
 
 type cloudeventProcessor struct {
 	logger          *service.Logger
