@@ -4,6 +4,7 @@ kafka:
 podAnnotations:
   config.linkerd.io/proxy-cpu-limit: 2000m
   config.linkerd.io/proxy-cpu-request: 500m
+isDev: false
 env:
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
