@@ -4,6 +4,7 @@ kafka:
 podAnnotations:
   config.linkerd.io/proxy-cpu-limit: 2000m
   config.linkerd.io/proxy-cpu-request: 500m
+isDev: false
 env:
   ENVIRONMENT: prod
   DEVICES_APIGRPC_ADDR: devices-api-prod:8086
@@ -18,16 +19,26 @@ ingress:
   enabled: true
   className: nginx-direct
   annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: 'false'
-    external-dns.alpha.kubernetes.io/hostname: dis.dimo.zone
     nginx.ingress.kubernetes.io/limit-rps: '50'
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    nginx.ingress.kubernetes.io/ssl-passthrough: 'true'
   hosts:
+    - host: attest.dimo.zone
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+          backend:
+            service:
+              suffix: ''
+              port:
+                number: 9442
     - host: dis.dimo.zone
       paths:
         - path: /
           pathType: ImplementationSpecific
+          backend:
+            service:
+              suffix: ''
+              port:
+                number: 443
   tls: []
 certificate:
   commonName: dis.dimo.zone
