@@ -94,15 +94,6 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/limit-rps: '50'
   hosts:
-    - host: attest.dev.dimo.zone
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              suffix: ''
-              port:
-                number: 9442
     - host: dis.dev.dimo.zone
       paths:
         - path: /
