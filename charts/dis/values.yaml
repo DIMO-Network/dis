@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: dimozone/dis
   pullPolicy: IfNotPresent
-  tag: 4b0da32
+  tag: 9bc3d89
   command:
     - /dis
   args:
@@ -95,15 +95,6 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/limit-rps: '50'
   hosts:
-    - host: attest.dev.dimo.zone
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              suffix: ''
-              port:
-                number: 9442
     - host: dis.dev.dimo.zone
       paths:
         - path: /

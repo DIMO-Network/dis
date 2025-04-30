@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
@@ -39,6 +40,7 @@ const (
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
 
 type cloudeventProcessor struct {
 	logger          *service.Logger
@@ -143,6 +145,7 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
+		eventData = event.Data
 		source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
 		if !ok {
 			processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
@@ -151,7 +154,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 		validSignature, err := c.verifySignature(event, common.HexToAddress(source))
 		if err != nil {
-			c.logger.Warn(fmt.Sprintf("failed to check message signature: %s", err.Error()))
 			processors.SetError(msg, processorName, "failed to check message signature", err)
 			return service.MessageBatch{msg}
 		}
@@ -170,7 +172,6 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 
 	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
 	if err != nil {
-		c.logger.Warn(fmt.Sprintf("failed to create event message: %s", contentType))
 		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
@@ -183,41 +184,58 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
 	sig, ok := event.Extras["signature"].(string)
 	if !ok {
-		c.logger.Warn("failed to get signature from payload")
 		return false, errors.New("failed to get signed payload")
 	}
 
 	signature := common.FromHex(sig)
-	msgHash := crypto.Keccak256(event.Data)
-	pk, err := crypto.Ecrecover(msgHash, signature)
-	if err != nil {
-		return false, fmt.Errorf("failed to recover an recoveredPubKey: %w", err)
-	}
+	msgHash := crypto.Keccak256Hash(event.Data)
 
-	pubKey, err := crypto.UnmarshalPubkey(pk)
-	if err != nil {
-		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
-	}
-	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-	if source != recoveredAddress {
-		return c.verifyERC1271Signature(signature, msgHash, source)
+	eoaSigner, errEoa := c.verifyEOASignature(signature, msgHash, source)
+	if errEoa != nil || !eoaSigner {
+		erc1271Signer, errErc := c.verifyERC1271Signature(signature, msgHash, source)
+		if errErc != nil {
+			return false, errors.Join(errEoa, errErc)
+		}
+
+		return erc1271Signer, nil
 	}
 
 	return true, nil
 }
 
-func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash []byte, source common.Address) (bool, error) {
+func (c *cloudeventProcessor) verifyEOASignature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
+	if len(signature) != 65 {
+		return false, fmt.Errorf("signature has length %d != 65", len(signature))
+	}
+
+	sigCopy := make([]byte, len(signature))
+	copy(sigCopy, signature)
+
+	sigCopy[64] -= 27
+	if sigCopy[64] != 0 && sigCopy[64] != 1 {
+		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64])
+	}
+
+	pubKey, err := crypto.SigToPub(msgHash.Bytes(), sigCopy)
+	if err != nil {
+		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
+	}
+	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
+	return source == recoveredAddress, nil
+}
+
+func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
 	contract, err := web3.NewErc1271(source, c.ethClient)
 	if err != nil {
 		return false, fmt.Errorf("failed to connect to address: %s: %w", source, err)
 	}
 
-	result, err := contract.IsValidSignature(nil, [32]byte(msgHash), signature)
+	result, err := contract.IsValidSignature(nil, msgHash, signature)
 	if err != nil {
 		return false, fmt.Errorf("failed to validate signature with contract: %w", err)
 	}
 
-	return result != erc1271magicValue, nil
+	return result == erc1271magicValue, nil
 }
 
 func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
@@ -240,7 +258,9 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
 		}
 		newMsg := origMsg.Copy()
-		setDefaults(&hdrs[i], source, defaultID)
+		if err := validateHeadersAndSetDefaults(&hdrs[i], source, defaultID); err != nil {
+			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
+		}
 		setMetaData(&hdrs[i], newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
@@ -264,22 +284,49 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 	return messages, nil
 }
 
-func setDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) {
+func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
+
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
+
 	if event.ID == "" {
 		event.ID = defaultID
 	}
-
 	if event.SpecVersion == "" {
 		event.SpecVersion = "1.0"
 	}
-
 	if event.DataContentType == "" {
 		event.DataContentType = "application/json"
 	}
+
+	if !validCharacters.MatchString(event.ID) {
+		return fmt.Errorf("invalid id: %s", event.ID)
+	}
+	if !validCharacters.MatchString(event.SpecVersion) {
+		return fmt.Errorf("invalid specversion: %s", event.SpecVersion)
+	}
+	if !validCharacters.MatchString(event.DataContentType) {
+		return fmt.Errorf("invalid data content type: %s", event.DataContentType)
+	}
+	if event.DataSchema != "" && !validCharacters.MatchString(event.DataSchema) {
+		return fmt.Errorf("invalid data schema: %s", event.DataSchema)
+	}
+	if event.DataVersion != "" && !validCharacters.MatchString(event.DataVersion) {
+		return fmt.Errorf("invalid data version: %s", event.DataVersion)
+	}
+	if event.Type != "" && !validCharacters.MatchString(event.Type) {
+		return fmt.Errorf("invalid data type: %s", event.Type)
+	}
+	if event.Subject != "" && !validCharacters.MatchString(event.Subject) {
+		return fmt.Errorf("invalid subject: %s", event.Subject)
+	}
+	if event.Producer != "" && !validCharacters.MatchString(event.Producer) {
+		return fmt.Errorf("invalid producer: %s", event.Producer)
+	}
+
+	return nil
 }
 
 func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
