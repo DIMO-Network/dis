@@ -128,7 +128,7 @@ tests:
           source: "valueThatwillBeOverwritten"
           dataschema: "testschema/v2.0"
           subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
@@ -142,7 +142,7 @@ tests:
             source: "unregisterd-source-id"
             dataschema: "testschema/v2.0"
             subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
             time: "2024-04-18T17:20:46.436008782Z"
             vehicleTokenId: 123
             data:

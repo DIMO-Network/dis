@@ -49,7 +49,6 @@ env:
   SYNTHETIC_NFT_ADDRESS: '0x78513c8CB4D6B6079f813850376bc9c7fc8aE67f'
   TOKEN_EXCHANGE_KEY_SET_URL: https://auth.dev.dimo.zone/keys
   TOKEN_EXCHANGE_ISSUER: https://auth.dev.dimo.zone
-  RPC_URL: https://rpc-amoy.polygon.technology/
 service:
   type: ClusterIP
   ports:
