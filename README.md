@@ -45,13 +45,13 @@ Storing verifiable claims with DIMO requires two simple steps.
 
 ### Attestation Cloud Event Header Descriptions
 
-- **source**: Required field. The connection license address. Note that this field will be overwritten with the connection license address pulled from the CN of the certificate used for authentication.
-- **subject**: Required field. The NFT DID which denotes which vehicle token ID is being used. Must follow the format `did:<chain>:<chainId>:<contractAddress>`.
+- **source**: Required field. The connection license address. Note that this field must match the JWT signer (ERC-1271 standard). 
+- **subject**: Required field. The NFT DID which denotes which vehicle token ID the attestation is about. Must follow the format [`did:<chain>:<chainId>:<contractAddress>`](https://github.com/DIMO-Network/cloudevent?tab=readme-ov-file#ethereum-did)
 - **signature**: Required field. Signed data payload. Must be signed by the `source` address. 
 - **data**: Required field. Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.  
-- **type**: Required Field, must be: `dimo.attestation`
-- **producer**: The ETH DID of the paired device that produced the payload. Must follow the format did:nft:<chainId>:<contractAddress>_<tokenId>.
-- **id**: A unique identifier for the event. Defaults to a random KSUID. The combination of ID and Source must be unique.
+- **type**: Required Field. Must be: `dimo.attestation`
+- **producer**: Optional Field. If the source represents a developer license, the public address of the signer can be included here. [`did:nft:<chainId>:<contractAddress>_<tokenId>`](https://github.com/DIMO-Network/cloudevent?tab=readme-ov-file#nft-did)
+- **id**: Optional Field. A unique identifier for the event. Defaults to a random KSUID. The combination of ID and Source must be unique.
 - **specversion**: The version of CloudEvents specification used. Defaults to "1.0".
 - **time**: The time at which the event occurred. Must be within 5 minutes of the upload time. Will default to current timestamp. Format as ISO 8601 timestamp.
 - **datacontenttype**: An optional MIME type for the data field. We almost always serialize to JSON and in that case this field is implicitly "application/json".
