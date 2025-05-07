@@ -127,6 +127,10 @@ func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 			}
 		}
 
+		if signalMaxValue(*signal) {
+			signals[i] = pruneSignal
+		}
+
 		// prune latitude and longitude signals that don't have a matching signal
 		lastCord, errs = pruneLatLngSignals(&signals, lastCord, i, errs)
 	}
@@ -188,13 +192,17 @@ func pruneLatLngSignals(signals *[]vss.Signal, lastCord, currIdx int, errs error
 		(*signals)[currIdx] = pruneSignal
 		return -1, retErr
 	}
-	
+
 	// if the two signals are within half a second of each other keep both and reset the lastCord
 	return -1, errs
 }
 
 func signalEqual(a, b vss.Signal) bool {
 	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
+}
+
+func signalMaxValue(a vss.Signal) bool {
+	return a.ValueNumber == 255 || a.ValueNumber == 65535
 }
 
 func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent, subject cloudevent.NFTDID) {
