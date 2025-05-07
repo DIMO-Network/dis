@@ -657,8 +657,8 @@ github.com/DIMO-Network/benthos/v4 v4.0.0-20250331125744-764db784b997 h1:oyUP1/W
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250331125744-764db784b997/go.mod h1:qkXht39VfejQgnzg+VDCSQoOaeZx+azYxanM61YFd6k=
 github.com/DIMO-Network/cloudevent v0.0.4-0.20250327184649-14d31447d927 h1:NdlUQaWomZXUT6xpFVRKYcxqysZLdGBanppzZEi8bww=
 github.com/DIMO-Network/cloudevent v0.0.4-0.20250327184649-14d31447d927/go.mod h1:uY68qV/p18qtbMzLpBCci3QrJzhDPlDt+QcMrh5XY2s=
-github.com/DIMO-Network/model-garage v0.5.5 h1:2AlHuffXHWduvc/ajtNgr+0GeoNMAeNzSqmIte8xOrQ=
-github.com/DIMO-Network/model-garage v0.5.5/go.mod h1:IBYP7xta3LtYV5xXbRZ6B9wtvoVPRpqPLx06Ouh7Pgk=
+github.com/DIMO-Network/model-garage v0.5.6 h1:fmwKfzoSE1N6pP23nspTXj76Uc1PBbFxVLMlAYpffvY=
+github.com/DIMO-Network/model-garage v0.5.6/go.mod h1:IBYP7xta3LtYV5xXbRZ6B9wtvoVPRpqPLx06Ouh7Pgk=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 h1:oVLqHXhnYtUwM89y9T1fXGaK9wTkXHgNp8/ZNMQzUxE=
