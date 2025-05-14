@@ -58,7 +58,7 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Cl
 		return nil, fmt.Errorf("event timestamp %v exceeds valid range", event.Time)
 	}
 
-	if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
+	if _, err := cloudevent.DecodeERC721DID(event.Subject); err != nil {
 		return nil, fmt.Errorf("invalid attestation subject format: %w", err)
 	}
 

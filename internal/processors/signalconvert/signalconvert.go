@@ -58,7 +58,8 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 		// leave the message as is and continue to the next message
 		return retBatch
 	}
-	subjectDID, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
+
+	subjectDID, err := cloudevent.DecodeERC721DID(rawEvent.Subject)
 	if err != nil {
 		// fail this message if we unexpectedly can't decode the subject DID
 		msg.SetError(fmt.Errorf("failed to decode subject DID during signal convert which expects valid cloudevents: %w", err))
@@ -188,7 +189,7 @@ func pruneLatLngSignals(signals *[]vss.Signal, lastCord, currIdx int, errs error
 		(*signals)[currIdx] = pruneSignal
 		return -1, retErr
 	}
-	
+
 	// if the two signals are within half a second of each other keep both and reset the lastCord
 	return -1, errs
 }
@@ -197,18 +198,21 @@ func signalEqual(a, b vss.Signal) bool {
 	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
 }
 
-func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent, subject cloudevent.NFTDID) {
+func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent, subject cloudevent.ERC721DID) {
 	signal.Source = rawEvent.Source
 	signal.Producer = rawEvent.Producer
 	signal.CloudEventID = rawEvent.ID
-	signal.TokenID = subject.TokenID
+	if subject.TokenID != nil {
+		signal.TokenID = uint32(subject.TokenID.Uint64())
+	}
 }
 
 func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {
 	if rawEvent.Type != cloudevent.TypeStatus {
 		return false
 	}
-	did, err := cloudevent.DecodeNFTDID(rawEvent.Subject)
+
+	did, err := cloudevent.DecodeERC721DID(rawEvent.Subject)
 	if err != nil {
 		return false
 	}

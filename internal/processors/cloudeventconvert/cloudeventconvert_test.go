@@ -45,15 +45,15 @@ func TestProcessBatch(t *testing.T) {
 	}{
 		{
 			name:           "successful attestation",
-			inputData:      []byte(fmt.Sprintf(`{"id":"848","source":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","producer":"did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","specversion":"1.0","subject":"did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848","time":"%s","type":"dimo.attestation","signature":"0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b","data":{"goodTires":true}}`, attestationTimestamp.Format(time.RFC3339))),
+			inputData:      []byte(fmt.Sprintf(`{"id":"848","source":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","producer":"did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","specversion":"1.0","subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848","time":"%s","type":"dimo.attestation","signature":"0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b","data":{"goodTires":true}}`, attestationTimestamp.Format(time.RFC3339))),
 			sourceID:       common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
-			messageContent: "dimo_content_attestation",
+			messageContent: httpinputserver.AttestationContent,
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					ID:       "848",
 					Type:     cloudevent.TypeAttestation,
 					Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-					Subject:  "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848",
+					Subject:  "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848",
 					Time:     attestationTimestamp,
 				}
 
@@ -67,7 +67,7 @@ func TestProcessBatch(t *testing.T) {
 			expectedMeta: map[string]any{
 				cloudEventTypeKey:            cloudevent.TypeAttestation,
 				cloudEventProducerKey:        "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-				cloudEventSubjectKey:         "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848",
+				cloudEventSubjectKey:         "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
 				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
 					{
@@ -75,7 +75,7 @@ func TestProcessBatch(t *testing.T) {
 						Source:   common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
 						Type:     cloudevent.TypeAttestation,
 						Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-						Subject:  "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848",
+						Subject:  "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848",
 						Time:     attestationTimestamp,
 						Extras: map[string]any{
 							"signature": "0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b",
@@ -90,7 +90,61 @@ func TestProcessBatch(t *testing.T) {
 			name:           "successful event conversion",
 			inputData:      []byte(`{"test": "data"}`),
 			sourceID:       common.HexToAddress("0x").String(),
-			messageContent: "dimo_content_connection",
+			messageContent: httpinputserver.ConnectionContent,
+			setupMock: func() *mockCloudEventModule {
+				event := cloudevent.CloudEventHeader{
+					ID:       "33",
+					Type:     cloudevent.TypeStatus,
+					Producer: "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+					Subject:  "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
+					Time:     timestamp,
+				}
+				event2 := event
+				event2.Type = cloudevent.TypeFingerprint
+				data := json.RawMessage(`{"key": "value"}`)
+
+				return &mockCloudEventModule{
+					hdrs: []cloudevent.CloudEventHeader{event, event2},
+					data: data,
+					err:  nil,
+				}
+			},
+			msgLen:        2,
+			expectedError: false,
+			expectedMeta: map[string]any{
+				cloudEventTypeKey:            cloudevent.TypeStatus,
+				cloudEventProducerKey:        "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+				cloudEventSubjectKey:         "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
+				processors.MessageContentKey: "dimo_valid_cloudevent",
+				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
+					{
+						ID:              "33",
+						Source:          common.HexToAddress("0x").String(),
+						Type:            cloudevent.TypeStatus,
+						Producer:        "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+						Subject:         "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
+						Time:            timestamp,
+						SpecVersion:     "1.0",
+						DataContentType: "application/json",
+					},
+					{
+						ID:              "33",
+						Source:          common.HexToAddress("0x").String(),
+						Type:            cloudevent.TypeFingerprint,
+						Producer:        "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+						Subject:         "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
+						Time:            timestamp,
+						SpecVersion:     "1.0",
+						DataContentType: "application/json",
+					},
+				},
+			},
+		},
+		{
+			name:           "successful event conversion with legacy NFT DID",
+			inputData:      []byte(`{"test": "data"}`),
+			sourceID:       common.HexToAddress("0x").String(),
+			messageContent: httpinputserver.ConnectionContent,
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					ID:       "33",
@@ -113,16 +167,16 @@ func TestProcessBatch(t *testing.T) {
 			expectedError: false,
 			expectedMeta: map[string]any{
 				cloudEventTypeKey:            cloudevent.TypeStatus,
-				cloudEventProducerKey:        "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-				cloudEventSubjectKey:         "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+				cloudEventProducerKey:        "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+				cloudEventSubjectKey:         "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
 				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
 					{
 						ID:              "33",
 						Source:          common.HexToAddress("0x").String(),
 						Type:            cloudevent.TypeStatus,
-						Producer:        "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-						Subject:         "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+						Producer:        "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+						Subject:         "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
 						Time:            timestamp,
 						SpecVersion:     "1.0",
 						DataContentType: "application/json",
@@ -131,8 +185,8 @@ func TestProcessBatch(t *testing.T) {
 						ID:              "33",
 						Source:          common.HexToAddress("0x").String(),
 						Type:            cloudevent.TypeFingerprint,
-						Producer:        "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-						Subject:         "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+						Producer:        "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+						Subject:         "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
 						Time:            timestamp,
 						SpecVersion:     "1.0",
 						DataContentType: "application/json",
@@ -144,12 +198,12 @@ func TestProcessBatch(t *testing.T) {
 			name:           "Future timestamp error",
 			inputData:      []byte(`{"test": "data"}`),
 			sourceID:       common.HexToAddress("0x").String(),
-			messageContent: "dimo_content_connection",
+			messageContent: httpinputserver.ConnectionContent,
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
 					Type:     cloudevent.TypeStatus,
-					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
-					Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
+					Producer: "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:1",
+					Subject:  "did:erc721:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d:2",
 					Time:     time.Now().Add(time.Hour),
 				}
 				data := json.RawMessage(`{"key": "value"}`)
@@ -242,7 +296,7 @@ func TestProcessBatch(t *testing.T) {
 				// Validate metadata
 				for key, expectedValue := range tt.expectedMeta {
 					actualValue, exists := outMsg.MetaGetMut(key)
-					assert.True(t, exists, "metadata key %s not found", key)
+					require.True(t, exists, "metadata key %s not found", key)
 					assert.Equal(t, expectedValue, actualValue, "unexpected value for metadata key %s", key)
 				}
 

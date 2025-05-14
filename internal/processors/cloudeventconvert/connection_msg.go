@@ -70,8 +70,8 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 		if !isValidConnectionType(hdr) {
 			return nil, fmt.Errorf("unsupported cloud event type: %s", hdr.Type)
 		}
+		setConnectionContentType(hdr, newMsg, c.logger)
 		setMetaData(hdr, newMsg)
-		setConnectionContentType(hdr, newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: *hdr,
@@ -94,21 +94,31 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 	return messages, nil
 }
 
-func setConnectionContentType(eventHdr *cloudevent.CloudEventHeader, msg *service.Message) {
+func setConnectionContentType(eventHdr *cloudevent.CloudEventHeader, msg *service.Message, logger *service.Logger) {
 	contentType := cloudEventValidContentType
-	if !isValidConnectionHeader(eventHdr) {
+	if !isValidConnectionHeader(eventHdr, logger) {
 		contentType = cloudEventPartialContentType
 	}
 	msg.MetaSetMut(processors.MessageContentKey, contentType)
 }
 
-func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader) bool {
-	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
-		return false
+func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *service.Logger) bool {
+	if _, err := cloudevent.DecodeERC721DID(eventHdr.Subject); err != nil {
+		did, err := cloudevent.DecodeLegacyNFTDID(eventHdr.Subject)
+		if err != nil {
+			return false
+		}
+		eventHdr.Subject = did.String()
+		logger.Warnf("Cloud event header subject for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
 	}
 
-	if _, err := cloudevent.DecodeNFTDID(eventHdr.Producer); err != nil {
-		return false
+	if _, err := cloudevent.DecodeERC721DID(eventHdr.Producer); err != nil {
+		did, err := cloudevent.DecodeLegacyNFTDID(eventHdr.Producer)
+		if err != nil {
+			return false
+		}
+		eventHdr.Producer = did.String()
+		logger.Warnf("Cloud event header producer for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
 	}
 
 	return common.IsHexAddress(eventHdr.Source)
