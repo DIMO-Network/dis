@@ -147,7 +147,7 @@ func TestProcessBatch(t *testing.T) {
 			messageContent: "dimo_content_connection",
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
-					Type:     fmt.Sprintf("%s, %s", cloudevent.TypeStatus, cloudevent.TypeFingerprint),
+					Type:     cloudevent.TypeStatus,
 					Producer: "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_1",
 					Subject:  "did:nft:1:0x06012c8cf97BEaD5deAe237070F9587f8E7A266d_2",
 					Time:     time.Now().Add(time.Hour),

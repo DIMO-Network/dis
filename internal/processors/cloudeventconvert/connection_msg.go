@@ -51,7 +51,8 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 	defaultID := ksuid.New().String()
 	// set defaults and metadata for each header, then create a message for each header
 	for i := range hdrs {
-		if processors.IsFutureTimestamp(hdrs[i].Time) {
+		hdr := &hdrs[i]
+		if processors.IsFutureTimestamp(hdr.Time) {
 			if c.producerLoggers == nil {
 				c.producerLoggers = make(map[string]*ratedlogger.Logger)
 			}
@@ -63,14 +64,17 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
 		}
 		newMsg := origMsg.Copy()
-		if err := validateHeadersAndSetDefaults(&hdrs[i], source, defaultID); err != nil {
+		if err := validateHeadersAndSetDefaults(hdr, source, defaultID); err != nil {
 			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
 		}
-		setMetaData(&hdrs[i], newMsg)
-		setConnectionContentType(&hdrs[i], newMsg)
+		if !isValidConnectionType(hdr) {
+			return nil, fmt.Errorf("unsupported cloud event type: %s", hdr.Type)
+		}
+		setMetaData(hdr, newMsg)
+		setConnectionContentType(hdr, newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
-				CloudEventHeader: hdrs[i],
+				CloudEventHeader: *hdr,
 				Data:             eventData,
 			},
 		)
@@ -108,4 +112,8 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader) bool {
 	}
 
 	return common.IsHexAddress(eventHdr.Source)
+}
+
+func isValidConnectionType(eventHdr *cloudevent.CloudEventHeader) bool {
+	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint
 }
