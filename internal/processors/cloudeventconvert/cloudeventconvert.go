@@ -2,28 +2,23 @@ package cloudeventconvert
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
-	"github.com/DIMO-Network/cloudevent/pkg/clickhouse"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
-	"github.com/DIMO-Network/dis/internal/web3"
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/compass"
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"github.com/segmentio/ksuid"
 )
 
 const (
@@ -116,183 +111,15 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 		return service.MessageBatch{msg}
 	}
 
-	var hdrs []cloudevent.CloudEventHeader
-	var eventData []byte
 	switch contentType {
 	case httpinputserver.ConnectionContent:
-		hdrs, eventData, err = modules.ConvertToCloudEvents(ctx, source, msgBytes)
-		if err != nil {
-			// Try to unmarshal convert errors
-			data, marshalErr := json.Marshal(err)
-			if marshalErr == nil {
-				msg.SetBytes(data)
-			}
-			processors.SetError(msg, processorName, "failed to convert to cloud event", err)
-			return service.MessageBatch{msg}
-		}
-		if len(hdrs) == 0 {
-			processors.SetError(msg, processorName, "no cloud events headers returned", nil)
-			return service.MessageBatch{msg}
-		}
-		if len(eventData) == 0 {
-			// If the module chooses not to return data, use the original message
-			eventData = msgBytes
-		}
-		retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
-		if err != nil {
-			processors.SetError(msg, processorName, "failed to create event messages", err)
-			return service.MessageBatch{msg}
-		}
-		return retBatch
+		return c.processConnectionMsg(ctx, msg, msgBytes, source)
 	case httpinputserver.AttestationContent:
-		event, err := processAttestation(msgBytes)
-		if err != nil {
-			processors.SetError(msg, processorName, "failed to process attestation", err)
-			return service.MessageBatch{msg}
-		}
-
-		eventData = event.Data
-		source, ok := msg.MetaGet(httpinputserver.DIMOCloudEventSource)
-		if !ok {
-			processors.SetError(msg, processorName, "failed to get source from message metadata", nil)
-			return service.MessageBatch{msg}
-		}
-
-		validSignature, err := c.verifySignature(event, common.HexToAddress(source))
-		if err != nil {
-			processors.SetError(msg, processorName, "failed to check message signature", err)
-			return service.MessageBatch{msg}
-		}
-
-		if !validSignature {
-			processors.SetError(msg, processorName, "message signature invalid", nil)
-			return service.MessageBatch{msg}
-		}
-
-		msg.MetaDelete("Authorization")
-		setMetaData(&event.CloudEventHeader, msg)
-		msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
-		if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, source, ksuid.New().String()); err != nil {
-			processors.SetError(msg, processorName, "failed to create event messages", err)
-			return service.MessageBatch{msg}
-		}
-		msg.SetStructuredMut(&event)
-
-		msg.MetaSetMut(CloudEventIndexValueKey, []cloudevent.CloudEventHeader{event.CloudEventHeader})
-		objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
-		msg.MetaSetMut(cloudEventIndexKey, objectKey)
+		return c.processAttestationMsg(ctx, msg, msgBytes, source)
+	default:
+		processors.SetError(msg, processorName, "Internal error", errors.New("unknown content type"))
 		return service.MessageBatch{msg}
 	}
-
-	processors.SetError(msg, processorName, "Internal error", errors.New("unknown content type"))
-	return service.MessageBatch{msg}
-}
-
-// verifySignature attempts to verify the signed data
-// first check if the source is the signer
-// if the source is not the signer, check whether the signature is from a dev license where the source is the contract addr
-func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
-	sig, ok := event.Extras["signature"].(string)
-	if !ok {
-		return false, errors.New("failed to get signed payload")
-	}
-
-	signature := common.FromHex(sig)
-	msgHash := crypto.Keccak256Hash(event.Data)
-
-	eoaSigner, errEoa := c.verifyEOASignature(signature, msgHash, source)
-	if errEoa != nil || !eoaSigner {
-		erc1271Signer, errErc := c.verifyERC1271Signature(signature, msgHash, source)
-		if errErc != nil {
-			return false, errors.Join(errEoa, errErc)
-		}
-
-		return erc1271Signer, nil
-	}
-
-	return true, nil
-}
-
-func (c *cloudeventProcessor) verifyEOASignature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
-	if len(signature) != 65 {
-		return false, fmt.Errorf("signature has length %d != 65", len(signature))
-	}
-
-	sigCopy := make([]byte, len(signature))
-	copy(sigCopy, signature)
-
-	sigCopy[64] -= 27
-	if sigCopy[64] != 0 && sigCopy[64] != 1 {
-		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64])
-	}
-
-	pubKey, err := crypto.SigToPub(msgHash.Bytes(), sigCopy)
-	if err != nil {
-		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
-	}
-	recoveredAddress := crypto.PubkeyToAddress(*pubKey)
-	return source == recoveredAddress, nil
-}
-
-func (c *cloudeventProcessor) verifyERC1271Signature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
-	contract, err := web3.NewErc1271(source, c.ethClient)
-	if err != nil {
-		return false, fmt.Errorf("failed to connect to address: %s: %w", source, err)
-	}
-
-	result, err := contract.IsValidSignature(nil, msgHash, signature)
-	if err != nil {
-		return false, fmt.Errorf("failed to validate signature with contract: %w", err)
-	}
-
-	return result == erc1271magicValue, nil
-}
-
-func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source string, hdrs []cloudevent.CloudEventHeader, eventData []byte) ([]*service.Message, error) {
-	if len(hdrs) == 0 {
-		return nil, fmt.Errorf("no cloud events headers returned")
-	}
-	messages := make([]*service.Message, len(hdrs))
-	defaultID := ksuid.New().String()
-	// set defaults and metadata for each header, then create a message for each header
-	for i := range hdrs {
-		if processors.IsFutureTimestamp(hdrs[i].Time) {
-			if c.producerLoggers == nil {
-				c.producerLoggers = make(map[string]*ratedlogger.Logger)
-			}
-			logger, ok := c.producerLoggers[hdrs[i].Producer]
-			if !ok {
-				logger = ratedlogger.New(c.logger, time.Hour)
-				c.producerLoggers[hdrs[i].Producer] = logger
-			}
-			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
-		}
-		newMsg := origMsg.Copy()
-		if err := validateHeadersAndSetDefaults(&hdrs[i], source, defaultID); err != nil {
-			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
-		}
-		setMetaData(&hdrs[i], newMsg)
-		setContentType(&hdrs[i], newMsg)
-		newMsg.SetStructuredMut(
-			&cloudevent.CloudEvent[json.RawMessage]{
-				CloudEventHeader: hdrs[i],
-				Data:             eventData,
-			},
-		)
-		messages[i] = newMsg
-	}
-
-	// Add index and values to the first message without an error only, so we do not get duplicate s3 objects
-	for i := range messages {
-		if messages[i].GetError() == nil {
-			objectKey := clickhouse.CloudEventToObjectKey(&hdrs[i])
-			messages[i].MetaSetMut(cloudEventIndexKey, objectKey)
-			messages[i].MetaSetMut(CloudEventIndexValueKey, hdrs)
-			break
-		}
-	}
-
-	return messages, nil
 }
 
 func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
@@ -346,41 +173,4 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
 	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source)
-}
-
-func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage], error) {
-	var event cloudevent.CloudEvent[json.RawMessage]
-	if err := json.Unmarshal(msgBytes, &event); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal attestation cloud event: %w", err)
-	}
-
-	if processors.IsFutureTimestamp(event.Time) {
-		return nil, fmt.Errorf("event timestamp %v exceeds valid range", event.Time)
-	}
-
-	if _, err := cloudevent.DecodeNFTDID(event.Subject); err != nil {
-		return nil, fmt.Errorf("invalid attestation subject format: %w", err)
-	}
-
-	event.Type = cloudevent.TypeAttestation
-	return &event, nil
-}
-func setContentType(eventHdr *cloudevent.CloudEventHeader, msg *service.Message) {
-	contentType := cloudEventValidContentType
-	if !isValidDataCloudEventHeader(eventHdr) {
-		contentType = cloudEventPartialContentType
-	}
-	msg.MetaSetMut(processors.MessageContentKey, contentType)
-}
-
-func isValidDataCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
-	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
-		return false
-	}
-
-	if _, err := cloudevent.DecodeNFTDID(eventHdr.Producer); err != nil {
-		return false
-	}
-
-	return common.IsHexAddress(eventHdr.Source)
 }
