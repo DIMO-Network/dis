@@ -138,6 +138,12 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			// If the module chooses not to return data, use the original message
 			eventData = msgBytes
 		}
+		retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to create event messages", err)
+			return service.MessageBatch{msg}
+		}
+		return retBatch
 	case httpinputserver.AttestationContent:
 		event, err := processAttestation(msgBytes)
 		if err != nil {
@@ -163,19 +169,23 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 			return service.MessageBatch{msg}
 		}
 
-		hdrs = append(hdrs, event.CloudEventHeader)
-		msg.MetaSetMut(CloudEventIndexValueKey, hdrs)
+		msg.MetaDelete("Authorization")
+		setMetaData(&event.CloudEventHeader, msg)
+		msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
+		if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, source, ksuid.New().String()); err != nil {
+			processors.SetError(msg, processorName, "failed to create event messages", err)
+			return service.MessageBatch{msg}
+		}
+		msg.SetStructuredMut(&event)
+
+		msg.MetaSetMut(CloudEventIndexValueKey, []cloudevent.CloudEventHeader{event.CloudEventHeader})
 		objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
 		msg.MetaSetMut(cloudEventIndexKey, objectKey)
-		msg.MetaDelete("Authorization")
-	}
-
-	retBatch, err := c.createEventMsgs(msg, source, hdrs, eventData)
-	if err != nil {
-		processors.SetError(msg, processorName, "failed to create event messages", err)
 		return service.MessageBatch{msg}
 	}
-	return retBatch
+
+	processors.SetError(msg, processorName, "Internal error", errors.New("unknown content type"))
+	return service.MessageBatch{msg}
 }
 
 // verifySignature attempts to verify the signed data
@@ -262,6 +272,7 @@ func (c *cloudeventProcessor) createEventMsgs(origMsg *service.Message, source s
 			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
 		}
 		setMetaData(&hdrs[i], newMsg)
+		setContentType(&hdrs[i], newMsg)
 		newMsg.SetStructuredMut(
 			&cloudevent.CloudEvent[json.RawMessage]{
 				CloudEventHeader: hdrs[i],
@@ -330,12 +341,6 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 }
 
 func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
-	contentType := cloudEventValidContentType
-	if !isValidCloudEventHeader(hdr) {
-		contentType = cloudEventPartialContentType
-	}
-
-	msg.MetaSetMut(processors.MessageContentKey, contentType)
 	msg.MetaSetMut(cloudEventTypeKey, hdr.Type)
 	msg.MetaSetMut(cloudEventProducerKey, hdr.Producer)
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
@@ -360,16 +365,21 @@ func processAttestation(msgBytes []byte) (*cloudevent.CloudEvent[json.RawMessage
 	event.Type = cloudevent.TypeAttestation
 	return &event, nil
 }
+func setContentType(eventHdr *cloudevent.CloudEventHeader, msg *service.Message) {
+	contentType := cloudEventValidContentType
+	if !isValidDataCloudEventHeader(eventHdr) {
+		contentType = cloudEventPartialContentType
+	}
+	msg.MetaSetMut(processors.MessageContentKey, contentType)
+}
 
-func isValidCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
+func isValidDataCloudEventHeader(eventHdr *cloudevent.CloudEventHeader) bool {
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Subject); err != nil {
 		return false
 	}
 
 	if _, err := cloudevent.DecodeNFTDID(eventHdr.Producer); err != nil {
-		if _, err = cloudevent.DecodeEthrDID(eventHdr.Producer); err != nil {
-			return false
-		}
+		return false
 	}
 
 	return common.IsHexAddress(eventHdr.Source)

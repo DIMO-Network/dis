@@ -8,7 +8,6 @@ tests:
     input_batch:
        - metadata:
           dimo_message_content: 'dimo_content_attestation'
-          dimo_cloudevent_source: "unregisterd-source-id"
           dimo_cloudevent_type: "dimo.attesetation"
           dimo_cloudevent_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
          json_content:
