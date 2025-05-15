@@ -40,7 +40,7 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 	setMetaData(&event.CloudEventHeader, msg)
 	msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
 
-	msg.SetStructuredMut(&event)
+	msg.SetStructuredMut(event)
 	msg.MetaSetMut(CloudEventIndexValueKey, []cloudevent.CloudEventHeader{event.CloudEventHeader})
 	objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
 	msg.MetaSetMut(cloudEventIndexKey, objectKey)
