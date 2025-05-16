@@ -14,7 +14,7 @@ tests:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
           dataschema: "testschema/v2.0"
-          subject: "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848"
+          subject: "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848"
           producer:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
           time: "2025-03-27T18:35:46.436008782Z"
           vehicleTokenId: 2
@@ -26,7 +26,7 @@ tests:
             id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
             source: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
             dataschema: "testschema/v2.0"
-            subject: "did:nft:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8_848"
+            subject: "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848"
             producer:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
             time: "2025-03-27T18:35:46.436008782Z"
             vehicleTokenId: 2
@@ -44,9 +44,9 @@ tests:
             id: "0123"
             source: "dimo/integration/2lcaMFuCO0HJIUfdq8o780Kx5n3"
             dataversion: "testschema/v2.0"
-            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
             type: dimo.status
-            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
             time: "2024-04-18T17:20:46.436008782Z"
             vehicleTokenId: 123
             data:
@@ -64,8 +64,8 @@ tests:
             specversion: "1.0"
             source: "0xSampleIntegrationAddr"
             dataversion: "testschema/v2.0"
-            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+            producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
             type: dimo.status
             time: "2024-04-18T17:20:46.436008782Z"
             vehicleTokenId: 123
@@ -79,7 +79,7 @@ tests:
                   name: "coolantTemp"
                   value: 107
           metadata_equals:
-            dimo_cloudevent_index: 9did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123!2024-04-18T17:20:46Z!dimo.status!0xSampleIntegrationAddr!0123
+            dimo_cloudevent_index: adid:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123!2024-04-18T17:20:46Z!dimo.status!0xSampleIntegrationAddr!0123
 
   - name: "Test Signal Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
@@ -96,8 +96,8 @@ tests:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "0xSampleIntegrationAddr"
           dataschema: "testschema/v2.0"
-          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+          producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
@@ -112,7 +112,7 @@ tests:
             vin: "1HGCM826"
     output_batches:
       - - {} # replay of original message
-        - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
+        - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
 
   - name: "Test Default Cloud Event Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
@@ -126,8 +126,8 @@ tests:
           id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
           source: "valueThatwillBeOverwritten"
           dataschema: "testschema/v2.0"
-          subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-          producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+          subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+          producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
@@ -140,8 +140,8 @@ tests:
             id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
             source: "unregisterd-source-id"
             dataschema: "testschema/v2.0"
-            subject: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
-            producer: "did:nft:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_123"
+            subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+            producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
             time: "2024-04-18T17:20:46.436008782Z"
             vehicleTokenId: 123
             data:
