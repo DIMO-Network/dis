@@ -109,7 +109,7 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 			return false
 		}
 		eventHdr.Subject = did.String()
-		logger.Warnf("Cloud event header subject for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
+		logger.Debugf("Cloud event header subject for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
 	}
 
 	if _, err := cloudevent.DecodeERC721DID(eventHdr.Producer); err != nil {
@@ -118,7 +118,7 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 			return false
 		}
 		eventHdr.Producer = did.String()
-		logger.Warnf("Cloud event header producer for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
+		logger.Debugf("Cloud event header producer for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
 	}
 
 	return common.IsHexAddress(eventHdr.Source)
