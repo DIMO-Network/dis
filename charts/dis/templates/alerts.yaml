@@ -10,7 +10,7 @@ groups:
           namespace: {{ .Release.Namespace }}
         annotations:
           summary: 'No data received in 30 minutes'
-          description: 'Please check dis service and networking.'
+          description: 'Please check dis service and networking. Service: dis'
       - alert: High500ErrorRate
         expr: sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="dimo_internal_error_sync_response"}[5m])) BY (pod, job, namespace) >= 1
         for: 5m
@@ -28,7 +28,7 @@ groups:
           namespace: {{ .Release.Namespace }}
         annotations:
           summary: 'High rate of 400 errors detected'
-          description: 'The rate of 400 (Bad Request) errors has exceeded 1 per second in the last 5 minutes.'
+          description: 'The rate of 400 (Bad Request) errors has exceeded 1 per second in the last 5 minutes. Service: dis'
       - alert: HighCloudEventConvertErrorRate
         expr: sum(rate(dimo_error_count{namespace="{{ .Release.Namespace }}", container="dis", component="dimo_cloudevent_convert"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_cloudevent"}[5m])) BY (pod, job, namespace) >= 0.1
         for: 5m
@@ -37,7 +37,7 @@ groups:
           namespace: {{ .Release.Namespace }}
         annotations:
           summary: 'High failure rate for convert cloud events detected'
-          description: 'The error rate for converting cloud events has exceeded 10% in the last 5 minutes.'
+          description: 'The error rate for converting cloud events has exceeded 10% in the last 5 minutes. Service: dis'
       - alert: HighSignalConvertErrorRate
         expr: sum(rate(dimo_error_count{namespace="{{ .Release.Namespace }}", container="dis", component="dimo_signal_convert"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_signals"}[5m])) BY (pod, job, namespace) >= 0.1
         for: 5m
@@ -46,5 +46,5 @@ groups:
           namespace: {{ .Release.Namespace }}
         annotations:
           summary: 'High failure rate for signals convert detected'
-          description: 'The error rate for converting signals has exceeded 10% in the last 5 minutes.'
+          description: 'The error rate for converting signals has exceeded 10% in the last 5 minutes. Service: dis'
 {{- end -}}
