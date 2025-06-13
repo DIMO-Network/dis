@@ -80,11 +80,11 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 	}
 
 	signature := common.FromHex(sig)
-	msgHash := crypto.Keccak256Hash(event.Data)
+	msgHashPrfx := crypto.Keccak256Hash([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(event.Data), event.Data)))
 
-	eoaSigner, errEoa := verifyEOASignature(signature, msgHash, source)
+	eoaSigner, errEoa := verifyEOASignature(signature, msgHashPrfx, source)
 	if errEoa != nil || !eoaSigner {
-		erc1271Signer, errErc := c.verifyERC1271Signature(signature, msgHash, source)
+		erc1271Signer, errErc := c.verifyERC1271Signature(signature, msgHashPrfx, source)
 		if errErc != nil {
 			return false, errors.Join(errEoa, errErc)
 		}

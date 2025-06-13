@@ -45,15 +45,15 @@ func TestProcessBatch(t *testing.T) {
 	}{
 		{
 			name:           "successful attestation",
-			inputData:      []byte(fmt.Sprintf(`{"id":"848","source":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","producer":"did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","specversion":"1.0","subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848","time":"%s","type":"dimo.attestation","signature":"0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b","data":{"goodTires":true}}`, attestationTimestamp.Format(time.RFC3339))),
+			inputData:      []byte(fmt.Sprintf(`{"id":"unique-attestation-id-1","source":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","producer":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","specversion":"1.0","subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005","time":"%s","type":"dimo.attestation","signature":"0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b","data":{"subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005","insured":true,"provider":"State Farm","coverageStartDate":1744751357,"expirationDate":1807822654,"policyNumber":"SF-12345678"}}`, attestationTimestamp.Format(time.RFC3339))),
 			sourceID:       common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
 			messageContent: httpinputserver.AttestationContent,
 			setupMock: func() *mockCloudEventModule {
 				event := cloudevent.CloudEventHeader{
-					ID:       "848",
+					ID:       "unique-attestation-id-1",
 					Type:     cloudevent.TypeAttestation,
 					Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-					Subject:  "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848",
+					Subject:  "did:erc721:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b:1005",
 					Time:     attestationTimestamp,
 				}
 
@@ -66,19 +66,19 @@ func TestProcessBatch(t *testing.T) {
 			expectedError: false,
 			expectedMeta: map[string]any{
 				cloudEventTypeKey:            cloudevent.TypeAttestation,
-				cloudEventProducerKey:        "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-				cloudEventSubjectKey:         "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848",
+				cloudEventProducerKey:        "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+				cloudEventSubjectKey:         "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005",
 				processors.MessageContentKey: "dimo_valid_cloudevent",
 				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
 					{
-						ID:       "848",
+						ID:       "unique-attestation-id-1",
 						Source:   common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
 						Type:     cloudevent.TypeAttestation,
-						Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-						Subject:  "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:848",
+						Producer: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+						Subject:  "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005",
 						Time:     attestationTimestamp,
 						Extras: map[string]any{
-							"signature": "0xa9d9d02cde3c18def3836e039b967fb0363f09f8dcf2a5ca07831443b7936e76776051405f7fa44b4864d9cf013730b1c6d63871636ac872c1b031010a4621281b",
+							"signature": "0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b",
 						},
 						DataContentType: "application/json",
 						SpecVersion:     "1.0",
