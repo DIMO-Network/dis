@@ -31,6 +31,8 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 		return service.MessageBatch{msg}
 	}
 
+	c.logger.Info(fmt.Sprintf("signature valid. source: %s", source))
+
 	if !validSignature {
 		processors.SetError(msg, processorName, "message signature invalid", nil)
 		return service.MessageBatch{msg}
