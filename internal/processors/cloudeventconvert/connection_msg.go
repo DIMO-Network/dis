@@ -73,7 +73,7 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 		setConnectionContentType(hdr, newMsg, c.logger)
 		setMetaData(hdr, newMsg)
 		newMsg.SetStructuredMut(
-			&cloudevent.CloudEvent[json.RawMessage]{
+			&cloudevent.RawEvent{
 				CloudEventHeader: *hdr,
 				Data:             eventData,
 			},
