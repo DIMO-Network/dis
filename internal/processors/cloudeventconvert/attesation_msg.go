@@ -74,12 +74,7 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Cl
 // first check if the source is the signer
 // if the source is not the signer, check whether the signature is from a dev license where the source is the contract addr
 func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
-	sig, ok := event.Extras["signature"].(string)
-	if !ok {
-		return false, errors.New("failed to get signed payload")
-	}
-
-	signature := common.FromHex(sig)
+	signature := common.FromHex(event.Signature)
 	msgHashWithPrfx := crypto.Keccak256Hash([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(event.Data), event.Data)))
 
 	eoaSigner, errEoa := verifyEOASignature(signature, msgHashWithPrfx, source)

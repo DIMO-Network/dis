@@ -71,15 +71,13 @@ func TestProcessBatch(t *testing.T) {
 				processors.MessageContentKey: "dimo_valid_cloudevent",
 				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
 					{
-						ID:       "unique-attestation-id-1",
-						Source:   common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
-						Type:     cloudevent.TypeAttestation,
-						Producer: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
-						Subject:  "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005",
-						Time:     attestationTimestamp,
-						Extras: map[string]any{
-							"signature": "0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b",
-						},
+						ID:              "unique-attestation-id-1",
+						Source:          common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
+						Type:            cloudevent.TypeAttestation,
+						Producer:        "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+						Subject:         "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005",
+						Time:            attestationTimestamp,
+						Signature:       "0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b",
 						DataContentType: "application/json",
 						SpecVersion:     "1.0",
 					},
