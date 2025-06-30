@@ -14,7 +14,7 @@ const (
 )
 
 var configSpec = service.NewConfigSpec().
-	Summary("Converts events into a list of signals").
+	Summary("Converts data into a list of signals").
 	Field(service.NewIntField(chainIDFieldName).Description("Chain Id for the Ethereum network")).
 	Field(service.NewStringField(vehicleAddressFieldName).Description("Ethereum address for the vehicles contract"))
 

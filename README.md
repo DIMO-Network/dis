@@ -21,7 +21,7 @@ Storing verifiable claims with DIMO requires two simple steps.
 
 ```json
 {
-  "id": "unique-event-identifier",
+  "id": "unique-identifier",
   "source": "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
   "producer": "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
   "specversion": "1.0",
@@ -51,9 +51,9 @@ Storing verifiable claims with DIMO requires two simple steps.
 - **data**: Required field. Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.  
 - **type**: Required Field. Must be: `dimo.attestation`
 - **producer**: Optional Field. If the source represents a developer license, the public address of the signer can be included here. [`did:nft:<chainId>:<contractAddress>_<tokenId>`](https://github.com/DIMO-Network/cloudevent?tab=readme-ov-file#nft-did)
-- **id**: Optional Field. A unique identifier for the event. Defaults to a random KSUID. The combination of ID and Source must be unique.
+- **id**: Optional Field. A unique identifier for the attestation. Defaults to a random KSUID. The combination of ID and Source must be unique.
 - **specversion**: The version of CloudEvents specification used. Defaults to "1.0".
-- **time**: The time at which the event occurred. Must be within 5 minutes of the upload time. Will default to current timestamp. Format as ISO 8601 timestamp.
+- **time**: The time at which the attestation occurred. Must be within 5 minutes of the upload time. Will default to current timestamp. Format as ISO 8601 timestamp.
 - **datacontenttype**: An optional MIME type for the data field. We almost always serialize to JSON and in that case this field is implicitly "application/json".
 - **dataversion**: An optional way for the data provider to give more information about the type of data in the payload.
 
@@ -72,7 +72,7 @@ When posting data to the DIS server, you must format your payload according to t
 
 ```json
 {
-  "id": "unique-event-identifier",
+  "id": "unique-identifier",
   "source": "0xConnectionLicenseAddress",
   "producer": "did:nft:1:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF_42",
   "specversion": "1.0",
