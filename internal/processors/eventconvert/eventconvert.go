@@ -48,6 +48,10 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 		return batch
 	}
 
+	if event.Type != cloudevent.TypeEvent {
+		return batch
+	}
+
 	if err := v.validateEvent(event); err != nil {
 		processors.SetError(msg, processorName, "failed to validate event", err)
 		return batch
@@ -56,25 +60,19 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 	var evtData EventData
 	if err := json.Unmarshal(event.Data, &evtData); err != nil {
 		processors.SetError(msg, processorName, "failed to parse event category data", err)
-		return service.MessageBatch{msg}
+		return batch
 	}
 
 	if evtData.EventCategory == "" || !validCharacters.MatchString(evtData.EventCategory) {
 		processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %s", evtData.EventCategory))
-		return service.MessageBatch{msg}
+		return batch
 	}
 
 	event.Extras = map[string]any{
-		evtData.EventCategory: evtData.EventCategory,
+		eventCategory: evtData.EventCategory,
 	}
 
-	finalBytes, err := event.MarshalJSON()
-	if err != nil {
-		processors.SetError(msg, processorName, "failed to process event", err)
-		return service.MessageBatch{msg}
-	}
-
-	return service.MessageBatch{service.NewMessage(finalBytes)}
+	return batch
 }
 
 type EventData struct {
@@ -82,10 +80,6 @@ type EventData struct {
 }
 
 func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
-	if event.Type != cloudevent.TypeEvent {
-		return fmt.Errorf("invalid event type: %s", event.Type)
-	}
-
 	// event subject is the vehicle
 	subjDID, err := cloudevent.DecodeERC721DID(event.Subject)
 	if err != nil {

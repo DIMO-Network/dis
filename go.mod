@@ -6,7 +6,7 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 
 require (
 	github.com/DIMO-Network/cloudevent v0.1.2-0.20250630133933-fe9cb3ce2425
-	github.com/DIMO-Network/model-garage v0.6.0
+	github.com/DIMO-Network/model-garage v0.6.2-0.20250701160314-cb32bf5f1f98
 	github.com/MicahParks/keyfunc/v3 v3.3.10
 	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/ethereum/go-ethereum v1.15.11
@@ -292,7 +292,7 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/term v0.32.0 // indirect
 	golang.org/x/text v0.25.0 // indirect
-	golang.org/x/tools v0.32.0 // indirect
+	golang.org/x/tools v0.33.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/api v0.205.0 // indirect
 	google.golang.org/genproto v0.0.0-20241113202542-65e8d215514f // indirect

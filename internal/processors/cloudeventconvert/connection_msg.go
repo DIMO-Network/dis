@@ -125,5 +125,5 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 }
 
 func isValidConnectionType(eventHdr *cloudevent.CloudEventHeader) bool {
-	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint
+	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint || eventHdr.Type == cloudevent.TypeEvent
 }

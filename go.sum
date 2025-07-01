@@ -659,6 +659,8 @@ github.com/DIMO-Network/cloudevent v0.1.2-0.20250630133933-fe9cb3ce2425 h1:qfVi3
 github.com/DIMO-Network/cloudevent v0.1.2-0.20250630133933-fe9cb3ce2425/go.mod h1:0+bmPJ/SXRYX1QFYJrusjJGtIiHXvBxIPout7vFapjg=
 github.com/DIMO-Network/model-garage v0.6.0 h1:VtRjcEljCTffeDQbq5k8LP1Y01FBt5OpgwXRrH5QiPY=
 github.com/DIMO-Network/model-garage v0.6.0/go.mod h1:5xrWBU0Gr6l3szBtfwM76KbsQlT6GTX2XI+4s/ZD9O0=
+github.com/DIMO-Network/model-garage v0.6.2-0.20250701160314-cb32bf5f1f98 h1:FFxhhCeHKS+ETaMX6yZ7xYNdTx8nPXS/1FNB1XwNt7o=
+github.com/DIMO-Network/model-garage v0.6.2-0.20250701160314-cb32bf5f1f98/go.mod h1:bF80Rr+bGjuXJAzLU7FNAdn4pf+UrYbLxDHPlen5jU0=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
 github.com/DataDog/zstd v1.5.2/go.mod h1:g4AWEaM3yOg3HYfnJ3YIawPnVdXJh9QME85blwSAmyw=
 github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0 h1:oVLqHXhnYtUwM89y9T1fXGaK9wTkXHgNp8/ZNMQzUxE=
@@ -2043,6 +2045,7 @@ golang.org/x/tools v0.6.0/go.mod h1:Xwgl3UAJ/d3gWutnCtw505GrjyAbvKui8lOU390QaIU=
 golang.org/x/tools v0.7.0/go.mod h1:4pg6aUX35JBAogB10C9AtvVL+qowtN4pT3CGSQex14s=
 golang.org/x/tools v0.32.0 h1:Q7N1vhpkQv7ybVzLFtTjvQya2ewbwNDZzUgfXGqtMWU=
 golang.org/x/tools v0.32.0/go.mod h1:ZxrU41P/wAbZD8EDa6dDCa6XfpkhJ7HFMjHJXfBDu8s=
+golang.org/x/tools v0.33.0/go.mod h1:CIJMaWEY88juyUfo7UbgPqbC8rU2OqfAV1h2Qp0oMYI=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
