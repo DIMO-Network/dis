@@ -1,23 +1,21 @@
-package eventconvert
+package enrichevents
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
 const (
-	eventCategory = "eventCategory"
-)
-
-var (
-	validCharacters = regexp.MustCompile(`^[a-zA-Z]+$`)
+	eventName     = "eventName"
+	eventTime     = "eventTime"
+	eventDuration = "eventDuration"
 )
 
 type processor struct {
@@ -57,26 +55,44 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 		return batch
 	}
 
-	var evtData EventData
-	if err := json.Unmarshal(event.Data, &evtData); err != nil {
-		processors.SetError(msg, processorName, "failed to parse event category data", err)
+	var evts Events
+	if err := json.Unmarshal(event.Data, &evts); err != nil {
+		processors.SetError(msg, processorName, "failed to parse event specific data", err)
 		return batch
 	}
 
-	if evtData.EventCategory == "" || !validCharacters.MatchString(evtData.EventCategory) {
-		processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %s", evtData.EventCategory))
-		return batch
+	var evtNames []string
+	var evtDurs []string
+	var evtTimes []string
+	for _, evt := range evts.Events {
+		if evt.Name == "" || !cloudeventconvert.ValidCharacters.MatchString(evt.Name) {
+			processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %s", evt.Name))
+			continue
+		}
+
+		evtNames = append(evtNames, evt.Name)
+		evtDurs = append(evtDurs, evt.Duration)
+		evtTimes = append(evtTimes, evt.Time)
 	}
 
 	event.Extras = map[string]any{
-		eventCategory: evtData.EventCategory,
+		eventName:     evtNames,
+		eventDuration: evtDurs,
+		eventTime:     evtTimes,
 	}
 
 	return batch
 }
 
+type Events struct {
+	Events []EventData `json:"events"`
+}
+
 type EventData struct {
-	EventCategory string `json:"eventCategory"`
+	Name     string          `json:"name"`
+	Time     string          `json:"time,omitempty"`
+	Duration string          `json:"duration,omitempty"`
+	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
 
 func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
@@ -92,20 +108,6 @@ func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
 
 	if subjDID.ContractAddress.Cmp(v.vehicleNFTAddress) != 0 {
 		return fmt.Errorf("expected subject did contract address %s; recieved: %s", v.vehicleNFTAddress.Hex(), subjDID.ContractAddress.Hex())
-	}
-
-	// event producer is device
-	producerDID, err := cloudevent.DecodeERC721DID(event.Producer)
-	if err != nil {
-		return fmt.Errorf("failed to decode producer did: %w", err)
-	}
-
-	if producerDID.ChainID != v.chainID {
-		return fmt.Errorf("expected producer did chain id %d; recieved: %d", v.chainID, producerDID.ChainID)
-	}
-
-	if producerDID.ContractAddress.Cmp(v.vehicleNFTAddress) != 0 {
-		return fmt.Errorf("expected producer did contract address %s; recieved: %s", v.vehicleNFTAddress.Hex(), producerDID.ContractAddress.Hex())
 	}
 
 	// source must be a valid hex addr

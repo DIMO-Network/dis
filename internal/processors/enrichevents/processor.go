@@ -1,4 +1,4 @@
-package eventconvert
+package enrichevents
 
 import (
 	"fmt"
