@@ -10,6 +10,7 @@ import (
 	"github.com/DIMO-Network/cloudevent/pkg/clickhouse"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/web3"
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -48,8 +49,8 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 	return service.MessageBatch{msg}
 }
 
-func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.CloudEvent[json.RawMessage], error) {
-	var event cloudevent.CloudEvent[json.RawMessage]
+func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.RawEvent, error) {
+	var event cloudevent.RawEvent
 	if err := json.Unmarshal(msgBytes, &event); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal attestation cloud event: %w", err)
 	}
@@ -73,13 +74,13 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Cl
 // verifySignature attempts to verify the signed data.
 // first check if the source is the signer
 // if the source is not the signer, check whether the signature is from a dev license where the source is the contract addr
-func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.RawMessage], source common.Address) (bool, error) {
+func (c *cloudeventProcessor) verifySignature(event *cloudevent.RawEvent, source common.Address) (bool, error) {
 	signature := common.FromHex(event.Signature)
-	msgHashWithPrfx := crypto.Keccak256Hash([]byte(fmt.Sprintf("\x19Ethereum Signed Message:\n%d%s", len(event.Data), event.Data)))
 
+	msgHashWithPrfx := accounts.TextHash(event.Data)
 	eoaSigner, errEoa := verifyEOASignature(signature, msgHashWithPrfx, source)
 	if errEoa != nil || !eoaSigner {
-		erc1271Signer, errErc := c.verifyERC1271Signature(signature, msgHashWithPrfx, source)
+		erc1271Signer, errErc := c.verifyERC1271Signature(signature, common.BytesToHash(msgHashWithPrfx), source)
 		if errErc != nil {
 			return false, errors.Join(errEoa, errErc)
 		}
@@ -90,7 +91,7 @@ func (c *cloudeventProcessor) verifySignature(event *cloudevent.CloudEvent[json.
 	return true, nil
 }
 
-func verifyEOASignature(signature []byte, msgHash common.Hash, source common.Address) (bool, error) {
+func verifyEOASignature(signature []byte, msgHash []byte, source common.Address) (bool, error) {
 	if len(signature) != 65 {
 		return false, fmt.Errorf("signature has length %d != 65", len(signature))
 	}
@@ -103,7 +104,7 @@ func verifyEOASignature(signature []byte, msgHash common.Hash, source common.Add
 		return false, fmt.Errorf("invalid v byte: %d; accepted values 27 or 28", signature[64])
 	}
 
-	pubKey, err := crypto.SigToPub(msgHash.Bytes(), sigCopy)
+	pubKey, err := crypto.SigToPub(msgHash, sigCopy)
 	if err != nil {
 		return false, fmt.Errorf("failed to unmarshal public key: %w", err)
 	}

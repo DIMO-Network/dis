@@ -73,7 +73,7 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 		setConnectionContentType(hdr, newMsg, c.logger)
 		setMetaData(hdr, newMsg)
 		newMsg.SetStructuredMut(
-			&cloudevent.CloudEvent[json.RawMessage]{
+			&cloudevent.RawEvent{
 				CloudEventHeader: *hdr,
 				Data:             eventData,
 			},
@@ -125,5 +125,5 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 }
 
 func isValidConnectionType(eventHdr *cloudevent.CloudEventHeader) bool {
-	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint
+	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint || eventHdr.Type == cloudevent.TypeEvent
 }
