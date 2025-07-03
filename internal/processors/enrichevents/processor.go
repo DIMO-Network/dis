@@ -30,6 +30,11 @@ func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProce
 	if err != nil {
 		return nil, fmt.Errorf("failed to get %s: %w", chainIDFieldName, err)
 	}
+
+	if chainID < 1 {
+		return nil, fmt.Errorf("invalid chain id for %s: %d", chainIDFieldName, chainID)
+	}
+
 	vehicleAddress, err := cfg.FieldString(vehicleAddressFieldName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get %s: %w", vehicleAddressFieldName, err)

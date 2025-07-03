@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
@@ -60,8 +61,14 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 	}
 
 	for _, evt := range evts.Events {
-		if evt.Name == "" || !cloudeventconvert.ValidCharacters.MatchString(evt.Name) {
-			processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %s", evt.Name))
+		if evt.Name == "" || !cloudeventconvert.ValidIdentifier(evt.Name) {
+			processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %q", evt.Name))
+			batch = append(batch, msg)
+			continue
+		}
+
+		if err := v.validateEventQueryFields(evt); err != nil {
+			processors.SetError(msg, processorName, "invalid event query fields", err)
 			batch = append(batch, msg)
 			continue
 		}
@@ -81,14 +88,14 @@ type Events struct {
 
 type EventData struct {
 	Name     string          `json:"name"`
-	Time     string          `json:"time,omitempty"`
-	Duration string          `json:"duration,omitempty"`
+	Time     *string         `json:"time,omitempty"`
+	Duration *string         `json:"duration,omitempty"`
 	Metadata json.RawMessage `json:"metadata,omitempty"`
 }
 
 type EventExtras struct {
-	Time     string `json:"time,omitempty"`
-	Duration string `json:"duration,omitempty"`
+	Time     *string `json:"time,omitempty"`
+	Duration *string `json:"duration,omitempty"`
 }
 
 func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
@@ -109,6 +116,22 @@ func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
 	// source must be a valid hex addr
 	if !common.IsHexAddress(event.Source) {
 		return fmt.Errorf("invalid source. must be valid hex address: %s", event.Source)
+	}
+
+	return nil
+}
+
+func (v *processor) validateEventQueryFields(event EventData) error {
+	if event.Duration != nil {
+		if _, err := time.ParseDuration(*event.Duration); err != nil {
+			return fmt.Errorf("invalid %s event duration: %w", event.Name, err)
+		}
+	}
+
+	if event.Time != nil {
+		if _, err := time.Parse(time.RFC3339, *event.Time); err != nil {
+			return fmt.Errorf("invalid %s event duration: %w", event.Name, err)
+		}
 	}
 
 	return nil

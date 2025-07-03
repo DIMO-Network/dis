@@ -35,7 +35,7 @@ const (
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
-var ValidCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
+var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
 
 type cloudeventProcessor struct {
 	logger          *service.Logger
@@ -139,28 +139,28 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 		event.DataContentType = "application/json"
 	}
 
-	if !ValidCharacters.MatchString(event.ID) {
+	if !ValidIdentifier(event.ID) {
 		return fmt.Errorf("invalid id: %s", event.ID)
 	}
-	if !ValidCharacters.MatchString(event.SpecVersion) {
+	if !ValidIdentifier(event.SpecVersion) {
 		return fmt.Errorf("invalid specversion: %s", event.SpecVersion)
 	}
-	if !ValidCharacters.MatchString(event.DataContentType) {
+	if !ValidIdentifier(event.DataContentType) {
 		return fmt.Errorf("invalid data content type: %s", event.DataContentType)
 	}
-	if event.DataSchema != "" && !ValidCharacters.MatchString(event.DataSchema) {
+	if event.DataSchema != "" && !ValidIdentifier(event.DataSchema) {
 		return fmt.Errorf("invalid data schema: %s", event.DataSchema)
 	}
-	if event.DataVersion != "" && !ValidCharacters.MatchString(event.DataVersion) {
+	if event.DataVersion != "" && !ValidIdentifier(event.DataVersion) {
 		return fmt.Errorf("invalid data version: %s", event.DataVersion)
 	}
-	if event.Type != "" && !ValidCharacters.MatchString(event.Type) {
+	if event.Type != "" && !ValidIdentifier(event.Type) {
 		return fmt.Errorf("invalid data type: %s", event.Type)
 	}
-	if event.Subject != "" && !ValidCharacters.MatchString(event.Subject) {
+	if event.Subject != "" && !ValidIdentifier(event.Subject) {
 		return fmt.Errorf("invalid subject: %s", event.Subject)
 	}
-	if event.Producer != "" && !ValidCharacters.MatchString(event.Producer) {
+	if event.Producer != "" && !ValidIdentifier(event.Producer) {
 		return fmt.Errorf("invalid producer: %s", event.Producer)
 	}
 
@@ -173,4 +173,8 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 	msg.MetaSetMut(cloudEventSubjectKey, hdr.Subject)
 	msg.MetaSetMut(cloudEventIDKey, hdr.ID)
 	msg.MetaSetMut(httpinputserver.DIMOCloudEventSource, hdr.Source)
+}
+
+func ValidIdentifier(str string) bool {
+	return validCharacters.MatchString(str)
 }
