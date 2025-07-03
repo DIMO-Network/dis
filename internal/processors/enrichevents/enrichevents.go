@@ -12,12 +12,6 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
-const (
-	eventName     = "eventName"
-	eventTime     = "eventTime"
-	eventDuration = "eventDuration"
-)
-
 type processor struct {
 	logger            *service.Logger
 	vehicleNFTAddress common.Address
