@@ -61,24 +61,21 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 		return batch
 	}
 
-	var evtNames []string
-	var evtDurs []string
-	var evtTimes []string
+	if event.Extras == nil {
+		event.Extras = make(map[string]any)
+	}
+
 	for _, evt := range evts.Events {
 		if evt.Name == "" || !cloudeventconvert.ValidCharacters.MatchString(evt.Name) {
 			processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %s", evt.Name))
+			batch = append(batch, msg)
 			continue
 		}
 
-		evtNames = append(evtNames, evt.Name)
-		evtDurs = append(evtDurs, evt.Duration)
-		evtTimes = append(evtTimes, evt.Time)
-	}
-
-	event.Extras = map[string]any{
-		eventName:     evtNames,
-		eventDuration: evtDurs,
-		eventTime:     evtTimes,
+		event.Extras[evt.Name] = &EventExtras{
+			Duration: evt.Duration,
+			Time:     evt.Time,
+		}
 	}
 
 	return batch
@@ -93,6 +90,11 @@ type EventData struct {
 	Time     string          `json:"time,omitempty"`
 	Duration string          `json:"duration,omitempty"`
 	Metadata json.RawMessage `json:"metadata,omitempty"`
+}
+
+type EventExtras struct {
+	Time     string `json:"time,omitempty"`
+	Duration string `json:"duration,omitempty"`
 }
 
 func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
