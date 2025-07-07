@@ -83,6 +83,10 @@ pipeline:
             - resource: "dimo_partial_index_count"
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
           processors:
+            - label: enrich_events
+              dimo_enrich_events:
+                chain_id: ${DIMO_REGISTRY_CHAIN_ID:137}
+                vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
             - label: validate_fingerprint
               dimo_validate_fingerprint: {}
            # If label name change, update the alerts
