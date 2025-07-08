@@ -77,6 +77,11 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 			Duration: evt.Duration,
 			Time:     evt.Time,
 		}
+		fmt.Printf("evt name: %s; dur: %s, time: %s", evt.Name, *evt.Duration, *evt.Time)
+	}
+
+	if len(event.Extras) == 0 {
+		fmt.Println("no events")
 	}
 
 	jsonExtra, err := json.Marshal(event.Extras)
