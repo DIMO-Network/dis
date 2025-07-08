@@ -73,7 +73,7 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 			continue
 		}
 
-		event.Extras[evt.Name] = &EventExtras{
+		event.Extras[evt.Name] = EventExtras{
 			Duration: evt.Duration,
 			Time:     evt.Time,
 		}
