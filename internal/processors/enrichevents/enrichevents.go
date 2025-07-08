@@ -34,6 +34,7 @@ func (v *processor) ProcessBatch(ctx context.Context, msgs service.MessageBatch)
 }
 
 func (v *processor) processMsg(_ context.Context, msg *service.Message) service.MessageBatch {
+	v.logger.Debug("processing event msg")
 	batch := service.MessageBatch{msg}
 	event, err := processors.MsgToEvent(msg)
 	if err != nil {
@@ -77,18 +78,14 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 			Duration: evt.Duration,
 			Time:     evt.Time,
 		}
-		fmt.Printf("evt name: %s; dur: %s, time: %s", evt.Name, *evt.Duration, *evt.Time)
-	}
 
-	if len(event.Extras) == 0 {
-		fmt.Println("no events")
 	}
 
 	jsonExtra, err := json.Marshal(event.Extras)
 	if err != nil {
-		v.logger.Info("err marshaling extras: " + err.Error())
+		v.logger.Debug("err marshaling extras: " + err.Error())
 	} else {
-		v.logger.Info("extras: " + string(jsonExtra))
+		v.logger.Debug("extras: " + string(jsonExtra))
 	}
 
 	return batch
