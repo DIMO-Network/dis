@@ -79,13 +79,13 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 			Time:     evt.Time,
 		}
 
-	}
+		r, err := json.Marshal(event.Extras)
+		if err != nil {
+			processors.SetError(msg, processorName, "failed to marshal events", err)
+		}
 
-	jsonExtra, err := json.Marshal(event.Extras)
-	if err != nil {
-		v.logger.Debug("err marshaling extras: " + err.Error())
-	} else {
-		v.logger.Debug("extras: " + string(jsonExtra))
+		fmt.Println("\n\n", string(r))
+
 	}
 
 	return batch
