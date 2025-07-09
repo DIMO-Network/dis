@@ -96,7 +96,7 @@ func attestationMiddleware(conf *service.ParsedConfig) (func(*http.Request) (map
 			return retMeta, ErrInvalidEthAddr
 		}
 
-		retMeta[DIMOCloudEventSource] = strings.TrimSpace(claims.EthereumAddress.Hex())
+		retMeta[DIMOCloudEventSource] = claims.EthereumAddress.Hex()
 		retMeta[processors.MessageContentKey] = AttestationContent
 
 		return retMeta, nil
