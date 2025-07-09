@@ -54,7 +54,7 @@ func setupMockAuthServer(t *testing.T) *mockAuthServer {
 			"kid": keyID,
 			"alg": "RS256",
 			"use": "sig",
-			"n":   base64.RawURLEncoding.EncodeToString(sk.PublicKey.N.Bytes()),
+			"n":   base64.RawURLEncoding.EncodeToString(sk.N.Bytes()),
 			"e":   "AQAB",
 		}
 
