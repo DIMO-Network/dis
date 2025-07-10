@@ -8,7 +8,6 @@ require (
 	github.com/DIMO-Network/cloudevent v0.1.2-0.20250630133933-fe9cb3ce2425
 	github.com/DIMO-Network/model-garage v0.6.2-0.20250702154613-ccec327779d1
 	github.com/MicahParks/keyfunc/v3 v3.3.10
-	github.com/auth0/go-jwt-middleware/v2 v2.3.0
 	github.com/ethereum/go-ethereum v1.15.11
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/redpanda-data/benthos/v4 v4.44.1
@@ -300,7 +299,6 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	google.golang.org/grpc v1.69.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
-	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/jcmturner/aescts.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/dnsutils.v1 v1.0.1 // indirect
 	gopkg.in/jcmturner/gokrb5.v6 v6.1.1 // indirect
