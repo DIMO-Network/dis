@@ -12,7 +12,6 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/occurrences"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
-	"github.com/segmentio/ksuid"
 )
 
 type processor struct {
@@ -47,7 +46,7 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 		return batch
 	}
 
-	var evts events
+	var evts Events
 	if err := json.Unmarshal(event.Data, &evts); err != nil {
 		processors.SetError(msg, processorName, "failed to parse event specific data", err)
 		return batch
@@ -60,8 +59,8 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 			continue
 		}
 
-		storedEvt, err := v.validateAndFormatEvent(event.CloudEventHeader, evt)
-		if err != nil {
+		var storedEvt occurrences.Event
+		if err := v.validateAndFormatEvent(event.CloudEventHeader, evt, &storedEvt); err != nil {
 			processors.SetError(msg, processorName, "failed to format event object for storage", err)
 			continue
 		}
@@ -75,7 +74,7 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 	return batch
 }
 
-type events struct {
+type Events struct {
 	Events []EventData `json:"events"`
 }
 
@@ -84,11 +83,6 @@ type EventData struct {
 	Time     *string         `json:"time,omitempty"`
 	Duration *string         `json:"duration,omitempty"`
 	Metadata json.RawMessage `json:"metadata,omitempty"`
-}
-
-type eventExtras struct {
-	Time     *string `json:"time,omitempty"`
-	Duration *string `json:"duration,omitempty"`
 }
 
 func (v *processor) ValidateEvent(event *cloudevent.RawEvent) error {
@@ -114,12 +108,11 @@ func (v *processor) ValidateEvent(event *cloudevent.RawEvent) error {
 	return nil
 }
 
-func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, event EventData) (*occurrences.Event, error) {
-	var storedEvtObj occurrences.Event
+func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, event EventData, storedEvtObj *occurrences.Event) error {
 	if event.Duration != nil {
 		dur, err := time.ParseDuration(*event.Duration)
 		if err != nil {
-			return nil, fmt.Errorf("invalid duration for event %q: %w", event.Name, err)
+			return fmt.Errorf("invalid duration for event %q: %w", event.Name, err)
 		}
 		storedEvtObj.EventDuration = dur
 	}
@@ -127,12 +120,11 @@ func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, e
 	if event.Time != nil {
 		t, err := time.Parse(time.RFC3339, *event.Time)
 		if err != nil {
-			return nil, fmt.Errorf("invalid time for event %q: %w", event.Name, err)
+			return fmt.Errorf("invalid time for event %q: %w", event.Name, err)
 		}
 		storedEvtObj.EventTime = t
 	}
 
-	storedEvtObj.EventID = ksuid.New().String()
 	storedEvtObj.CloudEventID = header.ID
 	storedEvtObj.Subject = header.Subject
 	storedEvtObj.Source = header.Source
@@ -142,10 +134,10 @@ func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, e
 	if len(event.Metadata) > 0 {
 		var tmp map[string]interface{}
 		if err := json.Unmarshal(event.Metadata, &tmp); err != nil {
-			return nil, fmt.Errorf("invalid metadata JSON for event %q: %w", event.Name, err)
+			return fmt.Errorf("invalid metadata JSON for event %q: %w", event.Name, err)
 		}
 		storedEvtObj.EventMetaData = string(event.Metadata)
 	}
 
-	return &storedEvtObj, nil
+	return nil
 }
