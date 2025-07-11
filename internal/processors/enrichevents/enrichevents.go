@@ -9,8 +9,10 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
+	"github.com/DIMO-Network/model-garage/pkg/occurrences"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
+	"github.com/tidwall/gjson"
 )
 
 type processor struct {
@@ -34,19 +36,13 @@ func (v *processor) ProcessBatch(ctx context.Context, msgs service.MessageBatch)
 }
 
 func (v *processor) processMsg(_ context.Context, msg *service.Message) service.MessageBatch {
-	v.logger.Debug("processing event msg")
 	batch := service.MessageBatch{msg}
 	event, err := processors.MsgToEvent(msg)
-	if err != nil {
-		processors.SetError(msg, processorName, "failed to convert to event", err)
+	if err != nil || event.Type != cloudevent.TypeEvent {
 		return batch
 	}
 
-	if event.Type != cloudevent.TypeEvent {
-		return batch
-	}
-
-	if err := v.validateEvent(event); err != nil {
+	if err := v.ValidateEvent(event); err != nil {
 		processors.SetError(msg, processorName, "failed to validate event", err)
 		return batch
 	}
@@ -57,34 +53,22 @@ func (v *processor) processMsg(_ context.Context, msg *service.Message) service.
 		return batch
 	}
 
-	if event.Extras == nil {
-		event.Extras = make(map[string]any)
-	}
-
 	for _, evt := range evts.Events {
 		if evt.Name == "" || !cloudeventconvert.ValidIdentifier(evt.Name) {
-			processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event category: %q", evt.Name))
+			processors.SetError(msg, processorName, "invalid event category", fmt.Errorf("missing or invalid event name: %q", evt.Name))
 			batch = append(batch, msg)
 			continue
 		}
 
-		if err := v.validateEventQueryFields(evt); err != nil {
-			processors.SetError(msg, processorName, "invalid event query fields", err)
-			batch = append(batch, msg)
+		var storedEvt occurrences.Event
+		if err := v.validateAndFormatEvent(event.CloudEventHeader, evt, &storedEvt); err != nil {
+			processors.SetError(msg, processorName, "failed to format event object for storage", err)
 			continue
 		}
 
-		event.Extras[evt.Name] = EventExtras{
-			Duration: evt.Duration,
-			Time:     evt.Time,
-		}
-
-		r, err := json.Marshal(event.Extras)
-		if err != nil {
-			processors.SetError(msg, processorName, "failed to marshal events", err)
-		}
-
-		fmt.Println("\n\n", string(r))
+		msgCpy := msg.Copy()
+		msgCpy.SetStructured(storedEvt)
+		batch = append(batch, msgCpy)
 
 	}
 
@@ -97,17 +81,12 @@ type Events struct {
 
 type EventData struct {
 	Name     string          `json:"name"`
-	Time     *string         `json:"time,omitempty"`
+	Time     string          `json:"time"`
 	Duration *string         `json:"duration,omitempty"`
-	Metadata json.RawMessage `json:"metadata,omitempty"`
+	Metadata json.RawMessage `json:"metadata"`
 }
 
-type EventExtras struct {
-	Time     *string `json:"time,omitempty"`
-	Duration *string `json:"duration,omitempty"`
-}
-
-func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
+func (v *processor) ValidateEvent(event *cloudevent.RawEvent) error {
 	// event subject is the vehicle
 	subjDID, err := cloudevent.DecodeERC721DID(event.Subject)
 	if err != nil {
@@ -130,17 +109,36 @@ func (v *processor) validateEvent(event *cloudevent.RawEvent) error {
 	return nil
 }
 
-func (v *processor) validateEventQueryFields(event EventData) error {
+func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, event EventData, storedEvtObj *occurrences.Event) error {
 	if event.Duration != nil {
 		if _, err := time.ParseDuration(*event.Duration); err != nil {
-			return fmt.Errorf("invalid %s event duration: %w", event.Name, err)
+			return fmt.Errorf("invalid duration for event %q: %w", event.Name, err)
 		}
+		storedEvtObj.EventDuration = *event.Duration
 	}
 
-	if event.Time != nil {
-		if _, err := time.Parse(time.RFC3339, *event.Time); err != nil {
-			return fmt.Errorf("invalid %s event duration: %w", event.Name, err)
+	t, err := time.Parse(time.RFC3339, event.Time)
+	if err != nil {
+		return fmt.Errorf("invalid time for event %q: %w", event.Name, err)
+	}
+
+	if t.IsZero() {
+		return fmt.Errorf("missing required field for event %q: time", event.Name)
+	}
+
+	storedEvtObj.EventTime = t
+	storedEvtObj.CloudEventID = header.ID
+	storedEvtObj.Subject = header.Subject
+	storedEvtObj.Source = header.Source
+	storedEvtObj.Producer = header.Producer
+	storedEvtObj.EventName = event.Name
+
+	if gjson.Valid(string(event.Metadata)) {
+		var tmp map[string]interface{}
+		if err := json.Unmarshal(event.Metadata, &tmp); err != nil {
+			return fmt.Errorf("failed to parse metadata JSON for event %q: %w", event.Name, err)
 		}
+		storedEvtObj.EventMetaData = string(event.Metadata)
 	}
 
 	return nil
