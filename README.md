@@ -82,6 +82,29 @@ When posting data to the DIS server, you must format your payload according to t
   "datacontenttype": "application/json",
   "dataversion": "default/v1.0",
   "data": {
+    "events" : [
+    {
+        "name": "harsh_brake",
+        "time": "2025-07-08T14:52:00Z",
+        "duration": "3s",
+        "metadata": {
+          "g_force": 1.7,
+          "location": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          }
+        }
+      },
+      {
+        "name": "charging_session",
+        "time": "2025-07-08T12:30:00Z",
+        "duration": "45m",
+        "metadata": {
+          "charging_station_id": "cs_id_1",
+          "energy_added_kwh": 18.2
+        }
+      }
+    ],
     "signals": [
       {
         "name": "powertrainTransmissionTravelledDistance",
@@ -139,13 +162,32 @@ The `data` field contains the actual vehicle data with the following structure:
    "vin": "1GGCM82633A123456"
    ```
 
-### Event Type Processing
+3. **event**: An array of event objects representing discrete occurrences. Each event object has the following structure:
+   ```json
+    "events": [
+      {
+        "name": "harsh_brake",
+        "time": "2025-07-08T14:52:00Z",
+        "duration": "3s",
+        "metadata": {
+          "g_force": 1.7,
+          "location": {
+            "lat": 37.7749,
+            "lon": -122.4194
+          }
+        }
+      }
+    ]
+   ```
+
+### Data Type Processing
 
 The server processes your data payload and determines how it will be stored:
 
 - If the `signals` field is present in the data, a new cloud event will be stored with the type `status`.
 - If the `vin` field is present in the data, it will be stored with the type `fingerprint`.
-- If both are present, then two separate cloud events will be created and stored - one as a `status` payload and one as a `fingerprint`.
+- If the `events` field is present in the data, it will be stored with the type `dimo.event`.
+- If multiple are present, then separate cloud events will be created and stored for each respective type. 
 
 ### NFT DID Format
 
