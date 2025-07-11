@@ -15,6 +15,7 @@ require (
 	github.com/redpanda-data/connect/v4 v4.49.1
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.10.0
+	github.com/tidwall/gjson v1.18.0
 	golang.org/x/time v0.11.0
 )
 
@@ -248,7 +249,6 @@ require (
 	github.com/supranational/blst v0.3.14 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20210819022825-2ae1ddf74ef7 // indirect
 	github.com/teslamotors/fleet-telemetry v0.7.2 // indirect
-	github.com/tidwall/gjson v1.18.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.1 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
