@@ -26,7 +26,32 @@ tests:
                   speed: 10
     output_batches:
       - - {} # replay of original message
-        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": 0,"eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
+        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": "","eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
+  - name: "Test Event Conversion: no metadata"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 153
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+    input_batch:
+       - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+          dimo_cloudevent_type: "dimo.event"
+         json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+          source: "0xSampleIntegrationAddr"
+          dataschema: "testschema/v2.0"
+          subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+          producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+          time: "2024-04-18T17:20:46.436008782Z"
+          vehicleTokenId: 123
+          data:
+            events: 
+              - name: "tripStart"
+                time: "2024-04-18T17:20:46.436008782Z"
+    output_batches:
+      - - {} # replay of original message
+        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": "","eventMetadata": "","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
   - name: "Failed Event Conversion, Missing Event Name"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     environment:
@@ -52,6 +77,30 @@ tests:
                 metadata:
                   ingitition: 1
                   speed: 10
+    output_batches: []
+  - name: "Failed Event Conversion, invalid metadata format"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 153
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+    input_batch:
+       - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+          dimo_cloudevent_type: "dimo.event"
+         json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+          source: "0xSampleIntegrationAddr"
+          dataschema: "testschema/v2.0"
+          subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+          producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+          time: "2024-04-18T17:20:46.436008782Z"
+          vehicleTokenId: 123
+          data:
+            events: 
+              - name: ""
+                time: "2024-04-18T17:20:46.436008782Z"
+                metadata: "abc"
     output_batches: []
   - name: "Multiple Event Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
@@ -86,8 +135,8 @@ tests:
                   speed: 10
     output_batches:
       - - {} # replay of original message
-        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": 0,"eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
-        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": 900000000000,"eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripEnd","eventTime": "2024-04-18T17:35:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
+        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": "","eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
+        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": "15m","eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripEnd","eventTime": "2024-04-18T17:35:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
   - name: "Event and Signal in Same Cloudevent"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     environment:
@@ -126,8 +175,8 @@ tests:
       - - {} # replay of original message
         - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
         - {} # replay of original message
-        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": 0,"eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
-        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": 900000000000,"eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripEnd","eventTime": "2024-04-18T17:35:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
+        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": "","eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripStart","eventTime": "2024-04-18T17:20:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
+        - json_equals: '{"cloudEventId": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","eventDuration": "15m","eventMetadata": "{\"ingitition\":1,\"speed\":10}","eventName": "tripEnd","eventTime": "2024-04-18T17:35:46.436008782Z","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}'
   - name: "Invalid event and valid signal in same cloudevent"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     environment:

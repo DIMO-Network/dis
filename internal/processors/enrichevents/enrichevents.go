@@ -12,6 +12,7 @@ import (
 	"github.com/DIMO-Network/model-garage/pkg/occurrences"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
+	"github.com/tidwall/gjson"
 )
 
 type processor struct {
@@ -80,9 +81,9 @@ type Events struct {
 
 type EventData struct {
 	Name     string          `json:"name"`
-	Time     *string         `json:"time,omitempty"`
+	Time     string          `json:"time"`
 	Duration *string         `json:"duration,omitempty"`
-	Metadata json.RawMessage `json:"metadata,omitempty"`
+	Metadata json.RawMessage `json:"metadata"`
 }
 
 func (v *processor) ValidateEvent(event *cloudevent.RawEvent) error {
@@ -116,24 +117,26 @@ func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, e
 		storedEvtObj.EventDuration = *event.Duration
 	}
 
-	if event.Time != nil {
-		t, err := time.Parse(time.RFC3339, *event.Time)
-		if err != nil {
-			return fmt.Errorf("invalid time for event %q: %w", event.Name, err)
-		}
-		storedEvtObj.EventTime = t
+	t, err := time.Parse(time.RFC3339, event.Time)
+	if err != nil {
+		return fmt.Errorf("invalid time for event %q: %w", event.Name, err)
 	}
 
+	if t.IsZero() {
+		return fmt.Errorf("missing required field for event %q: time", event.Name)
+	}
+
+	storedEvtObj.EventTime = t
 	storedEvtObj.CloudEventID = header.ID
 	storedEvtObj.Subject = header.Subject
 	storedEvtObj.Source = header.Source
 	storedEvtObj.Producer = header.Producer
 	storedEvtObj.EventName = event.Name
 
-	if len(event.Metadata) > 0 {
+	if gjson.Valid(string(event.Metadata)) {
 		var tmp map[string]interface{}
 		if err := json.Unmarshal(event.Metadata, &tmp); err != nil {
-			return fmt.Errorf("invalid metadata JSON for event %q: %w", event.Name, err)
+			return fmt.Errorf("failed to parse metadata JSON for event %q: %w", event.Name, err)
 		}
 		storedEvtObj.EventMetaData = string(event.Metadata)
 	}
