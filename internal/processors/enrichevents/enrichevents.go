@@ -111,10 +111,11 @@ func (v *processor) ValidateEvent(event *cloudevent.RawEvent) error {
 
 func (v *processor) validateAndFormatEvent(header cloudevent.CloudEventHeader, event EventData, storedEvtObj *occurrences.Event) error {
 	if event.Duration != nil {
-		if _, err := time.ParseDuration(*event.Duration); err != nil {
+		dur, err := time.ParseDuration(*event.Duration)
+		if err != nil {
 			return fmt.Errorf("invalid duration for event %q: %w", event.Name, err)
 		}
-		storedEvtObj.EventDuration = *event.Duration
+		storedEvtObj.EventDurationNS = dur.Nanoseconds()
 	}
 
 	t, err := time.Parse(time.RFC3339, event.Time)
