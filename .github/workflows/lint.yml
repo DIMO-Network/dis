@@ -22,5 +22,5 @@ jobs:
       - name: build
         run: go build
 
-      - name: Run golangci-lint
+      - name: Run linters
         run: make lint
