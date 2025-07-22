@@ -46,29 +46,33 @@ func (e *eventsProcessor) processMsg(ctx context.Context, msg *service.Message) 
 	events, partialErr := modules.ConvertToEvents(ctx, rawEvent.Source, *rawEvent)
 	if partialErr != nil {
 		errMsg := msg.Copy()
-		errMsg.SetError(partialErr)
+		processors.SetError(errMsg, processorName, "error converting events", partialErr)
 		data, err := json.Marshal(partialErr)
 		if err == nil {
 			errMsg.SetBytes(data)
 		}
 		retBatch = append(retBatch, errMsg)
 	}
-
-	for i := range events {
-		msgCpy := msg.Copy()
-		setMetaData(&events[i], rawEvent)
-		msgCpy.SetStructured(events[i])
-		msgCpy.MetaSetMut(processors.MessageContentKey, eventValidContentType)
-		retBatch = append(retBatch, msgCpy)
+	if len(events) == 0 {
+		return retBatch
 	}
+
+	msgCpy := msg.Copy()
+	setMetaData(events, rawEvent)
+	msgCpy.SetStructured(events)
+	msgCpy.MetaSetMut(processors.MessageContentKey, eventValidContentType)
+	retBatch = append(retBatch, msgCpy)
+
 	return retBatch
 }
 
-func setMetaData(event *vss.Event, rawEvent *cloudevent.RawEvent) {
-	event.Subject = rawEvent.Subject
-	event.Source = rawEvent.Source
-	event.Producer = rawEvent.Producer
-	event.CloudEventID = rawEvent.ID
+func setMetaData(events []vss.Event, rawEvent *cloudevent.RawEvent) {
+	for i := range events {
+		events[i].Subject = rawEvent.Subject
+		events[i].Source = rawEvent.Source
+		events[i].Producer = rawEvent.Producer
+		events[i].CloudEventID = rawEvent.ID
+	}
 }
 
 func (e *eventsProcessor) isVehicleEventMessage(rawEvent *cloudevent.RawEvent) bool {

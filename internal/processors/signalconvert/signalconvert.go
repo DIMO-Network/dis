@@ -68,7 +68,7 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 	signals, partialErr := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
 	if partialErr != nil {
 		errMsg := msg.Copy()
-		errMsg.SetError(partialErr)
+		processors.SetError(errMsg, processorName, "error converting signals", partialErr)
 		data, err := json.Marshal(partialErr)
 		if err == nil {
 			errMsg.SetBytes(data)
