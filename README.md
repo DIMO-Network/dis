@@ -103,7 +103,7 @@ When posting data to the DIS server, you must format your payload according to t
       {
         "name": "tripStart",
         "timestamp": "2025-03-04T12:00:00Z",
-        "metadata": "{\"ingitition\":1,\"confidence\":0.7}"
+        "metadata": "{\"ignition\":1,\"confidence\":0.7}"
       }
     ]
   }
@@ -153,7 +153,7 @@ The `data` field contains the actual vehicle data with the following structure:
      "name": "tripStart",
      "timestamp": "ISO-8601 timestamp",
      "durationNs": 1234567890,
-     "metadata": "{\"ingitition\":1,\"confidence\":0.7}"
+     "metadata": "{\"ignition\":1,\"confidence\":0.7}"
    }
    ```
 
