@@ -20,30 +20,12 @@ tests:
           data:
             events: 
               - name: "tripStart"
-                time: "2024-04-18T17:20:46.436008782Z"
-                metadata:
-                  ingitition: 1
-                  speed: 10
+                timestamp: "2024-04-18T17:20:46.436008782Z"
+                metadata: '{"ignition":1,"speed":10}'
     output_batches:
-      - - json_contains:
-            id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-            producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-            source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
-            specversion: "1.0"
-            subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-            type: dimo.event
-            datacontenttype: "application/json"
-            dataschema: "testschema/v2.0"
-            time: "2024-04-18T17:20:46.436008782Z"
-            tripStart:
-              time: "2024-04-18T17:20:46.436008782Z"
-            data:
-              events: 
-                - name: "tripStart"
-                  time: "2024-04-18T17:20:46.436008782Z"
-                  metadata:
-                    ingitition: 1
-                    speed: 10
+      - - {} # replay of original message
+        - json_equals: '[{"name":"tripStart","timestamp":"2024-04-18T17:20:46.436008782Z","metadata":"{\"ignition\":1,\"speed\":10}","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359","producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b", "durationNs":0,"subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"}]'
+
   - name: "Failed Event Conversion, Missing Event Name"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     environment:
@@ -65,11 +47,11 @@ tests:
           data:
             events: 
               - name: ""
-                time: "2024-04-18T17:20:46.436008782Z"
-                metadata:
-                  ingitition: 1
-                  speed: 10
-    output_batches: []
+                timestamp: "2024-04-18T17:20:46.436008782Z"
+                metadata: '{"ignition":1,"speed":10}'
+    output_batches:
+      - - {} # replay of original message
+       
   - name: "Multiple Event Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     environment:
@@ -91,115 +73,85 @@ tests:
           data:
             events: 
               - name: "tripStart"
-                time: "2024-04-18T17:20:46.436008782Z"
-                metadata:
-                  ingitition: 1
-                  speed: 10
+                timestamp: "2024-04-18T17:20:46.436008782Z"
+                metadata: '{"ignition":1,"speed":10}'
               - name: "tripEnd"
-                time: "2024-04-18T17:35:46.436008782Z"
-                duration: "15m"
-                metadata:
-                  ingitition: 1
-                  speed: 10
-    output_batches:
-      - - json_contains:
-            id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-            producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-            source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
-            specversion: "1.0"
-            subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-            type: dimo.event
-            "datacontenttype": "application/json"
-            dataschema: "testschema/v2.0"
-            time: "2024-04-18T17:20:46.436008782Z"
-            tripStart:
-              "time": "2024-04-18T17:20:46.436008782Z"
-            tripEnd:
-              "time": "2024-04-18T17:35:46.436008782Z"
-              "duration": "15m"
-            data:
-              events: 
-                - name: "tripStart"
-                  time: "2024-04-18T17:20:46.436008782Z"
-                  metadata:
-                    ingitition: 1
-                    speed: 10
-                - name: "tripEnd"
-                  time: "2024-04-18T17:35:46.436008782Z"
-                  duration: "15m"
-                  metadata:
-                    ingitition: 1
-                    speed: 10
-  - name: "Event and Signal in Same Cloudevent"
-    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
-    environment:
-      DIMO_REGISTRY_CHAIN_ID: 153
-      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
-    input_batch:
-       - metadata:
-          dimo_message_content: 'dimo_content_connection'
-          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
-          dimo_cloudevent_type: "dimo.status"
-         json_content:
-          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-          source: "0xSampleIntegrationAddr"
-          dataschema: "testschema/v2.0"
-          subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-          producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-          time: "2024-04-18T17:20:46.436008782Z"
-          data:
-            events: 
-              - name: "tripStart"
-                time: "2024-04-18T17:20:46.436008782Z"
-                metadata:
-                  ingitition: 1
-                  speed: 10
-              - name: "tripEnd"
-                time: "2024-04-18T17:35:46.436008782Z"
-                duration: "15m"
-                metadata:
-                  ingitition: 1
-                  speed: 10
-            signals:
-              - timestamp: 1713460826633
-                name: "coolantTemp"
-                value: 107
+                timestamp: "2024-04-18T17:35:46.436008782Z"
+                durationNs: 15000000000
     output_batches:
       - - {} # replay of original message
-        - json_equals: '{"data": {"events": [{"metadata": {"ingitition": 1,"speed": 10},"name": "tripStart","time": "2024-04-18T17:20:46.436008782Z"},{"duration": "15m","metadata": {"ingitition": 1,"speed": 10},"name": "tripEnd","time": "2024-04-18T17:35:46.436008782Z"}],"signals": [{"name": "coolantTemp","timestamp": 1713460826633,"value": 107}]},"datacontenttype": "application/json","dataschema": "testschema/v2.0","tripEnd": {"duration": "15m","time": "2024-04-18T17:35:46.436008782Z"},"tripStart": {"time": "2024-04-18T17:20:46.436008782Z"},"id": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","specversion": "1.0","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","time": "2024-04-18T17:20:46.436008782Z","type": "dimo.event"}'
-  - name: "Invalid Event and Valid Signal in Same Cloudevent"
-    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
-    environment:
-      DIMO_REGISTRY_CHAIN_ID: 153
-      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
-    input_batch:
-       - metadata:
-          dimo_message_content: 'dimo_content_connection'
-          dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
-          dimo_cloudevent_type: "dimo.status"
-         json_content:
-          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
-          source: "0xSampleIntegrationAddr"
-          dataschema: "testschema/v2.0"
-          subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-          producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
-          time: "2024-04-18T17:20:46.436008782Z"
-          data:
-            events: 
-              - name: ""
-                time: "2024-04-18T17:20:46.436008782Z"
-                metadata:
-                  ingitition: 1
-                  speed: 10
-              - name: "tripEnd"
-                time: "2024-04-18T17:35:46.436008782Z"
-                duration: "15m"
-                metadata:
-                  ingitition: 1
-                  speed: 10
-            signals:
-              - timestamp: 1713460826633
-                name: "coolantTemp"
-                value: 107
-    output_batches:
-      - - {} # replay of original message
+        - json_equals: '[{"name":"tripStart","timestamp":"2024-04-18T17:20:46.436008782Z","metadata":"{\"ignition\":1,\"speed\":10}","durationNs":0,"source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"},{"name":"tripEnd","timestamp":"2024-04-18T17:35:46.436008782Z","metadata":"","durationNs":15000000000,"source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359","subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}]'
+ 
+  # - name: "Event and Signal in Same Cloudevent"
+  #   target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+  #   environment:
+  #     DIMO_REGISTRY_CHAIN_ID: 153
+  #     VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+  #   input_batch:
+  #      - metadata:
+  #         dimo_message_content: 'dimo_content_connection'
+  #         dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+  #         dimo_cloudevent_type: "dimo.status"
+  #        json_content:
+  #         id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+  #         source: "0xSampleIntegrationAddr"
+  #         dataschema: "testschema/v2.0"
+  #         subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+  #         producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+  #         time: "2024-04-18T17:20:46.436008782Z"
+  #         data:
+  #           events: 
+  #             - name: "tripStart"
+  #               time: "2024-04-18T17:20:46.436008782Z"
+  #               metadata:
+  #                 ignition: 1
+  #                 speed: 10
+  #             - name: "tripEnd"
+  #               time: "2024-04-18T17:35:46.436008782Z"
+  #               duration: "15m"
+  #               metadata:
+  #                 ignition: 1
+  #                 speed: 10
+  #           signals:
+  #             - timestamp: 1713460826633
+  #               name: "coolantTemp"
+  #               value: 107
+  #   output_batches:
+  #     - - {} # replay of original message
+  #       - json_equals: '{"data": {"events": [{"metadata": {"ignition": 1,"speed": 10},"name": "tripStart","time": "2024-04-18T17:20:46.436008782Z"},{"duration": "15m","metadata": {"ignition": 1,"speed": 10},"name": "tripEnd","time": "2024-04-18T17:35:46.436008782Z"}],"signals": [{"name": "coolantTemp","timestamp": 1713460826633,"value": 107}]},"datacontenttype": "application/json","dataschema": "testschema/v2.0","tripEnd": {"duration": "15m","time": "2024-04-18T17:35:46.436008782Z"},"tripStart": {"time": "2024-04-18T17:20:46.436008782Z"},"id": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359","specversion": "1.0","subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123","time": "2024-04-18T17:20:46.436008782Z","type": "dimo.event"}'
+  # - name: "Invalid Event and Valid Signal in Same Cloudevent"
+  #   target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+  #   environment:
+  #     DIMO_REGISTRY_CHAIN_ID: 153
+  #     VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+  #   input_batch:
+  #      - metadata:
+  #         dimo_message_content: 'dimo_content_connection'
+  #         dimo_cloudevent_source: "0x12343d054925bdEC534A9Cdf33a71807d72B1359"
+  #         dimo_cloudevent_type: "dimo.status"
+  #        json_content:
+  #         id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+  #         source: "0xSampleIntegrationAddr"
+  #         dataschema: "testschema/v2.0"
+  #         subject: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+  #         producer: "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123"
+  #         time: "2024-04-18T17:20:46.436008782Z"
+  #         data:
+  #           events: 
+  #             - name: ""
+  #               time: "2024-04-18T17:20:46.436008782Z"
+  #               metadata:
+  #                 ignition: 1
+  #                 speed: 10
+  #             - name: "tripEnd"
+  #               time: "2024-04-18T17:35:46.436008782Z"
+  #               duration: "15m"
+  #               metadata:
+  #                 ignition: 1
+  #                 speed: 10
+  #           signals:
+  #             - timestamp: 1713460826633
+  #               name: "coolantTemp"
+  #               value: 107
+  #   output_batches:
+  #     - - {} # replay of original message

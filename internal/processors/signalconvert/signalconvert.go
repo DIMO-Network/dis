@@ -3,7 +3,6 @@ package signalconvert
 import (
 	"cmp"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/model-garage/pkg/convert"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/ethereum/go-ethereum/common"
@@ -65,17 +65,24 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 		msg.SetError(fmt.Errorf("failed to decode subject DID during signal convert which expects valid cloudevents: %w", err))
 		return retBatch
 	}
-	signals, partialErr := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
-	if partialErr != nil {
+	signals, err := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
+	if err != nil {
 		errMsg := msg.Copy()
-		errMsg.SetError(partialErr)
-		data, err := json.Marshal(partialErr)
-		if err == nil {
-			errMsg.SetBytes(data)
+		var convertErr *convert.ConversionError
+		if errors.As(err, &convertErr) {
+			// if this is a conversion error, we can use the decoded signals and the errors
+			err = errors.Join(convertErr.Errors...)
+			signals = convertErr.DecodedSignals
 		}
+		processors.SetError(errMsg, processorName, "error converting signals", err)
 		retBatch = append(retBatch, errMsg)
 	}
-	signals, partialErr = pruneSignals(signals)
+
+	if len(signals) == 0 {
+		return retBatch
+	}
+
+	signals, partialErr := pruneSignals(signals)
 	if partialErr != nil {
 		errMsg := msg.Copy()
 		errMsg.SetError(partialErr)

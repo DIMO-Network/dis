@@ -83,10 +83,6 @@ pipeline:
             - resource: "dimo_partial_index_count"
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
           processors:
-            - label: enrich_events
-              dimo_enrich_events:
-                chain_id: ${DIMO_REGISTRY_CHAIN_ID:137}
-                vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
             - label: validate_fingerprint
               dimo_validate_fingerprint: {}
            # If label name change, update the alerts
@@ -94,6 +90,8 @@ pipeline:
               dimo_signal_convert:
                 chain_id: ${DIMO_REGISTRY_CHAIN_ID:137}
                 vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
+            - label: convert_events
+              dimo_event_convert: {}
     # If label name change, update the alerts
     - label: "processing_errors"
       catch:
@@ -151,6 +149,47 @@ output:
                 target_version: 2.5.0
                 timeout: 5s
                 topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
+                metadata:
+                  exclude_prefixes:
+                    - dimo_cloudevent_index_value
+                    - dimo_cloudevent_index
+                    - dimo_cloudevent_producer
+                    - dimo_cloudevent_source
+                    - dimo_cloudevent_subject
+                    - dimo_cloudevent_type
+                    - dimo_cloudevent_id
+                    - dimo_cloudevent_type
+                    - dimo_message_content
+                    - http_server_remote_ip
+                    - http_server_request_path
+                    - http_server_tls_cipher_suite
+                    - http_server_tls_subject
+          # Output for valid events
+          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_event"'
+            output:
+              label: "send_event"
+              kafka:
+                ack_replicas: false
+                addresses:
+                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                backoff:
+                  initial_interval: 1s
+                  max_elapsed_time: 30s
+                  max_interval: 5s
+                client_id: ${CONTAINER_NAME:localhost}-event-output
+                compression: '${KAFKA_COMPRESSION:none}'
+                max_msg_bytes: 300000
+                max_retries: 1
+                max_in_flight: 20
+                key: ${!metadata("dimo_cloudevent_subject")}
+                partitioner: murmur2_hash
+                batching:
+                  count: 1000
+                  byte_size: 200_000 # 0.5MB
+                  period: 10ms
+                target_version: 2.5.0
+                timeout: 5s
+                topic: '${KAFKA_EVENTS_TOPIC:topic.device.events}'
                 metadata:
                   exclude_prefixes:
                     - dimo_cloudevent_index_value

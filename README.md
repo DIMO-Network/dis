@@ -1,21 +1,21 @@
 # DIMO INGEST Server (DIS)
 
-DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data. <br><br> 
+DIS (DIMO Ingest Server) is a server that receives data from data providers and stores the various data. <br><br>
 
-To learn more about submitting attestations to DIMO, [start reading here](#getting-started-with-dimo-attestations). <br> 
+To learn more about submitting attestations to DIMO, [start reading here](#getting-started-with-dimo-attestations). <br>
 
-To learn more about integrating general vehicle data with DIMO, [start reading here](#getting-started-with-dimo-ingest-server). 
+To learn more about integrating general vehicle data with DIMO, [start reading here](#getting-started-with-dimo-ingest-server).
 
 ## Getting Started With DIMO Attestations
 
-Storing verifiable claims with DIMO requires two simple steps. 
+Storing verifiable claims with DIMO requires two simple steps.
 
 1. Obtain a valid DIMO JWT.
-2. Compile a payload using the information below. Be sure to include all required headers.  <br> Data must be passed as a JSON. Remember that once an attestation is made, the subject of the attestation can choose to share the data with whoever they choose. Do not include information that you would not want to be accessible by a third party.<br><br> Although there are no required data fields, we recommend employing the following best practices: <br><br>
-    - <b>Who is the attestation about. </b> <br>Although the subject of the attestation is included as a header, if the statement you are making is unique to a specific user or vehicle, it is recommended to include this information in the signed message. <br><br>
-    - <b>Who is making the attestation. </b> <br>The producer field may represent the entity making an attestation or it may be a signed on a developer license making an attestation. If the attesting party is uniquely capable of providing this information or if a third party reading the attestation would interpret the message differently if it came from the attestor or a different individual, it is recommended to include this information in the signed message. <br><br>
-    - <b>How long is this attestation valid for?</b> <br>If the information included in the attestation is invalid after a certain date, it is recommended to include this information in the signed message. <br><br>
-3. Post data to https://attest.dimo.zone 
+2. Compile a payload using the information below. Be sure to include all required headers. <br> Data must be passed as a JSON. Remember that once an attestation is made, the subject of the attestation can choose to share the data with whoever they choose. Do not include information that you would not want to be accessible by a third party.<br><br> Although there are no required data fields, we recommend employing the following best practices: <br><br>
+   - <b>Who is the attestation about. </b> <br>Although the subject of the attestation is included as a header, if the statement you are making is unique to a specific user or vehicle, it is recommended to include this information in the signed message. <br><br>
+   - <b>Who is making the attestation. </b> <br>The producer field may represent the entity making an attestation or it may be a signed on a developer license making an attestation. If the attesting party is uniquely capable of providing this information or if a third party reading the attestation would interpret the message differently if it came from the attestor or a different individual, it is recommended to include this information in the signed message. <br><br>
+   - <b>How long is this attestation valid for?</b> <br>If the information included in the attestation is invalid after a certain date, it is recommended to include this information in the signed message. <br><br>
+3. Post data to https://attest.dimo.zone
 
 ### Attestation Data Format
 
@@ -45,10 +45,10 @@ Storing verifiable claims with DIMO requires two simple steps.
 
 ### Attestation Cloud Event Header Descriptions
 
-- **source**: Required field. The connection license address. Note that this field must match the JWT signer (ERC-1271 standard). 
+- **source**: Required field. The connection license address. Note that this field must match the JWT signer (ERC-1271 standard).
 - **subject**: Required field. The NFT DID which denotes which vehicle token ID the attestation is about. Must follow the format [`did:<chain>:<chainId>:<contractAddress>`](https://github.com/DIMO-Network/cloudevent?tab=readme-ov-file#ethereum-did)
-- **signature**: Required field. Signed data payload. Must be signed by the `source` address. 
-- **data**: Required field. Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.  
+- **signature**: Required field. Signed data payload. Must be signed by the `source` address.
+- **data**: Required field. Any JSON formatted data may be passed, making up the content which is being attested to. This payload must be signed by the `source` address and the signature must be passed as a separate field.
 - **type**: Required Field. Must be: `dimo.attestation`
 - **producer**: Optional Field. If the source represents a developer license, the public address of the signer can be included here. [`did:nft:<chainId>:<contractAddress>_<tokenId>`](https://github.com/DIMO-Network/cloudevent?tab=readme-ov-file#nft-did)
 - **id**: Optional Field. A unique identifier for the attestation. Defaults to a random KSUID. The combination of ID and Source must be unique.
@@ -56,7 +56,6 @@ Storing verifiable claims with DIMO requires two simple steps.
 - **time**: The time at which the attestation occurred. Must be within 5 minutes of the upload time. Will default to current timestamp. Format as ISO 8601 timestamp.
 - **datacontenttype**: An optional MIME type for the data field. We almost always serialize to JSON and in that case this field is implicitly "application/json".
 - **dataversion**: An optional way for the data provider to give more information about the type of data in the payload.
-
 
 ## Getting Started With DIMO Ingest Server
 
@@ -99,7 +98,14 @@ When posting data to the DIS server, you must format your payload according to t
         "value": "COMBUSTION"
       }
     ],
-    "vin": "1GGCM82633A123456"
+    "vin": "1GGCM82633A123456",
+    "events": [
+      {
+        "name": "tripStart",
+        "timestamp": "2025-03-04T12:00:00Z",
+        "metadata": "{\"ignition\":1,\"confidence\":0.7}"
+      }
+    ]
   }
 }
 ```
@@ -135,17 +141,32 @@ The `data` field contains the actual vehicle data with the following structure:
    Note: A signal's value can either be a number or a string. If the value is string, a numeric value will not be accepted.
 
 2. **vin**: A string representing the Vehicle Identification Number.
+
    ```json
    "vin": "1GGCM82633A123456"
    ```
 
-### Event Type Processing
+3. **events**: An array of event objects representing vehicle events. Each event object has the following structure:
+
+   ```json
+   {
+     "name": "tripStart",
+     "timestamp": "ISO-8601 timestamp",
+     "durationNs": 1234567890,
+     "metadata": "{\"ignition\":1,\"confidence\":0.7}"
+   }
+   ```
+
+   Note: The metadata field and durationNs field are optional and can be omitted.
+
+### CloudEvent Type Processing
 
 The server processes your data payload and determines how it will be stored:
 
 - If the `signals` field is present in the data, a new cloud event will be stored with the type `status`.
 - If the `vin` field is present in the data, it will be stored with the type `fingerprint`.
-- If both are present, then two separate cloud events will be created and stored - one as a `status` payload and one as a `fingerprint`.
+- If the `events` field is present in the data, it will be stored with the type `event`.
+- If both `signals` and `events` fields are present, then two separate cloud events will be created and stored - one as a `status` payload and one as a `fingerprint`.
 
 ### NFT DID Format
 
@@ -169,20 +190,6 @@ Where:
 External providers must authenticate with the server using TLS client certificates.
 The server will verify the client certificate against the CA certificate root.
 Based on the client certificate CN, the server will determine the provider and the provider's configuration.
-
-## Provider Configuration
-
-Each provider should be added to the `connections/` files(dev and prod).
-**connectionID** is the CN of the client certificate that the provider will use to authenticate with the server and at the same time it is 0x address of the provider.
-
-## Generate Benthos config
-
-After you have made changes to the provider configs(connections_dev.yaml and connections_prod.yaml), you will
-need to run make generate to update the benthos config to contain your provider config changes.
-
-```shell
-make generate
-```
 
 ## Build
 
