@@ -9,6 +9,7 @@ import (
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/model-garage/pkg/convert"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -23,6 +24,12 @@ type mockEventModule struct {
 }
 
 func (m *mockEventModule) EventConvert(ctx context.Context, rawEvent cloudevent.RawEvent) ([]vss.Event, error) {
+	if m.err != nil {
+		return nil, &convert.ConversionError{
+			Errors:        []error{m.err},
+			DecodedEvents: m.events,
+		}
+	}
 	return m.events, m.err
 }
 
@@ -75,6 +82,13 @@ func TestProcessBatch_SuccessfulConversion(t *testing.T) {
 	require.True(t, ok)
 	require.Len(t, events, 1)
 	assert.Equal(t, "tripStart", events[0].Name)
+	assert.Equal(t, "test-source", events[0].Source)
+	assert.Equal(t, "test-producer", events[0].Producer)
+	assert.Equal(t, "test-id", events[0].CloudEventID)
+	assert.Equal(t, "did:erc721:1:0x123:456", events[0].Subject)
+	assert.Equal(t, timestamp, events[0].Timestamp)
+	assert.Equal(t, uint64(0), events[0].DurationNs)
+	assert.Equal(t, "{\"confidence\": 0.95}", events[0].Metadata)
 }
 
 func TestProcessBatch_WithPartialError(t *testing.T) {
@@ -167,48 +181,6 @@ func TestProcessBatch_EmptyEventsArray(t *testing.T) {
 	require.Len(t, batches, 1)
 	batch := batches[0]
 	require.Len(t, batch, 1) // only original message (no events message when empty)
-}
-
-func TestSetMetaData(t *testing.T) {
-	timestamp := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
-	rawEvent := &cloudevent.RawEvent{
-		CloudEventHeader: cloudevent.CloudEventHeader{
-			Subject:  "did:erc721:1:0x123:456",
-			Source:   "test-source",
-			Producer: "test-producer",
-			ID:       "test-id",
-		},
-	}
-
-	events := []vss.Event{
-		{Name: "tripStart", Timestamp: timestamp, DurationNs: 0},
-		{Name: "tripEnd", Timestamp: timestamp.Add(30 * time.Minute), DurationNs: 1800000000000},
-	}
-
-	setMetaData(events, rawEvent)
-
-	for _, event := range events {
-		assert.Equal(t, rawEvent.Subject, event.Subject)
-		assert.Equal(t, rawEvent.Source, event.Source)
-		assert.Equal(t, rawEvent.Producer, event.Producer)
-		assert.Equal(t, rawEvent.ID, event.CloudEventID)
-	}
-}
-
-func TestIsVehicleEventMessage(t *testing.T) {
-	processor := &eventsProcessor{}
-
-	// Test vehicle event
-	vehicleEvent := &cloudevent.RawEvent{
-		CloudEventHeader: cloudevent.CloudEventHeader{Type: cloudevent.TypeEvent},
-	}
-	assert.True(t, processor.isVehicleEventMessage(vehicleEvent))
-
-	// Test non-vehicle event
-	statusEvent := &cloudevent.RawEvent{
-		CloudEventHeader: cloudevent.CloudEventHeader{Type: cloudevent.TypeStatus},
-	}
-	assert.False(t, processor.isVehicleEventMessage(statusEvent))
 }
 
 // Helper functions for creating test messages

@@ -2,10 +2,11 @@ package eventconvert
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/model-garage/pkg/convert"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -43,14 +44,16 @@ func (e *eventsProcessor) processMsg(ctx context.Context, msg *service.Message) 
 		return retBatch
 	}
 
-	events, partialErr := modules.ConvertToEvents(ctx, rawEvent.Source, *rawEvent)
-	if partialErr != nil {
+	events, err := modules.ConvertToEvents(ctx, rawEvent.Source, *rawEvent)
+	if err != nil {
 		errMsg := msg.Copy()
-		processors.SetError(errMsg, processorName, "error converting events", partialErr)
-		data, err := json.Marshal(partialErr)
-		if err == nil {
-			errMsg.SetBytes(data)
+		var convertErr *convert.ConversionError
+		if errors.As(err, &convertErr) {
+			// if this is a conversion error, we can use the decoded signals and the errors
+			err = errors.Join(convertErr.Errors...)
+			events = convertErr.DecodedEvents
 		}
+		processors.SetError(errMsg, processorName, "error converting events", err)
 		retBatch = append(retBatch, errMsg)
 	}
 	if len(events) == 0 {
