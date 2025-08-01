@@ -99,22 +99,11 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 	return retBatch
 }
 
-type LatLngIdx struct {
-	Latitude  *int `json:"latitude"`
-	Longitude *int `json:"longitude"`
-}
-
 // pruneSignals removes signals that are not valid and returns an error for each invalid signal.
 func pruneSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	var errs error
 	slices.SortFunc(signals, func(a, b vss.Signal) int {
-		if a.Timestamp.Before(b.Timestamp) {
-			return -1
-		}
-		if a.Timestamp.After(b.Timestamp) {
-			return 1
-		}
-		return cmp.Compare(a.Name, b.Name)
+		return cmp.Or(a.Timestamp.Compare(b.Timestamp), cmp.Compare(a.Name, b.Name))
 	})
 	lastCord := -1
 	for i := range signals {
