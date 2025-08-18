@@ -122,7 +122,7 @@ tests:
             vin: "1HGCM826"
     output_batches:
       - - {} # replay of original message
-        - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"}'
+        - json_equals: '{"tokenId":123,"timestamp":"2024-04-18T17:20:26.633Z","name":"powertrainCombustionEngineECT","valueNumber":107,"valueString":"","source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359", "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123", "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b","valueLocation": {"HDOP": 0, "Latitude": 0, "Longitude": 0}}'
 
   - name: "Test Default Cloud Event Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
