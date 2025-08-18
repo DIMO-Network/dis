@@ -80,6 +80,15 @@ func TestProcessBatch(t *testing.T) {
 			expectedBatches: 1,
 			expectedErrors:  1,
 		},
+
+		{
+			name: "Valid Japan Chassis VIN",
+			messages: []*service.Message{
+				createFingerprintMessage(t, "SNT33-042261"), // 'Q' is not a valid character
+			},
+			expectedBatches: 1,
+			expectedErrors:  0,
+		},
 		{
 			name: "Non-fingerprint event",
 			messages: []*service.Message{

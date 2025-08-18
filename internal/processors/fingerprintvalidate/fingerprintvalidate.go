@@ -2,15 +2,13 @@ package fingerprintvalidate
 
 import (
 	"context"
-	"regexp"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
+	"github.com/DIMO-Network/shared/pkg/vin"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
-
-var vinRegex = regexp.MustCompile(`^[A-HJ-NPR-Z0-9]{17}$`)
 
 type processor struct {
 	logger *service.Logger
@@ -47,8 +45,9 @@ func (v *processor) processMsg(ctx context.Context, msg *service.Message) servic
 		processors.SetError(msg, processorName, "failed to convert to fingerprint", err)
 		return batch
 	}
-	if !vinRegex.MatchString(fingerprint.VIN) {
-		processors.SetError(msg, processorName, "invalid VIN in fingerprint", err)
+	vinObj := vin.VIN(fingerprint.VIN)
+	if !vinObj.IsValidVIN() && !vinObj.IsValidJapanChassis() {
+		processors.SetError(msg, processorName, "invalid VIN format in fingerprint", nil)
 		return batch
 	}
 	return batch
