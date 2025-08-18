@@ -1,4 +1,4 @@
-replicaCount: 3
+replicaCount: 2
 kafka:
   clusterName: kafka-prod-dimo-kafka
 podAnnotations:
@@ -37,10 +37,10 @@ certificate:
   caConfigMap: cae-prod-dimo-ca-certs
 resources:
   limits:
-    cpu: 2000m
+    cpu: 1500m
     memory: 500Mi
   requests:
-    cpu: 2000m
+    cpu: 1500m
     memory: 500Mi
 autoscaling:
   enabled: false
