@@ -210,6 +210,36 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectError: []error{errLatLongMismatch},
 		},
+		{
+			name: "location includes hdop if present",
+			signals: []vss.Signal{
+				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueNumber: 45.5},
+				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
+				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
+			},
+			expectedSignals: []vss.Signal{
+				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueNumber: 45.5},
+				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
+				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6, HDOP: 0.9}},
+			},
+			expectError: nil,
+		},
+		{
+			name: "hdop alone still creates a location",
+			signals: []vss.Signal{
+				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
+				{Name: vss.FieldPowertrainCombustionEngineSpeed, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 3000},
+			},
+			expectedSignals: []vss.Signal{
+				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
+				{Name: vss.FieldPowertrainCombustionEngineSpeed, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 3000},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{HDOP: 0.9}},
+			},
+			expectError: nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -232,7 +262,7 @@ func TestPruneSignals(t *testing.T) {
 			for i := range result {
 				require.Equal(t, tt.expectedSignals[i].Name, result[i].Name, "signal name mismatch at index %d", i)
 				assert.Equal(t, tt.expectedSignals[i].ValueNumber, result[i].ValueNumber, "signal ValueNumber mismatch at index %d", i)
-				assert.Equal(t, tt.expectedSignals[i].Timestamp.Unix(), result[i].Timestamp.Unix(), "signal timestamp mismatch at index %d", i)
+				assert.Zero(t, tt.expectedSignals[i].Timestamp.Compare(result[i].Timestamp), "signal timestamp mismatch at index %d", i)
 			}
 
 			// Verify no pruneSignalName signals in result
