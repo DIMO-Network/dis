@@ -1,6 +1,7 @@
 package signalconvert
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -48,6 +49,7 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 50.0},
 				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -123.0},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 80.0},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 50.0, Longitude: -123.0}},
 			},
 		},
 		{
@@ -65,6 +67,7 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
 			},
 			expectError: nil,
 		},
@@ -83,6 +86,7 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
 			},
 			expectError: nil,
 		},
@@ -151,6 +155,8 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 45.6},
 				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: -122.7},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-15 * time.Minute), ValueNumber: 90.0},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-2 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-30 * time.Minute), ValueLocation: vss.Location{Latitude: 45.6, Longitude: -122.7}},
 			},
 			expectError: nil,
 		},
@@ -168,6 +174,7 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.6},
 				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 45.6, Longitude: -122.6}},
 			},
 			expectError: []error{errLatLongMismatch},
 		},
@@ -185,6 +192,7 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
 				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
+				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-2 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
 			},
 			expectError: []error{errLatLongMismatch},
 		},
@@ -206,7 +214,9 @@ func TestPruneSignals(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result, err := pruneSignals(tt.signals)
+			result, err1 := pruneFutureAndDuplicateSignals(tt.signals)
+			result, err2 := handleCoordinates(result)
+			err := errors.Join(err1, err2)
 
 			if tt.expectError != nil {
 				require.Error(t, err, "expected an error but got none")
