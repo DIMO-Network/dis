@@ -99,7 +99,8 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 	return retBatch
 }
 
-// pruneFutureAndDuplicateSignals removes signals that are not valid and returns an error for each invalid signal.
+// pruneFutureAndDuplicateSignals removes signals that are too far in the future, as
+// well as exact duplicates.
 func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	var errs error
 	slices.SortFunc(signals, func(a, b vss.Signal) int {
