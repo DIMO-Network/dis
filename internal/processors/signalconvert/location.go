@@ -166,7 +166,7 @@ func (c *coordinateStore) tryCreateLocation() {
 		if lat == 0 && lon == 0 {
 			c.signals[c.lastLat].Name = pruneSignalName
 			c.signals[c.lastLon].Name = pruneSignalName
-			c.errs = append(c.errs, fmt.Errorf("%w: latitude and longitude at origin at time %s", errLatLongMismatch, fmtTime(c.lastTime)))
+			c.errs = append(c.errs, fmt.Errorf("%w: latitude and longitude at origin at time %s", errLatLongMismatch, c.lastTime))
 		} else {
 			loc.Latitude = lat
 			loc.Longitude = lon
@@ -174,10 +174,10 @@ func (c *coordinateStore) tryCreateLocation() {
 		}
 	} else if c.lastLat != -1 {
 		c.signals[c.lastLat].Name = pruneSignalName
-		c.errs = append(c.errs, fmt.Errorf("%w: unpaired latitude at time %s", errLatLongMismatch, fmtTime(c.lastTime)))
+		c.errs = append(c.errs, fmt.Errorf("%w: unpaired latitude at time %s", errLatLongMismatch, c.lastTime))
 	} else if c.lastLon != -1 {
 		c.signals[c.lastLon].Name = pruneSignalName
-		c.errs = append(c.errs, fmt.Errorf("%w: unpaired longitude at time %s", errLatLongMismatch, fmtTime(c.lastTime)))
+		c.errs = append(c.errs, fmt.Errorf("%w: unpaired longitude at time %s", errLatLongMismatch, c.lastTime))
 	}
 
 	if c.lastHDOP != -1 {
@@ -201,11 +201,4 @@ func (c *coordinateStore) tryCreateLocation() {
 	c.lastLon = -1
 	c.lastHDOP = -1
 	c.lastTime = zeroTime
-}
-
-// fmtTime formats the given time per RFC-3339, for use in errors
-// returned to the client. The default Go format used for %s is not
-// standard.
-func fmtTime(t time.Time) string {
-	return t.Format(time.RFC3339)
 }
