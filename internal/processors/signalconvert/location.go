@@ -20,8 +20,6 @@ var zeroTime time.Time
 // handleCoordinates transforms a slice of input signals in ways that
 // simplify downstream processing. Currently this means:
 //
-//   - If there are multiple exact copies of a given signal, then
-//     remove all but one.
 //   - Remove location values with latitude and longitude both equal
 //     to zero.
 //   - Roughly, for each triple of the input signals named
@@ -30,8 +28,6 @@ var zeroTime time.Time
 //     close timestamps, we will also emit a location-values signal
 //     named currentLocationCoordinates which combines all three.
 //   - Remove unpaired latitudes and longitudes.
-//   - Remove values that are far into the future.
-//   - Remove coordinates at the origin (0, 0).
 //
 // The returned slice of signals is always meaningful, even if an error
 // is also returned.
