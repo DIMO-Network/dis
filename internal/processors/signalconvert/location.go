@@ -12,7 +12,7 @@ import (
 
 // maxLatLongDur is the amount of time we'll wait before starting
 // a new coordinate triple.
-const maxLatLongDur = time.Second / 2
+const maxLatLongDur = 500 * time.Millisecond
 
 // zeroTime is used to reset the timestamp on the coordinate store.
 var zeroTime time.Time
