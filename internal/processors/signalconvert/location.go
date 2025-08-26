@@ -12,6 +12,8 @@ import (
 
 // maxLatLongDur is the amount of time we'll wait before starting
 // a new coordinate triple.
+//
+// TODO(elffjs): Should this be a setting?
 const maxLatLongDur = 500 * time.Millisecond
 
 // zeroTime is used to reset the timestamp on the coordinate store.
