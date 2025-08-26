@@ -80,9 +80,9 @@ func (c *coordinateStore) processSignals() ([]vss.Signal, error) {
 	}
 
 	// Sorting this way makes it easier to handle time gaps. Sorting
-	// thereafter by name is not strictly necessary. Typically, this
-	// sorting will already have been performed upstream by a
-	// duplicate detector.
+	// thereafter by name is not strictly necessary but improves
+	// reproducibility. Typically, this sorting will already have been
+	// performed upstream.
 	slices.SortFunc(c.signals, func(a, b vss.Signal) int {
 		return cmp.Or(a.Timestamp.Compare(b.Timestamp), cmp.Compare(a.Name, b.Name))
 	})
@@ -150,7 +150,7 @@ func (c *coordinateStore) processSignal(index int) {
 // Only call this function when forced: if there is any chance that
 // the triple can be completed by the next element of the slice then
 // calling this function may discard the elements of the active triple
-// on the grounds of being incomplete.
+// on the grounds of it being incomplete.
 func (c *coordinateStore) tryCreateLocation() {
 	var loc vss.Location
 	var create bool
