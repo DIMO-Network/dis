@@ -8,14 +8,14 @@ require (
 	github.com/DIMO-Network/cloudevent v0.1.4
 	github.com/DIMO-Network/model-garage v0.7.3
 	github.com/DIMO-Network/shared v1.0.7
-	github.com/MicahParks/keyfunc/v3 v3.3.10
+	github.com/MicahParks/keyfunc/v3 v3.6.1
 	github.com/ethereum/go-ethereum v1.16.3
-	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/golang-jwt/jwt/v5 v5.3.0
 	github.com/redpanda-data/benthos/v4 v4.55.0
-	github.com/redpanda-data/connect/v4 v4.62.0
+	github.com/redpanda-data/connect/v4 v4.63.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/time v0.11.0
+	golang.org/x/time v0.13.0
 )
 
 require (
@@ -114,7 +114,6 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/deepmap/oapi-codegen v1.6.0 // indirect
-	github.com/denisenkom/go-mssqldb v0.12.3 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dvsekhvalnov/jose2go v1.8.0 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
@@ -199,6 +198,7 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/microsoft/go-mssqldb v1.8.2 // indirect
 	github.com/microsoft/gocosmos v1.1.1 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
