@@ -64,6 +64,14 @@ func newCloudConvertProcessor(client *ethclient.Client, lgr *service.Logger, cha
 		ChainID:                 chainID}
 	modules.CloudEventRegistry.Override(modules.RuptelaSource.String(), ruptelaModule)
 
+	// Ruptela Protocol - currently handled by Kaufmann Oracle only
+	ruptelaSyntheticModule := &ruptela.Module{
+		AftermarketContractAddr: syntheticAddr,
+		VehicleContractAddr:     vehicleAddr,
+		ChainID:                 chainID,
+	}
+	modules.CloudEventRegistry.Override(modules.KaufmannSource.String(), ruptelaSyntheticModule)
+
 	// HashDog
 	hashDogModule := &hashdog.Module{
 		AftermarketContractAddr: aftermarketAddr,
