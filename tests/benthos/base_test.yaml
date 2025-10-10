@@ -43,6 +43,50 @@ tests:
               - coverageStartDate: 1744751357
               - expirationDate: 1807822654
               - policyNumber: "SF-12345678"
+  - name: "Test Attestation With Ethr Subject"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
+    environment: {
+      TOKEN_EXCHANGE_ISSUER: "0.0.0.0",
+      TOKEN_EXCHANGE_KEY_SET_URL: "0.0.0.0",
+    }
+    input_batch:
+       - metadata:
+          dimo_message_content: 'dimo_content_attestation'
+          dimo_cloudevent_type: "dimo.attesetation"
+          dimo_cloudevent_source: "0xb534E08745486b957E13a0bBEEF5E7Eddaac28c0"
+         json_content:
+          id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+          source: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
+          dataschema: "testschema/v2.0"
+          subject: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
+          producer:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
+          time: "2025-03-27T18:35:46.436008782Z"
+          vehicleTokenId: 1005
+          signature: "0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b"
+          data:
+            - subject: "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005"
+            - insured: true
+            - provider:  "State Farm"
+            - coverageStartDate: 1744751357
+            - expirationDate: 1807822654
+            - policyNumber: "SF-12345678"
+    output_batches:
+      - - json_contains:
+            id: "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b"
+            source: "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
+            dataschema: "testschema/v2.0"
+            subject: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
+            producer:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b"
+            time: "2025-03-27T18:35:46.436008782Z"
+            vehicleTokenId: 1005
+            signature: "0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b"
+            data:
+              - subject: "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005"
+              - insured: true
+              - provider:  "State Farm"
+              - coverageStartDate: 1744751357
+              - expirationDate: 1807822654
+              - policyNumber: "SF-12345678"
 
   - name: "Test Cloud Event Indexing"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"

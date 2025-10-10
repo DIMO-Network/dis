@@ -85,6 +85,47 @@ func TestProcessBatch(t *testing.T) {
 			},
 		},
 		{
+			name:           "successful attestation with ethr DID",
+			inputData:      []byte(fmt.Sprintf(`{"id":"unique-attestation-id-1","source":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","producer":"0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b","specversion":"1.0","subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005","time":"%s","type":"dimo.attestation","signature":"0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b","data":{"subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005","insured":true,"provider":"State Farm","coverageStartDate":1744751357,"expirationDate":1807822654,"policyNumber":"SF-12345678"}}`, attestationTimestamp.Format(time.RFC3339))),
+			sourceID:       common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
+			messageContent: httpinputserver.AttestationContent,
+			setupMock: func() *mockCloudEventModule {
+				event := cloudevent.CloudEventHeader{
+					ID:       "unique-attestation-id-1",
+					Type:     cloudevent.TypeAttestation,
+					Producer: "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+					Subject:  "did:ethr:80002:0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+					Time:     attestationTimestamp,
+				}
+
+				return &mockCloudEventModule{
+					hdrs: []cloudevent.CloudEventHeader{event},
+					err:  nil,
+				}
+			},
+			msgLen:        1,
+			expectedError: false,
+			expectedMeta: map[string]any{
+				cloudEventTypeKey:            cloudevent.TypeAttestation,
+				cloudEventProducerKey:        "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+				cloudEventSubjectKey:         "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005",
+				processors.MessageContentKey: "dimo_valid_cloudevent",
+				CloudEventIndexValueKey: []cloudevent.CloudEventHeader{
+					{
+						ID:              "unique-attestation-id-1",
+						Source:          common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String(),
+						Type:            cloudevent.TypeAttestation,
+						Producer:        "0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b",
+						Subject:         "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005",
+						Time:            attestationTimestamp,
+						Signature:       "0xa2f41b51853db03749da01976aaef503252c3e240e4edb3c5651856c7b4842fa54be0cb843ee380561f5583ed7b38c99f8db6f3d3aa345856449e85be6e29af91b",
+						DataContentType: "application/json",
+						SpecVersion:     "1.0",
+					},
+				},
+			},
+		},
+		{
 			name:           "successful event conversion",
 			inputData:      []byte(`{"test": "data"}`),
 			sourceID:       common.HexToAddress("0x").String(),

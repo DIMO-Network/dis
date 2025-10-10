@@ -60,7 +60,9 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 	}
 
 	if _, err := cloudevent.DecodeERC721DID(event.Subject); err != nil {
-		return nil, fmt.Errorf("invalid attestation subject format: %w", err)
+		if _, err := cloudevent.DecodeEthrDID(event.Subject); err != nil {
+			return nil, fmt.Errorf("invalid attestation subject format: %w", err)
+		}
 	}
 
 	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, source, ksuid.New().String()); err != nil {
