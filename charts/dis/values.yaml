@@ -4,15 +4,15 @@ image:
   pullPolicy: IfNotPresent
   tag: 363747a
   command:
-    - /dis
+  - /dis
   args:
-    - '-w'
-    - '-r'
-    - /config/resources.yaml
-    - '-c'
-    - /config/config.yaml
-    - streams
-    - /streams/
+  - -w
+  - -r
+  - /config/resources.yaml
+  - -c
+  - /config/config.yaml
+  - streams
+  - /streams/
 imagePullSecrets: []
 nameOverride: ''
 fullnameOverride: ''
@@ -29,7 +29,7 @@ securityContext:
   allowPrivilegeEscalation: false
   capabilities:
     drop:
-      - all
+    - all
 isDev: true
 env:
   ENVIRONMENT: dev
@@ -62,15 +62,15 @@ service:
       targetPort: https
       protocol: TCP
 ports:
-  - name: mon-http
-    containerPort: 8888
-    protocol: TCP
-  - name: https
-    containerPort: 9443
-    protocol: TCP
-  - name: http
-    containerPort: 9442
-    protocol: TCP
+- name: mon-http
+  containerPort: 8888
+  protocol: TCP
+- name: https
+  containerPort: 9443
+  protocol: TCP
+- name: http
+  containerPort: 9442
+  protocol: TCP
 livenessProbe:
   httpGet:
     path: /ping
@@ -95,15 +95,15 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/limit-rps: '50'
   hosts:
-    - host: dis.dev.dimo.zone
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-          backend:
-            service:
-              suffix: ''
-              port:
-                number: 443
+  - host: dis.dev.dimo.zone
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+      backend:
+        service:
+          suffix: ''
+          port:
+            number: 443
   tls: []
 certificate:
   commonName: dis.dev.dimo.zone
@@ -112,10 +112,10 @@ certificate:
 resources:
   limits:
     cpu: 250m
-    memory: 256Mi
+    memory: 384Mi
   requests:
-    cpu: 50m
-    memory: 128Mi
+    cpu: 5m
+    memory: 32Mi
 autoscaling:
   enabled: false
   minReplicas: 1
