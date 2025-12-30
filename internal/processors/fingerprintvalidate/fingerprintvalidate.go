@@ -47,7 +47,10 @@ func (v *processor) processMsg(ctx context.Context, msg *service.Message) servic
 	}
 	vinObj := vin.VIN(fingerprint.VIN)
 	if !vinObj.IsValidVIN() && !vinObj.IsValidJapanChassis() {
-		processors.SetError(msg, processorName, "invalid VIN format in fingerprint", nil)
+		// If the fingerprint is invalid, do not error, just log and continue (device may be starting up)
+		if v.logger != nil {
+			v.logger.Warnf("Ignoring invalid VIN during device startup: %s", fingerprint.VIN)
+		}
 		return batch
 	}
 	return batch
