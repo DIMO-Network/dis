@@ -6,7 +6,7 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 
 require (
 	github.com/DIMO-Network/cloudevent v0.1.4
-	github.com/DIMO-Network/model-garage v0.8.5
+	github.com/DIMO-Network/model-garage v0.8.7
 	github.com/DIMO-Network/shared v1.0.7
 	github.com/MicahParks/keyfunc/v3 v3.6.1
 	github.com/ethereum/go-ethereum v1.16.4
