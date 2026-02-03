@@ -8,14 +8,14 @@ require (
 	github.com/DIMO-Network/cloudevent v0.1.4
 	github.com/DIMO-Network/model-garage v0.8.7
 	github.com/DIMO-Network/shared v1.0.7
-	github.com/MicahParks/keyfunc/v3 v3.6.1
-	github.com/ethereum/go-ethereum v1.16.4
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/MicahParks/keyfunc/v3 v3.7.0
+	github.com/ethereum/go-ethereum v1.16.8
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/redpanda-data/benthos/v4 v4.55.0
 	github.com/redpanda-data/connect/v4 v4.63.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/time v0.13.0
+	golang.org/x/time v0.14.0
 )
 
 require (
@@ -47,10 +47,11 @@ require (
 	github.com/Jeffail/grok v1.1.0 // indirect
 	github.com/Jeffail/shutdown v1.0.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
-	github.com/MicahParks/jwkset v0.8.0 // indirect
+	github.com/MicahParks/jwkset v0.11.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
-	github.com/VictoriaMetrics/fastcache v1.12.2 // indirect
+	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
+	github.com/VictoriaMetrics/fastcache v1.13.0 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/apache/arrow-go/v18 v18.3.0 // indirect
 	github.com/apache/thrift v0.22.0 // indirect
@@ -122,7 +123,7 @@ require (
 	github.com/emicklei/dot v1.6.2 // indirect
 	github.com/envoyproxy/go-control-plane/envoy v1.32.4 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.2.1 // indirect
-	github.com/ethereum/c-kzg-4844/v2 v2.1.3 // indirect
+	github.com/ethereum/c-kzg-4844/v2 v2.1.5 // indirect
 	github.com/ethereum/go-bigmodexpfix v0.0.0-20250911101455-f9e208c548ab // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fatih/color v1.18.0 // indirect
