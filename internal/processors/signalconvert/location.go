@@ -168,6 +168,8 @@ func (c *coordinateStore) tryCreateLocation() {
 		} else {
 			loc.Latitude = lat
 			loc.Longitude = lon
+			c.signals[c.lastLat].Name = pruneSignalName
+			c.signals[c.lastLon].Name = pruneSignalName
 			create = true
 		}
 	} else if c.lastLat != -1 {
@@ -180,6 +182,7 @@ func (c *coordinateStore) tryCreateLocation() {
 
 	if c.lastHDOP != -1 {
 		loc.HDOP = c.signals[c.lastHDOP].ValueNumber
+		c.signals[c.lastHDOP].Name = pruneSignalName
 		create = true
 	}
 

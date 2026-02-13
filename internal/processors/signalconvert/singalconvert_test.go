@@ -46,8 +46,6 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -123.0},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 80.0},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 50.0, Longitude: -123.0}},
 			},
@@ -63,8 +61,6 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
@@ -82,9 +78,7 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
 			},
@@ -149,11 +143,7 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 45.6},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: -122.7},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-15 * time.Minute), ValueNumber: 90.0},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-2 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-30 * time.Minute), ValueLocation: vss.Location{Latitude: 45.6, Longitude: -122.7}},
@@ -171,8 +161,6 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.6},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{Latitude: 45.6, Longitude: -122.6}},
 			},
@@ -189,8 +177,6 @@ func TestPruneSignals(t *testing.T) {
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-2 * time.Hour), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6}},
 			},
@@ -219,9 +205,6 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 			},
 			expectedSignals: []vss.Signal{
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
-				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueLocation: vss.Location{Latitude: 45.5, Longitude: -122.6, HDOP: 0.9}},
 			},
@@ -234,7 +217,6 @@ func TestPruneSignals(t *testing.T) {
 				{Name: vss.FieldPowertrainCombustionEngineSpeed, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 3000},
 			},
 			expectedSignals: []vss.Signal{
-				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
 				{Name: vss.FieldPowertrainCombustionEngineSpeed, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 3000},
 				{Name: vss.FieldCurrentLocationCoordinates, Timestamp: now.Add(-1 * time.Hour), ValueLocation: vss.Location{HDOP: 0.9}},
 			},
