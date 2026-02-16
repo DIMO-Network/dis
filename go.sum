@@ -664,8 +664,6 @@ github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26 h1:Q56IbfT
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26/go.mod h1:NQBR+ek5JR3QICSV9S3UNcj9z/0Mww2+/1JkKt/3Ino=
 github.com/DIMO-Network/cloudevent v0.1.4 h1:c6Sq4CyHt05V8OtnEXekUCRGfVuR1pFkJevfiKt1sYM=
 github.com/DIMO-Network/cloudevent v0.1.4/go.mod h1:Q2QpMEDYJ+VX0lz9SK2EUFxkuddV1XeF4aQ8LfegB68=
-github.com/DIMO-Network/model-garage v0.8.10 h1:DNWfciZ7s1r/ARH+O5626dEAUqYdX71JyhD6UsHqDqg=
-github.com/DIMO-Network/model-garage v0.8.10/go.mod h1:goE7y2N58G8CDUym/RqaAEH0E0w6+gzdUSprWItqmyU=
 github.com/DIMO-Network/model-garage v0.8.11 h1:C2/ddtqJ4Ulm3chckCbQkGtSIPBQA8KPtjntOlzlVjY=
 github.com/DIMO-Network/model-garage v0.8.11/go.mod h1:goE7y2N58G8CDUym/RqaAEH0E0w6+gzdUSprWItqmyU=
 github.com/DIMO-Network/shared v1.0.7 h1:LfSgsqJ6R7EUyfo2GTfuhrCpoDcweJqe7eVOa4j7Xbo=
