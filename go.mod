@@ -7,15 +7,15 @@ replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v
 require (
 	github.com/DIMO-Network/cloudevent v0.1.4
 	github.com/DIMO-Network/model-garage v0.8.12
-	github.com/DIMO-Network/shared v1.0.7
-	github.com/MicahParks/keyfunc/v3 v3.6.1
+	github.com/DIMO-Network/shared v1.1.5
+	github.com/MicahParks/keyfunc/v3 v3.8.0
 	github.com/ethereum/go-ethereum v1.16.8
-	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/redpanda-data/benthos/v4 v4.55.0
 	github.com/redpanda-data/connect/v4 v4.63.0
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/time v0.13.0
+	golang.org/x/time v0.14.0
 )
 
 require (
@@ -47,7 +47,7 @@ require (
 	github.com/Jeffail/grok v1.1.0 // indirect
 	github.com/Jeffail/shutdown v1.0.0 // indirect
 	github.com/Masterminds/squirrel v1.5.4 // indirect
-	github.com/MicahParks/jwkset v0.8.0 // indirect
+	github.com/MicahParks/jwkset v0.11.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/ProjectZKM/Ziren/crates/go-runtime/zkvm_runtime v0.0.0-20251001021608-1fe7b43fc4d6 // indirect
