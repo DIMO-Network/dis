@@ -37,12 +37,12 @@ func TestPruneSignals(t *testing.T) {
 			name: "duplicate signals should be pruned",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 50.0},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 50.0},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 80.0},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -123.0},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -123.0},
 			},
 			expectedSignals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
@@ -54,9 +54,9 @@ func TestPruneSignals(t *testing.T) {
 			name: "matching lat/long pairs should be kept with surrounding signals",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 			},
 			expectedSignals: []vss.Signal{
@@ -71,9 +71,9 @@ func TestPruneSignals(t *testing.T) {
 			name: "matching lat/long pairs should be kept with .2 sec diff",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 			},
 			expectedSignals: []vss.Signal{
@@ -88,9 +88,9 @@ func TestPruneSignals(t *testing.T) {
 			name: "matching long/lat pairs should be dropped with .2 sec diff and both are 0",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: 0},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour).Add(time.Millisecond * 200), ValueNumber: 0},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 			},
 			expectedSignals: []vss.Signal{
@@ -104,7 +104,7 @@ func TestPruneSignals(t *testing.T) {
 			name: "missing longitude should prune latitude while keeping other signals",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 			},
@@ -119,9 +119,9 @@ func TestPruneSignals(t *testing.T) {
 			name: "lat/long pairs with different timestamps and future timestamp should be pruned",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 50.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.5},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 90.0},
 			},
 			expectedSignals: []vss.Signal{
@@ -134,11 +134,11 @@ func TestPruneSignals(t *testing.T) {
 			name: "multiple lat/long pairs should be handled correctly",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 45.6},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: -122.7},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 45.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-30 * time.Minute), ValueNumber: -122.7},
 				{Name: vss.FieldPowertrainCombustionEngineECT, Timestamp: now.Add(-15 * time.Minute), ValueNumber: 90.0},
 			},
 			expectedSignals: []vss.Signal{
@@ -154,9 +154,9 @@ func TestPruneSignals(t *testing.T) {
 			name: "double latitude should prune one latitude",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour).Add(-200 * time.Millisecond), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.6},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour).Add(-200 * time.Millisecond), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 45.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
 			},
 			expectedSignals: []vss.Signal{
@@ -170,9 +170,9 @@ func TestPruneSignals(t *testing.T) {
 			name: "double longitude should prune one longitude",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour).Add(200 * time.Millisecond), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-2 * time.Hour).Add(200 * time.Millisecond), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
 			},
 			expectedSignals: []vss.Signal{
@@ -186,8 +186,8 @@ func TestPruneSignals(t *testing.T) {
 			name: "latitude and longitude too far apart should prune both",
 			signals: []vss.Signal{
 				{Name: vss.FieldSpeed, Timestamp: now.Add(-3 * time.Hour), ValueNumber: 45.0},
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-2 * time.Hour), ValueNumber: 45.5},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-30 * time.Minute), ValueNumber: 75.5},
 			},
 			expectedSignals: []vss.Signal{
@@ -199,9 +199,9 @@ func TestPruneSignals(t *testing.T) {
 		{
 			name: "location includes hdop if present",
 			signals: []vss.Signal{
-				{Name: vss.FieldCurrentLocationLatitude, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueNumber: 45.5},
-				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
-				{Name: vss.FieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
+				{Name: fieldCurrentLocationLatitude, Timestamp: now.Add(-1*time.Hour - 22*time.Millisecond), ValueNumber: 45.5},
+				{Name: fieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
+				{Name: fieldCurrentLocationLongitude, Timestamp: now.Add(-1 * time.Hour), ValueNumber: -122.6},
 				{Name: vss.FieldPowertrainFuelSystemRelativeLevel, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 75.5},
 			},
 			expectedSignals: []vss.Signal{
@@ -213,7 +213,7 @@ func TestPruneSignals(t *testing.T) {
 		{
 			name: "hdop alone still creates a location",
 			signals: []vss.Signal{
-				{Name: vss.FieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
+				{Name: fieldDIMOAftermarketHDOP, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 0.9},
 				{Name: vss.FieldPowertrainCombustionEngineSpeed, Timestamp: now.Add(-1 * time.Hour), ValueNumber: 3000},
 			},
 			expectedSignals: []vss.Signal{

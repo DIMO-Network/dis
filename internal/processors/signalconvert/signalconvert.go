@@ -57,12 +57,6 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 		return retBatch
 	}
 
-	subjectDID, err := cloudevent.DecodeERC721DID(rawEvent.Subject)
-	if err != nil {
-		// fail this message if we unexpectedly can't decode the subject DID
-		msg.SetError(fmt.Errorf("failed to decode subject DID during signal convert which expects valid cloudevents: %w", err))
-		return retBatch
-	}
 	signals, err := modules.ConvertToSignals(ctx, rawEvent.Source, *rawEvent)
 	if err != nil {
 		errMsg := msg.Copy()
@@ -91,7 +85,7 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 
 	for i := range signals {
 		msgCpy := msg.Copy()
-		setMetaData(&signals[i], rawEvent, subjectDID)
+		setMetaData(&signals[i], rawEvent)
 		msgCpy.SetStructured(signals[i])
 		msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
 		retBatch = append(retBatch, msgCpy)
@@ -136,16 +130,14 @@ func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) 
 }
 
 func signalEqual(a, b vss.Signal) bool {
-	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.TokenID == b.TokenID
+	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.Subject == b.Subject
 }
 
-func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent, subject cloudevent.ERC721DID) {
+func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent) {
 	signal.Source = rawEvent.Source
 	signal.Producer = rawEvent.Producer
 	signal.CloudEventID = rawEvent.ID
-	if subject.TokenID != nil {
-		signal.TokenID = uint32(subject.TokenID.Uint64())
-	}
+	signal.Subject = rawEvent.Subject
 }
 
 func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {
