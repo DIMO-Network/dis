@@ -19,6 +19,14 @@ const maxLatLongDur = 500 * time.Millisecond
 // zeroTime is used to reset the timestamp on the coordinate store.
 var zeroTime time.Time
 
+// We removed these from the standard set but they're still used
+// by AutoPi and Macaron, so we need to keep them around.
+const (
+	fieldCurrentLocationLatitude  = "currentLocationLatitude"
+	fieldCurrentLocationLongitude = "currentLocationLongitude"
+	fieldDIMOAftermarketHDOP      = "dimoAftermarketHDOP"
+)
+
 // handleCoordinates transforms a slice of input signals in ways that
 // simplify downstream processing. Currently this means:
 //
@@ -118,19 +126,19 @@ func (c *coordinateStore) processSignal(index int) {
 	// This logic could be made shorter and less repetitive by
 	// playing around with *int.
 	switch sig.Name {
-	case vss.FieldCurrentLocationLatitude:
+	case fieldCurrentLocationLatitude:
 		if c.lastLat != -1 {
 			// Start a new triple, but see if what's already being
 			// tracked is enough to yield a row.
 			c.tryCreateLocation()
 		}
 		c.lastLat = index
-	case vss.FieldCurrentLocationLongitude:
+	case fieldCurrentLocationLongitude:
 		if c.lastLon != -1 {
 			c.tryCreateLocation()
 		}
 		c.lastLon = index
-	case vss.FieldDIMOAftermarketHDOP:
+	case fieldDIMOAftermarketHDOP:
 		if c.lastHDOP != -1 {
 			c.tryCreateLocation()
 		}
@@ -188,7 +196,7 @@ func (c *coordinateStore) tryCreateLocation() {
 
 	if create {
 		c.created = append(c.created, vss.Signal{
-			TokenID:       template.TokenID,
+			Subject:       template.Subject,
 			Timestamp:     c.lastTime,
 			Name:          vss.FieldCurrentLocationCoordinates,
 			ValueLocation: loc,

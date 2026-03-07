@@ -12,7 +12,6 @@ import (
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
-	"github.com/DIMO-Network/model-garage/pkg/compass"
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
@@ -78,13 +77,6 @@ func newCloudConvertProcessor(client *ethclient.Client, lgr *service.Logger, cha
 		VehicleContractAddr:     vehicleAddr,
 		ChainID:                 chainID}
 	modules.CloudEventRegistry.Override(modules.HashDogSource.String(), hashDogModule)
-
-	// Compass IOT
-	compassModule := &compass.Module{
-		SynthContractAddr:   syntheticAddr,
-		VehicleContractAddr: vehicleAddr,
-		ChainID:             chainID}
-	modules.CloudEventRegistry.Override(modules.CompassSource.String(), compassModule)
 
 	return &cloudeventProcessor{
 		logger:    lgr,

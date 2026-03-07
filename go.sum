@@ -662,10 +662,10 @@ github.com/ClickHouse/clickhouse-go/v2 v2.40.1 h1:PbwsHBgqXRydU7jKULD1C8CHmifczf
 github.com/ClickHouse/clickhouse-go/v2 v2.40.1/go.mod h1:GDzSBLVhladVm8V01aEB36IoBOVLLICfyeuiIp/8Ezc=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26 h1:Q56IbfTwvFiXID4DM1qdD6Qt41wAgN7G5u8D1Lt7YMM=
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26/go.mod h1:NQBR+ek5JR3QICSV9S3UNcj9z/0Mww2+/1JkKt/3Ino=
-github.com/DIMO-Network/cloudevent v0.1.4 h1:c6Sq4CyHt05V8OtnEXekUCRGfVuR1pFkJevfiKt1sYM=
-github.com/DIMO-Network/cloudevent v0.1.4/go.mod h1:Q2QpMEDYJ+VX0lz9SK2EUFxkuddV1XeF4aQ8LfegB68=
-github.com/DIMO-Network/model-garage v0.8.16 h1:jsF9ihfLNgF2f9RTueA4uUpUVZHLPH1q+OgZXnwts8o=
-github.com/DIMO-Network/model-garage v0.8.16/go.mod h1:goE7y2N58G8CDUym/RqaAEH0E0w6+gzdUSprWItqmyU=
+github.com/DIMO-Network/cloudevent v0.1.6 h1:qFKrd+vkfx0TwJHelTtvdTYpUCNmIg8G0RbA/hRh+aQ=
+github.com/DIMO-Network/cloudevent v0.1.6/go.mod h1:Q2QpMEDYJ+VX0lz9SK2EUFxkuddV1XeF4aQ8LfegB68=
+github.com/DIMO-Network/model-garage v0.9.0 h1:JGOZlsca3vHwGxJ2nxRMJG4CnMFcOYOIb5cghl8fUa8=
+github.com/DIMO-Network/model-garage v0.9.0/go.mod h1:pWce1INj+K6ol6tauww6F5z9WIpwNEnsAs9Uw8bjLE8=
 github.com/DIMO-Network/shared v1.0.7 h1:LfSgsqJ6R7EUyfo2GTfuhrCpoDcweJqe7eVOa4j7Xbo=
 github.com/DIMO-Network/shared v1.0.7/go.mod h1:lDHUKwwT2LW6Zvd42Nb33dXklRNTmfyOlbUNx2dQfGY=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
