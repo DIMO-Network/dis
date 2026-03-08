@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/DIMO-Network/cloudevent"
+	modelce "github.com/DIMO-Network/model-garage/pkg/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"
@@ -15,11 +16,11 @@ import (
 type mockConvertToFingerprint struct{}
 
 // Mock for modules.FingerprintConvert
-func (mockConvertToFingerprint) FingerprintConvert(ctx context.Context, event cloudevent.RawEvent) (cloudevent.Fingerprint, error) {
-	var fp cloudevent.Fingerprint
+func (mockConvertToFingerprint) FingerprintConvert(ctx context.Context, event cloudevent.RawEvent) (modelce.Fingerprint, error) {
+	var fp modelce.Fingerprint
 	err := json.Unmarshal(event.Data, &fp)
 	if err != nil {
-		return cloudevent.Fingerprint{}, err
+		return modelce.Fingerprint{}, err
 	}
 	return fp, nil
 }
@@ -145,7 +146,7 @@ func TestProcessBatch(t *testing.T) {
 
 func createFingerprintMessage(t *testing.T, vin string) *service.Message {
 	t.Helper()
-	var fingerprintEvent cloudevent.FingerprintEvent
+	var fingerprintEvent modelce.FingerprintEvent
 	fingerprintEvent.Type = cloudevent.TypeFingerprint
 	fingerprintEvent.Data.VIN = vin
 	data, err := json.Marshal(fingerprintEvent.Data)
