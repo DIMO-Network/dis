@@ -122,5 +122,10 @@ output:
           inproc: "dimo_cloudevents"
       - check: ''
         output:
-          label: "inproc_converted"
-          inproc: "dimo_converted"
+          broker:
+            pattern: fan_out
+            outputs:
+              - label: "inproc_clickhouse"
+                inproc: "dimo_clickhouse"
+              - label: "inproc_kafka"
+                inproc: "dimo_kafka"

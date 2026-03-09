@@ -1,5 +1,5 @@
 input:
-  inproc: "dimo_converted"
+  inproc: "dimo_clickhouse"
 
 output:
   switch:

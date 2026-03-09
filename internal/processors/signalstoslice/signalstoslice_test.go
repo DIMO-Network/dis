@@ -30,18 +30,21 @@ func TestProcess_MultipleSignals(t *testing.T) {
 		Data: vss.SignalsPayload{
 			Signals: []vss.SignalData{
 				{
-					Timestamp:   now,
-					Name:        "speed",
-					ValueNumber: 65.5,
+					Timestamp:    now,
+					Name:         "speed",
+					ValueNumber:  65.5,
+					CloudEventID: "ce-123",
 				},
 				{
-					Timestamp:   now,
-					Name:        "odometer",
-					ValueNumber: 12345,
+					Timestamp:    now,
+					Name:         "odometer",
+					ValueNumber:  12345,
+					CloudEventID: "ce-123",
 				},
 				{
 					Timestamp:   now,
 					Name:        "currentLocationCoordinates",
+					CloudEventID: "ce-123",
 					ValueLocation: vss.Location{
 						Latitude:  37.7749,
 						Longitude: -122.4194,

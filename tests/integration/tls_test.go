@@ -141,6 +141,36 @@ func generateCerts() error {
 		return err
 	}
 
+	// Generate Tesla client cert — CN = Tesla source address
+	teslaClientKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return err
+	}
+	teslaClientTemplate := &x509.Certificate{
+		SerialNumber: big.NewInt(5),
+		Subject:      pkix.Name{CommonName: teslaSourceAddress},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+	teslaClientCertDER, err := x509.CreateCertificate(rand.Reader, teslaClientTemplate, caCert, &teslaClientKey.PublicKey, caKey)
+	if err != nil {
+		return err
+	}
+	teslaClientCertPath := filepath.Join(tmpDir, "tesla_client.crt")
+	teslaClientKeyPath := filepath.Join(tmpDir, "tesla_client.key")
+	if err := writePEM(teslaClientCertPath, "CERTIFICATE", teslaClientCertDER); err != nil {
+		return err
+	}
+	teslaClientKeyDER, err := x509.MarshalECPrivateKey(teslaClientKey)
+	if err != nil {
+		return err
+	}
+	if err := writePEM(teslaClientKeyPath, "EC PRIVATE KEY", teslaClientKeyDER); err != nil {
+		return err
+	}
+
 	// Build TLS configs
 	caCertPEM, err := os.ReadFile(tlsCACertPath)
 	if err != nil {
@@ -164,6 +194,15 @@ func generateCerts() error {
 	}
 	ruptelaTLSConfig = &tls.Config{
 		Certificates: []tls.Certificate{ruptelaClientCertTLS},
+		RootCAs:      caPool,
+	}
+
+	teslaClientCertTLS, err := tls.LoadX509KeyPair(teslaClientCertPath, teslaClientKeyPath)
+	if err != nil {
+		return err
+	}
+	teslaTLSConfig = &tls.Config{
+		Certificates: []tls.Certificate{teslaClientCertTLS},
 		RootCAs:      caPool,
 	}
 

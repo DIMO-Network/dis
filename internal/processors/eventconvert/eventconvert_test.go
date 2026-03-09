@@ -88,7 +88,7 @@ func TestProcessBatch_SuccessfulConversion(t *testing.T) {
 	assert.Equal(t, "test-source", eventCE.Source)
 	assert.Equal(t, "test-producer", eventCE.Producer)
 	assert.Equal(t, "test-id", eventCE.ID)
-	assert.Equal(t, cloudevent.TypeEvent, eventCE.Type)
+	assert.Equal(t, cloudevent.TypeEvents, eventCE.Type)
 	assert.Equal(t, "1.0", eventCE.DataVersion)
 	assert.Equal(t, "did:erc721:1:0x123:456", eventCE.Subject)
 	// Data payload contains events array
@@ -198,7 +198,7 @@ func createVehicleEventMessage(t *testing.T, timestamp time.Time) *service.Messa
 
 	event := &cloudevent.RawEvent{
 		CloudEventHeader: cloudevent.CloudEventHeader{
-			Type:        cloudevent.TypeEvent,
+			Type:        cloudevent.TypeEvents,
 			Subject:     "did:erc721:1:0x123:456",
 			Source:      "test-source",
 			Producer:    "test-producer",

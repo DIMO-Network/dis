@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/DIMO-Network/cloudevent"
-	"github.com/DIMO-Network/cloudevent/clickhouse"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/web3"
 	"github.com/ethereum/go-ethereum/accounts"
@@ -42,9 +41,6 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 	msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
 
 	msg.SetStructuredMut(event)
-	msg.MetaSetMut(CloudEventIndexValueKey, []cloudevent.CloudEventHeader{event.CloudEventHeader})
-	objectKey := clickhouse.CloudEventToObjectKey(&event.CloudEventHeader)
-	msg.MetaSetMut(cloudEventIndexKey, objectKey)
 
 	return service.MessageBatch{msg}
 }

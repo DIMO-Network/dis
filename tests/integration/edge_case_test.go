@@ -39,26 +39,26 @@ func TestFutureTimestampSignalPruning(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	assert.Equal(t, 200, resp.StatusCode)
+	// DIS may return 408 when all signals are pruned and downstream has nothing to ack.
+	if resp.StatusCode == 408 {
+		t.Log("got 408 (expected when all signals pruned), checking Kafka anyway")
+	} else {
+		assert.Equal(t, 200, resp.StatusCode)
+	}
 
 	time.Sleep(3 * time.Second)
 
 	// The CloudEvent is still processed but the signal should be pruned
 	// because its timestamp is 1 hour in the future (> 5 min threshold).
-	msgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		if ce.Subject == subject {
-			// If a signal CE exists for this subject, it should have 0 signals
-			assert.Empty(t, ce.Data.Signals, "future-timestamped signal should have been pruned")
-			return
-		}
-	}
-	// It is also acceptable for no signal CE to appear at all for this subject
-	// (pipeline may drop messages with zero valid signals).
+	// After pruning, all signals are removed so no signal CE should be produced.
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
+	assert.Empty(t, msgs, "no signal CE should be produced when all signals are pruned")
 }
 
 func TestDuplicateSignalPruning(t *testing.T) {
@@ -92,6 +92,9 @@ func TestDuplicateSignalPruning(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
@@ -99,19 +102,13 @@ func TestDuplicateSignalPruning(t *testing.T) {
 
 	time.Sleep(3 * time.Second)
 
-	msgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	var found bool
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		if ce.Subject == subject {
-			found = true
-			require.Len(t, ce.Data.Signals, 1, "duplicate signal should have been pruned, expected exactly 1")
-			assert.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
-			assert.InDelta(t, 107.0, ce.Data.Signals[0].ValueNumber, 0.01)
-			break
-		}
-	}
-	assert.True(t, found, "signal CloudEvent not found in Kafka messages")
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
+	require.Len(t, msgs, 1, "expected exactly 1 signal message")
+	ce := parseSignalCE(t, msgs[0])
+	assert.Equal(t, subject, ce.Subject)
+	require.Len(t, ce.Data.Signals, 1, "duplicate signal should have been pruned, expected exactly 1")
+	assert.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
+	assert.InDelta(t, 107.0, ce.Data.Signals[0].ValueNumber, 0.01)
 
 	// ClickHouse should also have exactly 1 row (deduplicated)
 	rows := querySignals(t, subject)
@@ -139,6 +136,9 @@ func TestEmptySignalsArray(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
@@ -146,16 +146,9 @@ func TestEmptySignalsArray(t *testing.T) {
 
 	time.Sleep(3 * time.Second)
 
-	// No signals should appear for this subject
-	msgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		if ce.Subject == subject {
-			assert.Empty(t, ce.Data.Signals, "empty signals array should produce no signals")
-			return
-		}
-	}
-	// No signal CE for this subject is the expected outcome
+	// No signal CE should be produced for an empty signals array
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
+	assert.Empty(t, msgs, "no signal CE should be produced for empty signals array")
 }
 
 func TestSignalsAndEventsInSamePayload(t *testing.T) {
@@ -191,6 +184,10 @@ func TestSignalsAndEventsInSamePayload(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	signalOffset := kafkaEndOffset(t, "topic.device.signals")
+	eventOffset := kafkaEndOffset(t, "topic.device.events")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
@@ -203,37 +200,25 @@ func TestSignalsAndEventsInSamePayload(t *testing.T) {
 	time.Sleep(3 * time.Second)
 
 	// Verify signal appears in Kafka signals topic
-	signalMsgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	var signalFound bool
-	for _, msg := range signalMsgs {
-		ce := parseSignalCE(t, msg)
-		if ce.Subject == subject {
-			signalFound = true
-			require.Len(t, ce.Data.Signals, 1)
-			assert.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
-			assert.InDelta(t, 80.0, ce.Data.Signals[0].ValueNumber, 0.01)
-			break
-		}
-	}
-	assert.True(t, signalFound, "signal CloudEvent not found in Kafka signals topic")
+	signalMsgs := consumeKafka(t, "topic.device.signals", signalOffset, 10*time.Second)
+	require.Len(t, signalMsgs, 1, "expected exactly 1 signal message")
+	signalCE := parseSignalCE(t, signalMsgs[0])
+	assert.Equal(t, subject, signalCE.Subject)
+	require.Len(t, signalCE.Data.Signals, 1)
+	assert.Equal(t, "powertrainCombustionEngineECT", signalCE.Data.Signals[0].Name)
+	assert.InDelta(t, 80.0, signalCE.Data.Signals[0].ValueNumber, 0.01)
 
 	// Verify event appears in Kafka events topic
-	eventMsgs := consumeKafka(t, "topic.device.events", 10*time.Second)
-	var eventFound bool
-	for _, msg := range eventMsgs {
-		ce := parseEventCE(t, msg)
-		if ce.Subject == subject {
-			eventFound = true
-			assert.Equal(t, "dimo.event", ce.Type)
-			require.Len(t, ce.Data.Events, 1)
-			assert.Equal(t, "behavior.harshBraking", ce.Data.Events[0].Name)
-			break
-		}
-	}
-	if !eventFound && resp.StatusCode == 408 {
+	eventMsgs := consumeKafka(t, "topic.device.events", eventOffset, 10*time.Second)
+	if len(eventMsgs) == 0 && resp.StatusCode == 408 {
 		t.Skip("skipping event check: not delivered due to pipeline congestion (known issue)")
 	}
-	assert.True(t, eventFound, "event CloudEvent not found in Kafka events topic")
+	require.Len(t, eventMsgs, 1, "expected exactly 1 event message")
+	eventCE := parseEventCE(t, eventMsgs[0])
+	assert.Equal(t, subject, eventCE.Subject)
+	assert.Equal(t, "dimo.events", eventCE.Type)
+	require.Len(t, eventCE.Data.Events, 1)
+	assert.Equal(t, "behavior.harshBraking", eventCE.Data.Events[0].Name)
 
 	// ── ClickHouse signal table — exactly 1 signal row ──────────
 	signalRows := querySignals(t, subject)

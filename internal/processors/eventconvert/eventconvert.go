@@ -67,7 +67,7 @@ func (e *eventsProcessor) processMsg(ctx context.Context, msg *service.Message) 
 		Producer:    rawEvent.Producer,
 		ID:          rawEvent.ID,
 		Time:        rawEvent.Time,
-		Type:        rawEvent.Type,
+		Type:        cloudevent.TypeEvents,
 		DataVersion: rawEvent.DataVersion,
 	}
 	eventCE := vss.PackEvents(header, events)
@@ -79,7 +79,6 @@ func (e *eventsProcessor) processMsg(ctx context.Context, msg *service.Message) 
 	return retBatch
 }
 
-
 func (e *eventsProcessor) isVehicleEventMessage(rawEvent *cloudevent.RawEvent) bool {
-	return rawEvent.Type == cloudevent.TypeEvent
+	return rawEvent.Type == cloudevent.TypeEvents
 }

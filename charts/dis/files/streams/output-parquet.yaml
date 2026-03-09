@@ -1,5 +1,9 @@
 input:
-  inproc: "dimo_cloudevents"
+  broker:
+    inputs:
+      - inproc: "dimo_cloudevents"
+    batching:
+      period: "5s"
 
 pipeline:
   processors:
@@ -7,13 +11,14 @@ pipeline:
         prefix: "cloudevent/valid/"
 
 output:
+  label: "insert_valid_cloudevent"
   fallback:
     - broker:
         pattern: fan_out_sequential_fail_fast
         outputs:
           # First: write parquet to S3
           - fallback:
-              - label: "s3_raw_parquet"
+              - label: "insert_valid_cloudevent_parquet_s3"
                 switch:
                   cases:
                     - check: 'metadata("dimo_s3_upload_key").or("") != ""'
@@ -22,6 +27,7 @@ output:
                           bucket: "${PARQUET_BUCKET}"
                           region: "${S3_AWS_REGION}"
                           endpoint: "${S3_ENDPOINT:}"
+                          content_type: application/octet-stream
                           force_path_style_urls: ${S3_FORCE_PATH_STYLE:false}
                           path: ${!metadata("dimo_s3_upload_key")}
                           credentials:
@@ -42,7 +48,7 @@ output:
               - label: "clickhouse_cloudevent"
                 switch:
                   cases:
-                    - check: 'metadata("dimo_s3_upload_key").or("") == ""'
+                    - check: 'metadata("dimo_message_content").or("") == "dimo_clickhouse_cloudevent"'
                       output:
                         sql_insert:
                           driver: clickhouse
@@ -56,10 +62,27 @@ output:
                             period: "2s"
                             check: ""
                         processors:
-                          - dimo_split_values: {}
+                          - catch:
+                              -  mutation: |
+                                   meta dimo_component = "clickhouse_cloudevent"
+                              - resource: "handle_db_error"
+                              - mapping: root = deleted()
                     - check: ''
                       output:
                         drop: {}
-              - label: "clickhouse_cloudevent_failure"
-                drop: {}
+              - label: 'insert_valid_cloudevent_clickhouse_failure'
+                switch:
+                  cases:
+                    - check: 'metadata("fallback_error").or("").contains("bad connection")'
+                      output:
+                        reject: metadata("fallback_error")
+                        processors:
+                          - resource: "handle_db_connection_error"
+                    - check: ''
+                      output:
+                        drop: {}
+                        processors:
+                          -  mutation: |
+                              meta dimo_component = "insert_valid_cloudevent_clickhouse"
+                          - resource: "handle_db_error"
     - drop: {}

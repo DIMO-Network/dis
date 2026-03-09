@@ -92,7 +92,7 @@ func (c *coordinateStore) processSignals() ([]vss.Signal, error) {
 	// reproducibility. Typically, this sorting will already have been
 	// performed upstream.
 	slices.SortFunc(c.signals, func(a, b vss.Signal) int {
-		return cmp.Or(a.Timestamp.Compare(b.Timestamp), cmp.Compare(a.Name, b.Name))
+		return cmp.Or(a.Data.Timestamp.Compare(b.Data.Timestamp), cmp.Compare(a.Data.Name, b.Data.Name))
 	})
 
 	for i := range c.signals {
@@ -105,7 +105,7 @@ func (c *coordinateStore) processSignals() ([]vss.Signal, error) {
 
 	var out []vss.Signal
 	for _, sig := range c.signals {
-		if sig.Name != pruneSignalName {
+		if sig.Data.Name != pruneSignalName {
 			out = append(out, sig)
 		}
 	}
@@ -119,13 +119,13 @@ func (c *coordinateStore) processSignals() ([]vss.Signal, error) {
 func (c *coordinateStore) processSignal(index int) {
 	sig := c.signals[index]
 
-	if !c.lastTime.IsZero() && sig.Timestamp.Sub(c.lastTime) >= maxLatLongDur {
+	if !c.lastTime.IsZero() && sig.Data.Timestamp.Sub(c.lastTime) >= maxLatLongDur {
 		c.tryCreateLocation()
 	}
 
 	// This logic could be made shorter and less repetitive by
 	// playing around with *int.
-	switch sig.Name {
+	switch sig.Data.Name {
 	case fieldCurrentLocationLatitude:
 		if c.lastLat != -1 {
 			// Start a new triple, but see if what's already being
@@ -148,7 +148,7 @@ func (c *coordinateStore) processSignal(index int) {
 	}
 
 	if c.lastTime.IsZero() {
-		c.lastTime = sig.Timestamp
+		c.lastTime = sig.Data.Timestamp
 	}
 }
 
@@ -166,43 +166,43 @@ func (c *coordinateStore) tryCreateLocation() {
 	template := c.signals[0]
 
 	if c.lastLat != -1 && c.lastLon != -1 {
-		lat := c.signals[c.lastLat].ValueNumber
-		lon := c.signals[c.lastLon].ValueNumber
+		lat := c.signals[c.lastLat].Data.ValueNumber
+		lon := c.signals[c.lastLon].Data.ValueNumber
 
 		if lat == 0 && lon == 0 {
-			c.signals[c.lastLat].Name = pruneSignalName
-			c.signals[c.lastLon].Name = pruneSignalName
+			c.signals[c.lastLat].Data.Name = pruneSignalName
+			c.signals[c.lastLon].Data.Name = pruneSignalName
 			c.errs = append(c.errs, fmt.Errorf("%w: latitude and longitude at origin at time %s", errLatLongMismatch, c.lastTime))
 		} else {
 			loc.Latitude = lat
 			loc.Longitude = lon
-			c.signals[c.lastLat].Name = pruneSignalName
-			c.signals[c.lastLon].Name = pruneSignalName
+			c.signals[c.lastLat].Data.Name = pruneSignalName
+			c.signals[c.lastLon].Data.Name = pruneSignalName
 			create = true
 		}
 	} else if c.lastLat != -1 {
-		c.signals[c.lastLat].Name = pruneSignalName
+		c.signals[c.lastLat].Data.Name = pruneSignalName
 		c.errs = append(c.errs, fmt.Errorf("%w: unpaired latitude at time %s", errLatLongMismatch, c.lastTime))
 	} else if c.lastLon != -1 {
-		c.signals[c.lastLon].Name = pruneSignalName
+		c.signals[c.lastLon].Data.Name = pruneSignalName
 		c.errs = append(c.errs, fmt.Errorf("%w: unpaired longitude at time %s", errLatLongMismatch, c.lastTime))
 	}
 
 	if c.lastHDOP != -1 {
-		loc.HDOP = c.signals[c.lastHDOP].ValueNumber
-		c.signals[c.lastHDOP].Name = pruneSignalName
+		loc.HDOP = c.signals[c.lastHDOP].Data.ValueNumber
+		c.signals[c.lastHDOP].Data.Name = pruneSignalName
 		create = true
 	}
 
 	if create {
 		c.created = append(c.created, vss.Signal{
-			Subject:       template.Subject,
-			Timestamp:     c.lastTime,
-			Name:          vss.FieldCurrentLocationCoordinates,
-			ValueLocation: loc,
-			Source:        template.Source,
-			Producer:      template.Producer,
-			CloudEventID:  template.CloudEventID,
+			CloudEventHeader: template.CloudEventHeader,
+			Data: vss.SignalData{
+				Timestamp:     c.lastTime,
+				Name:          vss.FieldCurrentLocationCoordinates,
+				ValueLocation: loc,
+				CloudEventID:  template.Data.CloudEventID,
+			},
 		})
 	}
 

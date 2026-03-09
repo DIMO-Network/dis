@@ -32,16 +32,18 @@ func TestProcess_MultipleEvents(t *testing.T) {
 		Data: vss.EventsPayload{
 			Events: []vss.EventData{
 				{
-					Name:       "behavior.harshBraking",
-					Timestamp:  now,
-					DurationNs: 0,
-					Metadata:   `{"counterValue":3}`,
+					Name:         "behavior.harshBraking",
+					Timestamp:    now,
+					DurationNs:   0,
+					Metadata:     `{"counterValue":3}`,
+					CloudEventID: "ce-evt-123",
 				},
 				{
-					Name:       "behavior.extremeBraking",
-					Timestamp:  now,
-					DurationNs: 5000000000,
-					Metadata:   `{"counterValue":1}`,
+					Name:         "behavior.extremeBraking",
+					Timestamp:    now,
+					DurationNs:   5000000000,
+					Metadata:     `{"counterValue":1}`,
+					CloudEventID: "ce-evt-123",
 				},
 			},
 		},

@@ -42,6 +42,9 @@ func TestDefaultModuleEvents(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	startOffset := kafkaEndOffset(t, "topic.device.events")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
@@ -58,25 +61,19 @@ func TestDefaultModuleEvents(t *testing.T) {
 	time.Sleep(5 * time.Second)
 
 	// Check Kafka events topic
-	msgs := consumeKafka(t, "topic.device.events", 10*time.Second)
-	var found bool
-	for _, msg := range msgs {
-		ce := parseEventCE(t, msg)
-		if ce.Subject == subject {
-			found = true
-			assert.Equal(t, "1.0", ce.SpecVersion)
-			assert.Equal(t, "dimo.event", ce.Type)
-			assert.Equal(t, testSourceAddress, ce.Source)
-			require.Len(t, ce.Data.Events, 2)
-			assert.Equal(t, "behavior.harshBraking", ce.Data.Events[0].Name)
-			assert.Equal(t, "behavior.harshAcceleration", ce.Data.Events[1].Name)
-			break
-		}
-	}
-	if !found && resp.StatusCode == 408 {
+	msgs := consumeKafka(t, "topic.device.events", startOffset, 10*time.Second)
+	if len(msgs) == 0 && resp.StatusCode == 408 {
 		t.Skip("skipping: event not delivered due to pipeline congestion (known issue)")
 	}
-	assert.True(t, found, "event CloudEvent not found in Kafka messages")
+	require.Len(t, msgs, 1, "expected exactly 1 event message")
+	ce := parseEventCE(t, msgs[0])
+	assert.Equal(t, subject, ce.Subject)
+	assert.Equal(t, "1.0", ce.SpecVersion)
+	assert.Equal(t, "dimo.events", ce.Type)
+	assert.Equal(t, testSourceAddress, ce.Source)
+	require.Len(t, ce.Data.Events, 2)
+	assert.Equal(t, "behavior.harshBraking", ce.Data.Events[0].Name)
+	assert.Equal(t, "behavior.harshAcceleration", ce.Data.Events[1].Name)
 
 	// Check ClickHouse event table — should have exactly 2 event rows
 	eventRows := queryEvents(t, subject)

@@ -37,6 +37,9 @@ func TestDefaultModuleSignals(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
@@ -44,24 +47,18 @@ func TestDefaultModuleSignals(t *testing.T) {
 
 	time.Sleep(3 * time.Second)
 
-	// Check Kafka signals topic — find our message by subject
-	msgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	var found bool
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		if ce.Subject == subject {
-			found = true
-			assert.Equal(t, "1.0", ce.SpecVersion)
-			assert.Equal(t, "dimo.status", ce.Type)
-			assert.Equal(t, testSourceAddress, ce.Source)
-			assert.Equal(t, subject, ce.Producer)
-			require.Len(t, ce.Data.Signals, 1)
-			assert.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
-			assert.InDelta(t, 107.0, ce.Data.Signals[0].ValueNumber, 0.01)
-			break
-		}
-	}
-	assert.True(t, found, "signal CloudEvent not found in Kafka messages")
+	// Check Kafka signals topic
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
+	require.Len(t, msgs, 1, "expected exactly 1 signal message")
+	ce := parseSignalCE(t, msgs[0])
+	assert.Equal(t, subject, ce.Subject)
+	assert.Equal(t, "1.0", ce.SpecVersion)
+	assert.Equal(t, "dimo.signals", ce.Type)
+	assert.Equal(t, testSourceAddress, ce.Source)
+	assert.Equal(t, subject, ce.Producer)
+	require.Len(t, ce.Data.Signals, 1)
+	assert.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
+	assert.InDelta(t, 107.0, ce.Data.Signals[0].ValueNumber, 0.01)
 
 	// Check ClickHouse — exactly 1 signal row for this subject
 	rows := querySignals(t, subject)

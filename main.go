@@ -38,7 +38,6 @@ import (
 	_ "github.com/DIMO-Network/dis/internal/processors/rawparquet"
 	_ "github.com/DIMO-Network/dis/internal/processors/signalconvert"
 	_ "github.com/DIMO-Network/dis/internal/processors/signalstoslice"
-	_ "github.com/DIMO-Network/dis/internal/processors/splitvalues"
 )
 
 func main() {

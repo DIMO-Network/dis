@@ -46,7 +46,7 @@ func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 	require.Len(t, result, 1, "should return exactly one batch")
 
 	batch := result[0]
-	require.Len(t, batch, 4, "should be 1 parquet + 3 originals")
+	require.Len(t, batch, 4, "should be 1 parquet + 3 CH rows")
 
 	// First message is the parquet file.
 	parquetMsg := batch[0]
@@ -72,11 +72,16 @@ func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, "3", parquetCount)
 
-	// Original messages should have dimo_cloudevent_index metadata.
+	// Remaining messages should be ClickHouse row messages.
 	for i := 1; i < len(batch); i++ {
-		idx, exists := batch[i].MetaGet(MetaCloudeventIndex)
-		assert.True(t, exists, "original message %d should have index", i)
-		assert.NotEmpty(t, idx, "index should not be empty for message %d", i)
+		content, exists := batch[i].MetaGet(MetaMessageContent)
+		assert.True(t, exists, "CH row message %d should have content metadata", i)
+		assert.Equal(t, MetaClickHouseCloudEvent, content, "CH row message %d should have correct content type", i)
+		val, err := batch[i].AsStructured()
+		assert.NoError(t, err, "CH row message %d should have structured content", i)
+		row, ok := val.([]any)
+		assert.True(t, ok, "CH row message %d should be a []any slice", i)
+		assert.True(t, len(row) > 0, "CH row message %d should not be empty", i)
 	}
 }
 
@@ -119,7 +124,7 @@ func TestProcessBatch_MixedValidInvalid(t *testing.T) {
 	require.Len(t, result, 1)
 
 	batch := result[0]
-	// 1 parquet + 2 valid originals (invalid one is skipped).
+	// 1 parquet + 2 CH rows (invalid one is skipped).
 	require.Len(t, batch, 3)
 
 	parquetCount, _ := batch[0].MetaGet(MetaParquetCount)
@@ -139,7 +144,7 @@ func TestProcessBatch_SingleMessage(t *testing.T) {
 	require.Len(t, result, 1)
 
 	batch := result[0]
-	require.Len(t, batch, 2, "1 parquet + 1 original")
+	require.Len(t, batch, 2, "1 parquet + 1 CH row")
 
 	s3Key, _ := batch[0].MetaGet(MetaS3UploadKey)
 	assert.Contains(t, s3Key, "cloudevent/valid/")

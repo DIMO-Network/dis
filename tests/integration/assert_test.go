@@ -5,6 +5,7 @@ package integration
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"testing"
@@ -18,9 +19,24 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
-// consumeKafka consumes all available messages from `topic` within `timeout`.
-// Returns the raw message bytes.
-func consumeKafka(t *testing.T, topic string, timeout time.Duration) [][]byte {
+// kafkaEndOffset returns the current end offset (high-water mark) for a single-partition topic.
+// Call this before sending messages, then pass the result to consumeKafka so the test
+// only sees messages produced after the snapshot.
+func kafkaEndOffset(t *testing.T, topic string) int64 {
+	t.Helper()
+	ctx := context.Background()
+	offsets, err := kafkaAdminClient.ListEndOffsets(ctx, topic)
+	require.NoError(t, err)
+
+	o, ok := offsets.Lookup(topic, 0)
+	require.True(t, ok, "topic %s partition 0 not found", topic)
+	require.NoError(t, o.Err)
+	return o.Offset
+}
+
+// consumeKafka consumes messages from `topic` starting at `fromOffset` within `timeout`.
+// Returns the raw message bytes. Logs full payload of each message.
+func consumeKafka(t *testing.T, topic string, fromOffset int64, timeout time.Duration) [][]byte {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -28,7 +44,7 @@ func consumeKafka(t *testing.T, topic string, timeout time.Duration) [][]byte {
 	cl, err := kgo.NewClient(
 		kgo.SeedBrokers(kafkaAddr),
 		kgo.ConsumeTopics(topic),
-		kgo.ConsumeResetOffset(kgo.NewOffset().AtStart()),
+		kgo.ConsumeResetOffset(kgo.NewOffset().At(fromOffset)),
 	)
 	require.NoError(t, err)
 	defer cl.Close()
@@ -39,11 +55,19 @@ func consumeKafka(t *testing.T, topic string, timeout time.Duration) [][]byte {
 		if errs := fetches.Errors(); len(errs) > 0 {
 			for _, e := range errs {
 				if e.Err == context.DeadlineExceeded {
+					t.Logf("Kafka topic %q: consumed %d messages (from offset %d)", topic, len(msgs), fromOffset)
 					return msgs
 				}
 			}
 		}
 		fetches.EachRecord(func(r *kgo.Record) {
+			// Pretty-print JSON payload
+			var pretty bytes.Buffer
+			if err := json.Indent(&pretty, r.Value, "  ", "  "); err == nil {
+				t.Logf("Kafka %s [partition=%d offset=%d]:\n  %s", topic, r.Partition, r.Offset, pretty.String())
+			} else {
+				t.Logf("Kafka %s [partition=%d offset=%d]: %s", topic, r.Partition, r.Offset, string(r.Value))
+			}
 			msgs = append(msgs, r.Value)
 		})
 	}
@@ -62,6 +86,7 @@ type SignalRow struct {
 }
 
 // querySignals queries the ClickHouse signal table for a given subject.
+// Logs full row data for each result.
 func querySignals(t *testing.T, subject string) []SignalRow {
 	t.Helper()
 	// Force merge to ensure data is visible
@@ -83,6 +108,12 @@ func querySignals(t *testing.T, subject string) []SignalRow {
 		result = append(result, r)
 	}
 	require.NoError(t, rows.Err())
+
+	t.Logf("ClickHouse dimo.signal: %d rows for subject=%s", len(result), subject)
+	for i, r := range result {
+		t.Logf("  signal[%d]: subject=%s name=%s valueNumber=%v valueString=%q timestamp=%v source=%s producer=%s cloudEventID=%s",
+			i, r.Subject, r.Name, r.ValueNumber, r.ValueString, r.Timestamp, r.Source, r.Producer, r.CloudEventID)
+	}
 	return result
 }
 
@@ -101,6 +132,7 @@ type EventRow struct {
 }
 
 // queryEvents queries the ClickHouse event table for a given subject.
+// Logs full row data for each result.
 func queryEvents(t *testing.T, subject string) []EventRow {
 	t.Helper()
 	_, err := clickhouseDB.Exec("OPTIMIZE TABLE dimo.event FINAL")
@@ -121,7 +153,75 @@ func queryEvents(t *testing.T, subject string) []EventRow {
 		result = append(result, r)
 	}
 	require.NoError(t, rows.Err())
+
+	t.Logf("ClickHouse dimo.event: %d rows for subject=%s", len(result), subject)
+	for i, r := range result {
+		t.Logf("  event[%d]: subject=%s name=%s type=%s timestamp=%v durationNs=%d metadata=%s source=%s producer=%s cloudEventID=%s dataVersion=%s",
+			i, r.Subject, r.Name, r.Type, r.Timestamp, r.DurationNs, r.Metadata, r.Source, r.Producer, r.CloudEventID, r.DataVersion)
+	}
 	return result
+}
+
+// CloudEventRow represents a row from the ClickHouse cloud_event table.
+type CloudEventRow struct {
+	Subject         string    `db:"subject"`
+	EventTime       time.Time `db:"event_time"`
+	EventType       string    `db:"event_type"`
+	ID              string    `db:"id"`
+	Source          string    `db:"source"`
+	Producer        string    `db:"producer"`
+	DataContentType string    `db:"data_content_type"`
+	DataVersion     string    `db:"data_version"`
+	IndexKey        string    `db:"index_key"`
+}
+
+// queryCloudEvents queries the ClickHouse cloud_event table for a given subject.
+// Logs full row data for each result.
+func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
+	t.Helper()
+	indexDB, err := sql.Open("clickhouse", clickhouseIndexDSN)
+	require.NoError(t, err)
+	defer indexDB.Close()
+
+	_, err = indexDB.Exec("OPTIMIZE TABLE cloud_event FINAL")
+	require.NoError(t, err)
+
+	rows, err := indexDB.Query(
+		"SELECT subject, event_time, event_type, id, source, producer, data_content_type, data_version, index_key FROM cloud_event WHERE subject = ? ORDER BY event_type",
+		subject,
+	)
+	require.NoError(t, err)
+	defer rows.Close()
+
+	var result []CloudEventRow
+	for rows.Next() {
+		var r CloudEventRow
+		err := rows.Scan(&r.Subject, &r.EventTime, &r.EventType, &r.ID, &r.Source, &r.Producer, &r.DataContentType, &r.DataVersion, &r.IndexKey)
+		require.NoError(t, err)
+		result = append(result, r)
+	}
+	require.NoError(t, rows.Err())
+
+	t.Logf("ClickHouse cloud_event: %d rows for subject=%s", len(result), subject)
+	for i, r := range result {
+		t.Logf("  cloud_event[%d]: subject=%s eventType=%s eventTime=%v id=%s source=%s producer=%s dataContentType=%s dataVersion=%s indexKey=%s",
+			i, r.Subject, r.EventType, r.EventTime, r.ID, r.Source, r.Producer, r.DataContentType, r.DataVersion, r.IndexKey)
+	}
+	return result
+}
+
+// clearMinIOObjects removes all objects in the bucket with the given prefix.
+// Call this before sending test data to ensure no stale parquet files from previous runs.
+func clearMinIOObjects(t *testing.T, prefix string) {
+	t.Helper()
+	ctx := context.Background()
+	objectsCh := minioClient.ListObjects(ctx, minioBucket, minio.ListObjectsOptions{Prefix: prefix, Recursive: true})
+	for obj := range objectsCh {
+		require.NoError(t, obj.Err)
+		err := minioClient.RemoveObject(ctx, minioBucket, obj.Key, minio.RemoveObjectOptions{})
+		require.NoError(t, err, "failed to remove MinIO object %s", obj.Key)
+	}
+	t.Logf("Cleared MinIO objects with prefix %q", prefix)
 }
 
 // listMinIOObjects lists all objects in the bucket with the given prefix.
@@ -137,6 +237,7 @@ func listMinIOObjects(t *testing.T, prefix string) []string {
 }
 
 // readParquetFromMinIO downloads a parquet file from MinIO and decodes it.
+// Logs full event data for each row.
 func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
 	t.Helper()
 	ctx := context.Background()
@@ -150,6 +251,13 @@ func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
 	reader := bytes.NewReader(data)
 	events, err := parquet.Decode(reader, int64(len(data)))
 	require.NoError(t, err)
+
+	t.Logf("Parquet %s: %d events", key, len(events))
+	for i, ev := range events {
+		dataJSON, _ := json.Marshal(ev.Data)
+		t.Logf("  parquet[%d]: id=%s subject=%s type=%s source=%s producer=%s specVersion=%s time=%v dataVersion=%s data=%s",
+			i, ev.ID, ev.Subject, ev.Type, ev.Source, ev.Producer, ev.SpecVersion, ev.Time, ev.DataVersion, string(dataJSON))
+	}
 	return events
 }
 

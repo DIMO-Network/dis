@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
+	"github.com/DIMO-Network/cloudevent/clickhouse"
 	pq "github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/google/uuid"
 	"github.com/redpanda-data/benthos/v4/public/service"
@@ -24,8 +25,10 @@ const (
 	MetaParquetPath  = "dimo_parquet_path"
 	MetaParquetSize  = "dimo_parquet_size"
 	MetaParquetCount = "dimo_parquet_count"
-	// MetaCloudeventIndex is the index_key (parquet_path#row_offset).
-	MetaCloudeventIndex = "dimo_cloudevent_index"
+	// MetaMessageContent is the content type key for downstream routing.
+	MetaMessageContent = "dimo_message_content"
+	// MetaClickHouseCloudEvent is the content value for ClickHouse CE rows.
+	MetaClickHouseCloudEvent = "dimo_clickhouse_cloudevent"
 )
 
 var configSpec = service.NewConfigSpec().
@@ -103,14 +106,14 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
 	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(good)))
 
-	for i, g := range good {
-		g.msg.MetaSetMut(MetaCloudeventIndex, indexKeyMap[i])
-	}
-
 	out := make(service.MessageBatch, 0, 1+len(good))
 	out = append(out, parquetMsg)
-	for _, g := range good {
-		out = append(out, g.msg)
+	for i, g := range good {
+		chMsg := service.NewMessage(nil)
+		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[i])
+		chMsg.SetStructured(row)
+		chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
+		out = append(out, chMsg)
 	}
 	return []service.MessageBatch{out}, nil
 }

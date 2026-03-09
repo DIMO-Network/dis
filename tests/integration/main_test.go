@@ -53,7 +53,9 @@ var (
 
 	// Infra ports — from docker-compose
 	kafkaAddr      = "localhost:19092"
-	clickhouseDSN  = "clickhouse://localhost:19000/dimo"
+	clickhouseDSN           = "clickhouse://localhost:19000/dimo"
+	clickhouseIndexDSN      = "clickhouse://localhost:19000/dimo_index"
+	clickhouseIndexDatabase = "dimo_index"
 	minioEndpoint  = "localhost:19090"
 	minioAccessKey = "minioadmin"
 	minioSecretKey = "minioadmin"
@@ -69,6 +71,10 @@ var (
 	// Ruptela source address — must match modules.RuptelaSource
 	ruptelaSourceAddress = "0xF26421509Efe92861a587482100c6d728aBf1CD0"
 	ruptelaTLSConfig     *tls.Config
+
+	// Tesla source address — must match modules.TeslaSource
+	teslaSourceAddress = "0xc4035Fecb1cc906130423EF05f9C20977F643722"
+	teslaTLSConfig     *tls.Config
 )
 
 func TestMain(m *testing.M) {

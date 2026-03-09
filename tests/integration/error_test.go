@@ -17,17 +17,16 @@ import (
 func TestMalformedJSON(t *testing.T) {
 	payload := []byte("{not json")
 
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
+
 	resp := postMTLS(t, payload)
 	drainAndClose(t, resp)
 
 	time.Sleep(2 * time.Second)
 
-	// Verify no messages leaked to Kafka for a bogus subject
-	msgs := consumeKafka(t, "topic.device.signals", 5*time.Second)
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		assert.NotEqual(t, "{not json", ce.Subject, "malformed JSON should not produce any signal")
-	}
+	// Verify no messages leaked to Kafka
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
+	assert.Empty(t, msgs, "malformed JSON should not produce any signal")
 }
 
 func TestUnsupportedCloudEventType(t *testing.T) {
@@ -51,21 +50,22 @@ func TestUnsupportedCloudEventType(t *testing.T) {
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
 
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
+
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
 
 	time.Sleep(2 * time.Second)
 
 	// Verify no signals appeared for this subject
-	msgs := consumeKafka(t, "topic.device.signals", 5*time.Second)
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		assert.NotEqual(t, subject, ce.Subject, "unsupported CloudEvent type should not produce signals")
-	}
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
+	assert.Empty(t, msgs, "unsupported CloudEvent type should not produce signals")
 }
 
 func TestEmptyPayload(t *testing.T) {
 	payload := []byte{}
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
 
 	resp := postMTLS(t, payload)
 	drainAndClose(t, resp)
@@ -73,11 +73,8 @@ func TestEmptyPayload(t *testing.T) {
 	time.Sleep(2 * time.Second)
 
 	// Verify no messages leaked to Kafka
-	msgs := consumeKafka(t, "topic.device.signals", 5*time.Second)
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		assert.NotEmpty(t, ce.Subject, "empty payload should not produce any signal with empty subject")
-	}
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
+	assert.Empty(t, msgs, "empty payload should not produce any signal")
 }
 
 func TestInvalidJWT(t *testing.T) {

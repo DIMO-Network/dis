@@ -9,7 +9,7 @@ replace github.com/DIMO-Network/model-garage => ../model-garage
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.7
-	github.com/DIMO-Network/cloudevent v0.2.2
+	github.com/DIMO-Network/cloudevent v0.2.5
 	github.com/DIMO-Network/model-garage v0.9.1
 	github.com/DIMO-Network/shared v1.0.7
 	github.com/MicahParks/keyfunc/v3 v3.6.1

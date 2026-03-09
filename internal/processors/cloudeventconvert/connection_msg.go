@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
-	"github.com/DIMO-Network/cloudevent/clickhouse"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
@@ -81,16 +80,6 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 		messages[i] = newMsg
 	}
 
-	// Add index and values to the first message without an error only, so we do not get duplicate s3 objects
-	for i := range messages {
-		if messages[i].GetError() == nil {
-			objectKey := clickhouse.CloudEventToObjectKey(&hdrs[i])
-			messages[i].MetaSetMut(cloudEventIndexKey, objectKey)
-			messages[i].MetaSetMut(CloudEventIndexValueKey, hdrs)
-			break
-		}
-	}
-
 	return messages, nil
 }
 
@@ -122,5 +111,5 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 }
 
 func isValidConnectionType(eventHdr *cloudevent.CloudEventHeader) bool {
-	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint || eventHdr.Type == cloudevent.TypeEvent
+	return eventHdr.Type == cloudevent.TypeStatus || eventHdr.Type == cloudevent.TypeFingerprint || eventHdr.Type == cloudevent.TypeEvents || eventHdr.Type == cloudevent.TypeSignals || eventHdr.Type == cloudevent.TypeRawStatus
 }

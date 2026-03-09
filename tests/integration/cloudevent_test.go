@@ -12,6 +12,8 @@ import (
 )
 
 func TestCloudEventParquet(t *testing.T) {
+	clearMinIOObjects(t, "cloudevent/valid/")
+
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:777"
 
 	payload := map[string]any{
@@ -37,6 +39,9 @@ func TestCloudEventParquet(t *testing.T) {
 
 	payloadBytes, err := json.Marshal(payload)
 	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
@@ -45,21 +50,15 @@ func TestCloudEventParquet(t *testing.T) {
 	time.Sleep(3 * time.Second)
 
 	// ── 1. Kafka signals topic — verify the signal CE was produced ──
-	msgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	var kafkaFound bool
-	for _, msg := range msgs {
-		ce := parseSignalCE(t, msg)
-		if ce.Subject == subject {
-			kafkaFound = true
-			assert.Equal(t, "dimo.status", ce.Type)
-			assert.Equal(t, testSourceAddress, ce.Source)
-			require.Len(t, ce.Data.Signals, 1, "expected exactly 1 signal in Kafka CE")
-			assert.Equal(t, "speed", ce.Data.Signals[0].Name)
-			assert.InDelta(t, 55.0, ce.Data.Signals[0].ValueNumber, 0.01)
-			break
-		}
-	}
-	assert.True(t, kafkaFound, "signal CloudEvent not found in Kafka signals topic")
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
+	require.Len(t, msgs, 1, "expected exactly 1 signal message")
+	ce := parseSignalCE(t, msgs[0])
+	assert.Equal(t, subject, ce.Subject)
+	assert.Equal(t, "dimo.signals", ce.Type)
+	assert.Equal(t, testSourceAddress, ce.Source)
+	require.Len(t, ce.Data.Signals, 1, "expected exactly 1 signal in Kafka CE")
+	assert.Equal(t, "speed", ce.Data.Signals[0].Name)
+	assert.InDelta(t, 55.0, ce.Data.Signals[0].ValueNumber, 0.01)
 
 	// ── 2. ClickHouse — verify signal row was written ──────────────
 	rows := querySignals(t, subject)

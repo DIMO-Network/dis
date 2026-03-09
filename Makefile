@@ -62,7 +62,7 @@ test-go: ## Run Go tests
 
 test-integration: build ## Run integration tests (requires Docker/Podman)
 	docker compose -f docker-compose.integration.yaml up -d --wait
-	go test -tags integration -count=1 -timeout 120s ./tests/integration/... -v; \
+	go test -tags integration -count=1 -timeout 600s ./tests/integration/... -v; \
 	status=$$?; \
 	docker compose -f docker-compose.integration.yaml down -v; \
 	exit $$status

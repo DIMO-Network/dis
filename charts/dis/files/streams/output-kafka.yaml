@@ -1,5 +1,5 @@
 input:
-  inproc: "dimo_converted"
+  inproc: "dimo_kafka"
 
 output:
   switch:
@@ -25,9 +25,8 @@ output:
             key: ${!metadata("dimo_cloudevent_subject")}
             partitioner: murmur2_hash
             batching:
-              count: 1000
-              byte_size: 200_000
-              period: 10ms
+              count: 10000
+              period: 1s
             target_version: 2.5.0
             timeout: 5s
             topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
@@ -65,9 +64,8 @@ output:
             key: ${!metadata("dimo_cloudevent_subject")}
             partitioner: murmur2_hash
             batching:
-              count: 1000
-              byte_size: 200_000
-              period: 10ms
+              count: 10000
+              period: 1s
             target_version: 2.5.0
             timeout: 5s
             topic: '${KAFKA_EVENTS_TOPIC:topic.device.events}'
