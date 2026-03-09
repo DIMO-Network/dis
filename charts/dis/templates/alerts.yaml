@@ -47,4 +47,13 @@ groups:
         annotations:
           summary: 'High failure rate for signals convert detected'
           description: 'The error rate for converting signals has exceeded 10% in the last 5 minutes. Service: dis'
+      - alert: HighEventConvertErrorRate
+        expr: sum(rate(dimo_error_count{namespace="{{ .Release.Namespace }}", container="dis", component="dimo_event_convert"}[5m])) BY (pod, job, namespace) / sum(rate(processor_sent{namespace="{{ .Release.Namespace }}", container="dis", label="convert_events"}[5m])) BY (pod, job, namespace) >= 0.1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'High failure rate for events convert detected'
+          description: 'The error rate for converting events has exceeded 10% in the last 5 minutes. Service: dis'
 {{- end -}}

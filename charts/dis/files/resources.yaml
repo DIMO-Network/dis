@@ -21,13 +21,6 @@ processor_resources:
       labels:
         source: ${! metadata("dimo_cloudevent_source") }
 
-  - label: "dimo_partial_index_count"
-    metric:
-      type: counter
-      name: dimo_partial_index_count
-      labels:
-        source: ${! metadata("dimo_cloudevent_source").or("unknown") }
-
   - label: "dimo_bad_request_sync_response"
     processors:
       - mapping: |

@@ -33,3 +33,4 @@ go.work
 # ignore file used for test.
 alerts-modified.yaml
 .claude
+openspec/

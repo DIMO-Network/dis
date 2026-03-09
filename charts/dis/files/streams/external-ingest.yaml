@@ -78,9 +78,6 @@ pipeline:
         - mapping: root = deleted()
     - label: "valid_cloudevent_switch"
       switch:
-        - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
-          processors:
-            - resource: "dimo_partial_index_count"
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
           processors:
             - label: validate_fingerprint
@@ -123,141 +120,191 @@ output:
         retry_until_success: true
         strict_mode: true
         cases:
-          # Output for valid signals
+          # Signals: ClickHouse flat rows + Kafka CloudEvent envelope
           - check: 'metadata("dimo_message_content").or("") == "dimo_valid_signal"'
             output:
-              label: "send_signal"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-signal-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 300000
-                max_retries: 1
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_subject")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 1000
-                  byte_size: 200_000 # 0.5MB
-                  period: 10ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
-                metadata:
-                  exclude_prefixes:
-                    - dimo_cloudevent_index_value
-                    - dimo_cloudevent_index
-                    - dimo_cloudevent_producer
-                    - dimo_cloudevent_source
-                    - dimo_cloudevent_subject
-                    - dimo_cloudevent_type
-                    - dimo_cloudevent_id
-                    - dimo_cloudevent_type
-                    - dimo_message_content
-                    - http_server_remote_ip
-                    - http_server_request_path
-                    - http_server_tls_cipher_suite
-                    - http_server_tls_subject
-          # Output for valid events
+              broker:
+                pattern: fan_out
+                outputs:
+                  - label: "clickhouse_signals"
+                    processors:
+                      - dimo_signal_to_slice: {}
+                    retry:
+                      output:
+                        sql_insert:
+                          driver: clickhouse
+                          dsn: "${CLICKHOUSE_DSN}"
+                          table: "${CLICKHOUSE_DATABASE:dimo}.signal"
+                          columns: []
+                          args_mapping: "root = this"
+                          batching:
+                            count: 500000
+                            period: 2s
+                      backoff:
+                        initial_interval: 1s
+                        max_interval: 30s
+                    buffer:
+                      file:
+                        directory: /var/lib/dis/buffer/signals
+                        max_size: 1073741824
+                  - label: "kafka_signals"
+                    kafka:
+                      ack_replicas: false
+                      addresses:
+                        - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                      backoff:
+                        initial_interval: 1s
+                        max_elapsed_time: 30s
+                        max_interval: 5s
+                      client_id: ${CONTAINER_NAME:localhost}-signal-output
+                      compression: '${KAFKA_COMPRESSION:none}'
+                      max_msg_bytes: 300000
+                      max_retries: 1
+                      max_in_flight: 20
+                      key: ${!metadata("dimo_cloudevent_subject")}
+                      partitioner: murmur2_hash
+                      batching:
+                        count: 1000
+                        byte_size: 200_000
+                        period: 10ms
+                      target_version: 2.5.0
+                      timeout: 5s
+                      topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
+                      metadata:
+                        exclude_prefixes:
+                          - dimo_cloudevent_index_value
+                          - dimo_cloudevent_index
+                          - dimo_cloudevent_producer
+                          - dimo_cloudevent_source
+                          - dimo_cloudevent_subject
+                          - dimo_cloudevent_type
+                          - dimo_cloudevent_id
+                          - dimo_message_content
+                          - http_server_remote_ip
+                          - http_server_request_path
+                          - http_server_tls_cipher_suite
+                          - http_server_tls_subject
+
+          # Events: ClickHouse flat rows + Kafka CloudEvent envelope
           - check: 'metadata("dimo_message_content").or("") == "dimo_valid_event"'
             output:
-              label: "send_event"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-event-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 300000
-                max_retries: 1
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_subject")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 1000
-                  byte_size: 200_000 # 0.5MB
-                  period: 10ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_EVENTS_TOPIC:topic.device.events}'
-                metadata:
-                  exclude_prefixes:
-                    - dimo_cloudevent_index_value
-                    - dimo_cloudevent_index
-                    - dimo_cloudevent_producer
-                    - dimo_cloudevent_source
-                    - dimo_cloudevent_subject
-                    - dimo_cloudevent_type
-                    - dimo_cloudevent_id
-                    - dimo_cloudevent_type
-                    - dimo_message_content
-                    - http_server_remote_ip
-                    - http_server_request_path
-                    - http_server_tls_cipher_suite
-                    - http_server_tls_subject
-          # Output for valid cloudevents
+              broker:
+                pattern: fan_out
+                outputs:
+                  - label: "clickhouse_events"
+                    processors:
+                      - dimo_event_to_slice: {}
+                    retry:
+                      output:
+                        sql_insert:
+                          driver: clickhouse
+                          dsn: "${CLICKHOUSE_DSN}"
+                          table: "${CLICKHOUSE_DATABASE:dimo}.event"
+                          columns:
+                            - subject
+                            - source
+                            - producer
+                            - cloud_event_id
+                            - name
+                            - timestamp
+                            - duration_ns
+                            - metadata
+                            - tags
+                            - type
+                            - data_version
+                          args_mapping: "root = this"
+                          batching:
+                            count: 500000
+                            period: 2s
+                      backoff:
+                        initial_interval: 1s
+                        max_interval: 30s
+                    buffer:
+                      file:
+                        directory: /var/lib/dis/buffer/events
+                        max_size: 1073741824
+                  - label: "kafka_events"
+                    kafka:
+                      ack_replicas: false
+                      addresses:
+                        - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                      backoff:
+                        initial_interval: 1s
+                        max_elapsed_time: 30s
+                        max_interval: 5s
+                      client_id: ${CONTAINER_NAME:localhost}-event-output
+                      compression: '${KAFKA_COMPRESSION:none}'
+                      max_msg_bytes: 300000
+                      max_retries: 1
+                      max_in_flight: 20
+                      key: ${!metadata("dimo_cloudevent_subject")}
+                      partitioner: murmur2_hash
+                      batching:
+                        count: 1000
+                        byte_size: 200_000
+                        period: 10ms
+                      target_version: 2.5.0
+                      timeout: 5s
+                      topic: '${KAFKA_EVENTS_TOPIC:topic.device.events}'
+                      metadata:
+                        exclude_prefixes:
+                          - dimo_cloudevent_index_value
+                          - dimo_cloudevent_index
+                          - dimo_cloudevent_producer
+                          - dimo_cloudevent_source
+                          - dimo_cloudevent_subject
+                          - dimo_cloudevent_type
+                          - dimo_cloudevent_id
+                          - dimo_message_content
+                          - http_server_remote_ip
+                          - http_server_request_path
+                          - http_server_tls_cipher_suite
+                          - http_server_tls_subject
+
+          # Valid CloudEvents: S3 parquet + Kafka passthrough
           - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
             output:
-              label: "send_valid_cloudevent"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-valid-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 52428800
-                max_retries: 2
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_subject")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 0
-                  byte_size: 1_000_000 # 1MB
-                  period: 50ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_VALID_CE_TOPIC:topic.device.validcloudevents}'
+              broker:
+                pattern: fan_out
+                outputs:
+                  - label: "s3_raw_parquet"
+                    processors:
+                      - dimo_raw_parquet:
+                          prefix: "cloudevent/valid/"
+                    aws_s3:
+                      bucket: "${PARQUET_BUCKET}"
+                      region: "${S3_AWS_REGION}"
+                      path: ${!metadata("dimo_s3_upload_key")}
+                      credentials:
+                        id: "${S3_AWS_ACCESS_KEY_ID}"
+                        secret: "${S3_AWS_SECRET_ACCESS_KEY}"
+                      batching:
+                        count: 10000
+                        period: 5s
+                  - label: "kafka_valid_cloudevents"
+                    kafka:
+                      ack_replicas: false
+                      addresses:
+                        - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
+                      backoff:
+                        initial_interval: 1s
+                        max_elapsed_time: 30s
+                        max_interval: 5s
+                      client_id: ${CONTAINER_NAME:localhost}-valid-output
+                      compression: '${KAFKA_COMPRESSION:none}'
+                      max_msg_bytes: 52428800
+                      max_retries: 2
+                      max_in_flight: 20
+                      key: ${!metadata("dimo_cloudevent_subject")}
+                      partitioner: murmur2_hash
+                      batching:
+                        count: 0
+                        byte_size: 1_000_000
+                        period: 50ms
+                      target_version: 2.5.0
+                      timeout: 5s
+                      topic: '${KAFKA_VALID_CE_TOPIC:topic.device.validcloudevents}'
 
-          # Output for partial cloudevents
-          - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-            output:
-              label: "send_partial_cloudevent"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-partial-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 52428800
-                max_retries: 2
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_source")}_${!metadata("dimo_cloudevent_id")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 0
-                  byte_size: 1_000_000 # 1MB
-                  period: 50ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_PARTIAL_CE_TOPIC:topic.device.partialcloudevents}'
           - check: ''
             output:
               label: "drop_message"

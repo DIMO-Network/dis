@@ -95,11 +95,8 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 }
 
 func setConnectionContentType(eventHdr *cloudevent.CloudEventHeader, msg *service.Message, logger *service.Logger) {
-	contentType := cloudEventValidContentType
-	if !isValidConnectionHeader(eventHdr, logger) {
-		contentType = cloudEventPartialContentType
-	}
-	msg.MetaSetMut(processors.MessageContentKey, contentType)
+	isValidConnectionHeader(eventHdr, logger)
+	msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
 }
 
 func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *service.Logger) bool {

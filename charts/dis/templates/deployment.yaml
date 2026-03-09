@@ -86,6 +86,8 @@ spec:
             - name: external-http-server-tls
               mountPath: /etc/ssl/certs/dis
               readOnly: true
+            - name: buffer-storage
+              mountPath: /var/lib/dis/buffer
 
       volumes:
         {{- range $path, $_ := $files }}
@@ -123,6 +125,9 @@ spec:
                   items:
                     - key: root_ca.crt
                       path: root_ca.crt
+        - name: buffer-storage
+          emptyDir:
+            sizeLimit: 2Gi
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

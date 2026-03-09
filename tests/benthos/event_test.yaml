@@ -28,15 +28,19 @@ tests:
         - json_equals: >
             [
               {
-                "name":"tripStart",
-                "timestamp":"2024-04-18T17:20:46.436008782Z",
-                "metadata":"{\"ignition\":1,\"speed\":10}",
+                "id":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
+                "type":"dimo.event",
+                "dataVersion":"",
                 "source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359",
                 "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-                "durationNs":0,
                 "subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "tags":["behavior.harshCornering"]
+                "data":{
+                  "name":"tripStart",
+                  "timestamp":"2024-04-18T17:20:46.436008782Z",
+                  "metadata":"{\"ignition\":1,\"speed\":10}",
+                  "durationNs":0,
+                  "tags":["behavior.harshCornering"]
+                }
               }
             ]
 
@@ -97,26 +101,34 @@ tests:
         - json_equals: >
             [
               {
-                "name":"tripStart",
-                "timestamp":"2024-04-18T17:20:46.436008782Z",
-                "metadata":"{\"ignition\":1,\"speed\":10}",
-                "durationNs":0,
+                "id":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
+                "type":"dimo.event",
+                "dataVersion":"",
                 "source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359",
                 "subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
                 "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-                "tags":null
+                "data":{
+                  "name":"tripStart",
+                  "timestamp":"2024-04-18T17:20:46.436008782Z",
+                  "metadata":"{\"ignition\":1,\"speed\":10}",
+                  "durationNs":0,
+                  "tags":null
+                }
               },
               {
-                "name":"tripEnd",
-                "timestamp":"2024-04-18T17:35:46.436008782Z",
-                "metadata":"",
-                "durationNs":15000000000,
+                "id":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
+                "type":"dimo.event",
+                "dataVersion":"",
                 "source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359",
                 "subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
                 "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "cloudEventId":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-                "tags":null
+                "data":{
+                  "name":"tripEnd",
+                  "timestamp":"2024-04-18T17:35:46.436008782Z",
+                  "metadata":"",
+                  "durationNs":15000000000,
+                  "tags":null
+                }
               }
             ]
  

@@ -29,8 +29,7 @@ const (
 	// CloudEventIndexValueKey is the key for the index value for inserting a cloud event's metadata.
 	CloudEventIndexValueKey = "dimo_cloudevent_index_value"
 
-	cloudEventValidContentType   = "dimo_valid_cloudevent"
-	cloudEventPartialContentType = "dimo_partial_cloudevent"
+	cloudEventValidContentType = "dimo_valid_cloudevent"
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
