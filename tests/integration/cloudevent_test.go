@@ -42,28 +42,55 @@ func TestCloudEventParquet(t *testing.T) {
 	drainAndClose(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	// Wait for parquet batch flush (5s period + buffer)
-	time.Sleep(8 * time.Second)
+	time.Sleep(3 * time.Second)
 
-	// Check MinIO for parquet files
+	// ── 1. Kafka signals topic — verify the signal CE was produced ──
+	msgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
+	var kafkaFound bool
+	for _, msg := range msgs {
+		ce := parseSignalCE(t, msg)
+		if ce.Subject == subject {
+			kafkaFound = true
+			assert.Equal(t, "dimo.status", ce.Type)
+			assert.Equal(t, testSourceAddress, ce.Source)
+			require.Len(t, ce.Data.Signals, 1, "expected exactly 1 signal in Kafka CE")
+			assert.Equal(t, "speed", ce.Data.Signals[0].Name)
+			assert.InDelta(t, 55.0, ce.Data.Signals[0].ValueNumber, 0.01)
+			break
+		}
+	}
+	assert.True(t, kafkaFound, "signal CloudEvent not found in Kafka signals topic")
+
+	// ── 2. ClickHouse — verify signal row was written ──────────────
+	rows := querySignals(t, subject)
+	require.Len(t, rows, 1, "expected exactly 1 signal row in ClickHouse")
+	assert.Equal(t, "speed", rows[0].Name)
+	assert.InDelta(t, 55.0, rows[0].ValueNumber, 0.01)
+	assert.Equal(t, testSourceAddress, rows[0].Source)
+
+	// ── 3. MinIO parquet — verify CloudEvent was archived ──────────
+	// Wait for parquet batch flush (5s period + buffer)
+	time.Sleep(6 * time.Second)
+
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
 
-	// Decode parquet files and look for our event
-	var found bool
+	var pqFound bool
 	for _, key := range keys {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {
 			if ev.Subject == subject {
-				found = true
+				pqFound = true
 				assert.Equal(t, testSourceAddress, ev.Source)
 				assert.Equal(t, "dimo.status", ev.Type)
+				assert.Equal(t, "1.0", ev.SpecVersion)
+				assert.Equal(t, subject, ev.Producer)
 				break
 			}
 		}
-		if found {
+		if pqFound {
 			break
 		}
 	}
-	assert.True(t, found, "expected CloudEvent not found in parquet file")
+	assert.True(t, pqFound, "expected CloudEvent not found in parquet file")
 }

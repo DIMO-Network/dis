@@ -10,6 +10,7 @@ import (
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/DIMO-Network/clickhouse-infra/pkg/migrate"
+	indexmigrations "github.com/DIMO-Network/cloudevent/clickhouse/migrations"
 	sigmigrations "github.com/DIMO-Network/model-garage/pkg/migrations"
 	"github.com/redpanda-data/benthos/v4/public/service"
 
@@ -37,6 +38,7 @@ import (
 	_ "github.com/DIMO-Network/dis/internal/processors/rawparquet"
 	_ "github.com/DIMO-Network/dis/internal/processors/signalconvert"
 	_ "github.com/DIMO-Network/dis/internal/processors/signalstoslice"
+	_ "github.com/DIMO-Network/dis/internal/processors/splitvalues"
 )
 
 func main() {
@@ -44,12 +46,15 @@ func main() {
 	port := envOrDefault("CLICKHOUSE_PORT", "9440")
 	user := envOrDefault("CLICKHOUSE_USER", "default")
 	pass := envOrDefault("CLICKHOUSE_PASSWORD", "")
-	dimoDB := envOrDefault("CLICKHOUSE_DATABASE", "dimo")
+	dimoDB := envOrDefault("CLICKHOUSE_DIMO_DATABASE", "dimo")
+	indexDB := envOrDefault("CLICKHOUSE_INDEX_DATABASE", "dimo_index")
 
 	secure := envOrDefault("CLICKHOUSE_SECURE", "true")
 	dimoDSN := fmt.Sprintf("clickhouse://%s:%s/%s?username=%s&password=%s&secure=%s&dial_timeout=5s", host, port, dimoDB, user, pass, secure)
+	indexDSN := fmt.Sprintf("clickhouse://%s:%s/%s?username=%s&password=%s&secure=%s&dial_timeout=5s", host, port, indexDB, user, pass, secure)
 
 	runMigration("signal", dimoDSN, sigmigrations.BaseFS)
+	runMigration("file_index", indexDSN, indexmigrations.BaseFS)
 
 	service.RunCLI(context.Background())
 }

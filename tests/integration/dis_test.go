@@ -63,24 +63,31 @@ processor_resources:
 		return err
 	}
 
-	srcPath, err := filepath.Abs("../../charts/dis/files/streams/external-ingest.yaml")
-	if err != nil {
-		return err
+	streamFiles := []string{
+		"external-ingest.yaml",
+		"output-parquet.yaml",
+		"output-clickhouse.yaml",
+		"output-kafka.yaml",
 	}
-	data, err := os.ReadFile(srcPath)
-	if err != nil {
-		return fmt.Errorf("read pipeline config: %w (path: %s)", err, srcPath)
-	}
-	if err := os.WriteFile(filepath.Join(streamsDir, "external-ingest.yaml"), data, 0o644); err != nil {
-		return err
+	for _, name := range streamFiles {
+		srcPath, err := filepath.Abs("../../charts/dis/files/streams/" + name)
+		if err != nil {
+			return err
+		}
+		data, err := os.ReadFile(srcPath)
+		if err != nil {
+			return fmt.Errorf("read pipeline config %s: %w (path: %s)", name, err, srcPath)
+		}
+		if err := os.WriteFile(filepath.Join(streamsDir, name), data, 0o644); err != nil {
+			return err
+		}
 	}
 
 	// Create buffer directories
-	if err := os.MkdirAll(filepath.Join(tmpDir, "buffer", "signals"), 0o755); err != nil {
-		return err
-	}
-	if err := os.MkdirAll(filepath.Join(tmpDir, "buffer", "events"), 0o755); err != nil {
-		return err
+	for _, dir := range []string{"signals", "events", "parquet", "kafka"} {
+		if err := os.MkdirAll(filepath.Join(tmpDir, "buffer", dir), 0o755); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -123,6 +130,8 @@ func startDIS() error {
 		"CLICKHOUSE_USER=default",
 		"CLICKHOUSE_PASSWORD=",
 		"CLICKHOUSE_DATABASE=dimo",
+		"CLICKHOUSE_DIMO_DATABASE=dimo",
+		"CLICKHOUSE_INDEX_DATABASE=dimo",
 		"CLICKHOUSE_SECURE=false",
 
 		// S3 / MinIO

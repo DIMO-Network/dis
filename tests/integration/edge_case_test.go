@@ -112,6 +112,12 @@ func TestDuplicateSignalPruning(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "signal CloudEvent not found in Kafka messages")
+
+	// ClickHouse should also have exactly 1 row (deduplicated)
+	rows := querySignals(t, subject)
+	require.Len(t, rows, 1, "ClickHouse should have exactly 1 signal row after deduplication")
+	assert.Equal(t, "powertrainCombustionEngineECT", rows[0].Name)
+	assert.InDelta(t, 107.0, rows[0].ValueNumber, 0.01)
 }
 
 func TestEmptySignalsArray(t *testing.T) {
@@ -228,4 +234,21 @@ func TestSignalsAndEventsInSamePayload(t *testing.T) {
 		t.Skip("skipping event check: not delivered due to pipeline congestion (known issue)")
 	}
 	assert.True(t, eventFound, "event CloudEvent not found in Kafka events topic")
+
+	// ── ClickHouse signal table — exactly 1 signal row ──────────
+	signalRows := querySignals(t, subject)
+	require.Len(t, signalRows, 1, "expected exactly 1 signal row in ClickHouse for mixed payload")
+	assert.Equal(t, "powertrainCombustionEngineECT", signalRows[0].Name)
+	assert.InDelta(t, 80.0, signalRows[0].ValueNumber, 0.01)
+	assert.Equal(t, testSourceAddress, signalRows[0].Source)
+
+	// ── ClickHouse event table — exactly 1 event row ────────────
+	eventRows := queryEvents(t, subject)
+	if resp.StatusCode == 408 && len(eventRows) == 0 {
+		t.Log("skipping ClickHouse event check: event not delivered due to pipeline congestion")
+	} else {
+		require.Len(t, eventRows, 1, "expected exactly 1 event row in ClickHouse for mixed payload")
+		assert.Equal(t, "behavior.harshBraking", eventRows[0].Name)
+		assert.Equal(t, testSourceAddress, eventRows[0].Source)
+	}
 }

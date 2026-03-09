@@ -77,4 +77,32 @@ func TestDefaultModuleEvents(t *testing.T) {
 		t.Skip("skipping: event not delivered due to pipeline congestion (known issue)")
 	}
 	assert.True(t, found, "event CloudEvent not found in Kafka messages")
+
+	// Check ClickHouse event table — should have exactly 2 event rows
+	eventRows := queryEvents(t, subject)
+	if resp.StatusCode == 408 && len(eventRows) == 0 {
+		t.Skip("skipping ClickHouse check: event not delivered due to pipeline congestion")
+	}
+	require.Len(t, eventRows, 2, "expected exactly 2 event rows in ClickHouse for 2 input events")
+
+	// Verify event names (queryEvents orders by name)
+	eventNames := make([]string, len(eventRows))
+	for i, r := range eventRows {
+		eventNames[i] = r.Name
+		assert.Equal(t, testSourceAddress, r.Source, "source mismatch for event %s", r.Name)
+		assert.Equal(t, subject, r.Producer, "producer mismatch for event %s", r.Name)
+		assert.NotEmpty(t, r.CloudEventID, "cloud_event_id should be set for event %s", r.Name)
+	}
+	assert.Contains(t, eventNames, "behavior.harshBraking")
+	assert.Contains(t, eventNames, "behavior.harshAcceleration")
+
+	// Verify metadata on harshBraking event
+	for _, r := range eventRows {
+		if r.Name == "behavior.harshBraking" {
+			assert.NotEmpty(t, r.Metadata, "harshBraking should have metadata")
+		}
+		if r.Name == "behavior.harshAcceleration" {
+			assert.Equal(t, uint64(15000000000), r.DurationNs, "harshAcceleration should have 15s duration")
+		}
+	}
 }

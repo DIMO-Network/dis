@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DIMO-Network/model-garage/pkg/vss"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,59 +57,90 @@ func TestRuptelaFullPipeline(t *testing.T) {
 
 	// ── 1. Kafka signals topic ──────────────────────────────────
 	signalMsgs := consumeKafka(t, "topic.device.signals", 10*time.Second)
-	var signalFound bool
+	var signalCE *vss.SignalCloudEvent
 	for _, msg := range signalMsgs {
 		ce := parseSignalCE(t, msg)
 		if ce.Subject == subject {
-			signalFound = true
-			assert.Equal(t, "1.0", ce.SpecVersion)
-			assert.Equal(t, "dimo.status", ce.Type)
-			assert.Equal(t, ruptelaSourceAddress, ce.Source)
-			assert.NotEmpty(t, ce.Data.Signals, "should have decoded signals")
+			signalCE = &ce
 			break
 		}
 	}
-	assert.True(t, signalFound, "signal CloudEvent not found in Kafka signals topic")
+	require.NotNil(t, signalCE, "signal CloudEvent not found in Kafka signals topic")
+	assert.Equal(t, "1.0", signalCE.SpecVersion)
+	assert.Equal(t, "dimo.status", signalCE.Type)
+	assert.Equal(t, ruptelaSourceAddress, signalCE.Source)
+	// Ruptela OIDs 96 (ECT) and 97 (exterior temp) should produce 2 signals
+	// OIDs 104-106 (VIN) may produce additional signal(s)
+	require.GreaterOrEqual(t, len(signalCE.Data.Signals), 2, "expected at least 2 signals from Ruptela OIDs 96+97")
+
+	// Verify specific signal values
+	signalsByName := make(map[string]float64)
+	for _, s := range signalCE.Data.Signals {
+		signalsByName[s.Name] = s.ValueNumber
+	}
+	assert.Contains(t, signalsByName, "powertrainCombustionEngineECT")
+	assert.Contains(t, signalsByName, "exteriorAirTemperature")
+	assert.InDelta(t, 67.0, signalsByName["powertrainCombustionEngineECT"], 0.01, "OID 96: 0x6B=107, 107-40=67°C")
+	assert.InDelta(t, 20.0, signalsByName["exteriorAirTemperature"], 0.01, "OID 97: 0x3C=60, 60-40=20°C")
 
 	// ── 2. Kafka events topic ───────────────────────────────────
 	eventMsgs := consumeKafka(t, "topic.device.events", 10*time.Second)
-	var eventFound bool
+	var eventCE *vss.EventCloudEvent
 	for _, msg := range eventMsgs {
 		ce := parseEventCE(t, msg)
 		if ce.Subject == subject {
-			eventFound = true
-			assert.Equal(t, "1.0", ce.SpecVersion)
-			assert.Equal(t, "dimo.event", ce.Type)
-			assert.Equal(t, ruptelaSourceAddress, ce.Source)
-			assert.NotEmpty(t, ce.Data.Events, "should have decoded events")
+			eventCE = &ce
 			break
 		}
 	}
-	assert.True(t, eventFound, "event CloudEvent not found in Kafka events topic")
+	require.NotNil(t, eventCE, "event CloudEvent not found in Kafka events topic")
+	assert.Equal(t, "1.0", eventCE.SpecVersion)
+	assert.Equal(t, "dimo.event", eventCE.Type)
+	assert.Equal(t, ruptelaSourceAddress, eventCE.Source)
+	// OIDs 135 (braking), 136 (acceleration), 143 (cornering) should produce 3 events
+	require.Len(t, eventCE.Data.Events, 3, "expected exactly 3 events from Ruptela OIDs 135+136+143")
+
+	kafkaEventNames := make(map[string]bool)
+	for _, e := range eventCE.Data.Events {
+		kafkaEventNames[e.Name] = true
+	}
+	assert.True(t, kafkaEventNames["behavior.harshBraking"], "missing harshBraking event")
+	assert.True(t, kafkaEventNames["behavior.harshAcceleration"], "missing harshAcceleration event")
+	assert.True(t, kafkaEventNames["behavior.harshCornering"], "missing harshCornering event")
 
 	// ── 3. ClickHouse signal table ──────────────────────────────
 	signalRows := querySignals(t, subject)
-	require.NotEmpty(t, signalRows, "no signal rows in ClickHouse")
-	var chSignalFound bool
+	// Should match the number of signals in the Kafka CE
+	require.Len(t, signalRows, len(signalCE.Data.Signals),
+		"ClickHouse signal row count should match Kafka signal count")
+
+	chSignalsByName := make(map[string]SignalRow)
 	for _, r := range signalRows {
-		if r.Name == "powertrainCombustionEngineECT" {
-			chSignalFound = true
-			assert.Equal(t, ruptelaSourceAddress, r.Source)
-		}
+		chSignalsByName[r.Name] = r
+		assert.Equal(t, ruptelaSourceAddress, r.Source, "source mismatch for signal %s", r.Name)
+		assert.NotEmpty(t, r.CloudEventID, "cloud_event_id should be set for signal %s", r.Name)
 	}
-	assert.True(t, chSignalFound, "expected signal not found in ClickHouse")
+	require.Contains(t, chSignalsByName, "powertrainCombustionEngineECT")
+	assert.InDelta(t, 67.0, chSignalsByName["powertrainCombustionEngineECT"].ValueNumber, 0.01)
+	require.Contains(t, chSignalsByName, "exteriorAirTemperature")
+	assert.InDelta(t, 20.0, chSignalsByName["exteriorAirTemperature"].ValueNumber, 0.01)
 
 	// ── 4. ClickHouse event table ───────────────────────────────
 	eventRows := queryEvents(t, subject)
-	require.NotEmpty(t, eventRows, "no event rows in ClickHouse")
-	var chEventFound bool
+	// Should match the number of events in the Kafka CE
+	require.Len(t, eventRows, len(eventCE.Data.Events),
+		"ClickHouse event row count should match Kafka event count")
+
+	chEventNames := make(map[string]bool)
 	for _, r := range eventRows {
-		if r.Name == "behavior.harshBraking" || r.Name == "behavior.harshAcceleration" || r.Name == "behavior.harshCornering" {
-			chEventFound = true
-			assert.Equal(t, ruptelaSourceAddress, r.Source)
-		}
+		chEventNames[r.Name] = true
+		assert.Equal(t, ruptelaSourceAddress, r.Source, "source mismatch for event %s", r.Name)
+		assert.NotEmpty(t, r.CloudEventID, "cloud_event_id should be set for event %s", r.Name)
+		assert.Equal(t, "dimo.event", r.Type, "type mismatch for event %s", r.Name)
 	}
-	assert.True(t, chEventFound, "expected event not found in ClickHouse event table")
+	assert.True(t, chEventNames["behavior.harshBraking"], "missing harshBraking in ClickHouse")
+	assert.True(t, chEventNames["behavior.harshAcceleration"], "missing harshAcceleration in ClickHouse")
+	assert.True(t, chEventNames["behavior.harshCornering"], "missing harshCornering in ClickHouse")
 
 	// ── 5. S3 (MinIO) parquet file ──────────────────────────────
 	// Wait for parquet batch flush (5s period + buffer)
@@ -116,19 +148,20 @@ func TestRuptelaFullPipeline(t *testing.T) {
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
 
-	var pqFound bool
+	var pqFound int
 	for _, key := range keys {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {
 			if ev.Subject == subject {
-				pqFound = true
+				pqFound++
 				assert.Equal(t, ruptelaSourceAddress, ev.Source)
-				break
+				assert.Equal(t, "1.0", ev.SpecVersion)
+				// Should be either dimo.status or dimo.event
+				assert.Contains(t, []string{"dimo.status", "dimo.event"}, ev.Type,
+					"unexpected CE type in parquet: %s", ev.Type)
 			}
 		}
-		if pqFound {
-			break
-		}
 	}
-	assert.True(t, pqFound, "CloudEvent not found in S3 parquet files")
+	// Ruptela with signals+events produces 2 CloudEvents (dimo.status + dimo.event)
+	assert.Equal(t, 2, pqFound, "expected 2 CloudEvents in parquet (dimo.status + dimo.event)")
 }

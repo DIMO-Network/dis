@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	_ "github.com/ClickHouse/clickhouse-go/v2"
+	indexmigrations "github.com/DIMO-Network/cloudevent/clickhouse/migrations"
 	"github.com/DIMO-Network/model-garage/pkg/migrations"
+	"github.com/pressly/goose/v3"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/twmb/franz-go/pkg/kadm"
@@ -34,6 +36,15 @@ func setupClickHouse(ctx context.Context) error {
 	if err := migrations.RunGoose(ctx, []string{"up"}, clickhouseDB); err != nil {
 		return fmt.Errorf("run migrations: %w", err)
 	}
+	// Run cloud_event index migrations.
+	// In prod these run in a separate database (CLICKHOUSE_INDEX_DATABASE), but in tests
+	// we use the same "dimo" database. Use a separate goose table to avoid version collisions
+	// with the signal migrations above.
+	goose.SetTableName("goose_db_version_cloud_event")
+	if err := indexmigrations.RunGoose(ctx, []string{"up"}, clickhouseDB); err != nil {
+		return fmt.Errorf("run cloud_event migrations: %w", err)
+	}
+	goose.SetTableName("goose_db_version")
 	return nil
 }
 
