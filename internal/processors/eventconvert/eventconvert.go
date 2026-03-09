@@ -60,23 +60,25 @@ func (e *eventsProcessor) processMsg(ctx context.Context, msg *service.Message) 
 		return retBatch
 	}
 
+	header := cloudevent.CloudEventHeader{
+		SpecVersion: rawEvent.SpecVersion,
+		Subject:     rawEvent.Subject,
+		Source:      rawEvent.Source,
+		Producer:    rawEvent.Producer,
+		ID:          rawEvent.ID,
+		Time:        rawEvent.Time,
+		Type:        rawEvent.Type,
+		DataVersion: rawEvent.DataVersion,
+	}
+	eventCE := vss.PackEvents(header, events)
 	msgCpy := msg.Copy()
-	setMetaData(events, rawEvent)
-	msgCpy.SetStructured(events)
+	msgCpy.SetStructured(eventCE)
 	msgCpy.MetaSetMut(processors.MessageContentKey, eventValidContentType)
 	retBatch = append(retBatch, msgCpy)
 
 	return retBatch
 }
 
-func setMetaData(events []vss.Event, rawEvent *cloudevent.RawEvent) {
-	for i := range events {
-		events[i].Subject = rawEvent.Subject
-		events[i].Source = rawEvent.Source
-		events[i].Producer = rawEvent.Producer
-		events[i].CloudEventID = rawEvent.ID
-	}
-}
 
 func (e *eventsProcessor) isVehicleEventMessage(rawEvent *cloudevent.RawEvent) bool {
 	return rawEvent.Type == cloudevent.TypeEvent

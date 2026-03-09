@@ -83,13 +83,20 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 		retBatch = append(retBatch, errMsg)
 	}
 
-	for i := range signals {
-		msgCpy := msg.Copy()
-		setMetaData(&signals[i], rawEvent)
-		msgCpy.SetStructured(signals[i])
-		msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
-		retBatch = append(retBatch, msgCpy)
+	header := cloudevent.CloudEventHeader{
+		SpecVersion: rawEvent.SpecVersion,
+		Subject:     rawEvent.Subject,
+		Source:      rawEvent.Source,
+		Producer:    rawEvent.Producer,
+		ID:          rawEvent.ID,
+		Time:        rawEvent.Time,
+		Type:        rawEvent.Type,
 	}
+	signalCE := vss.PackSignals(header, signals)
+	msgCpy := msg.Copy()
+	msgCpy.SetStructured(signalCE)
+	msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
+	retBatch = append(retBatch, msgCpy)
 	return retBatch
 }
 
@@ -131,13 +138,6 @@ func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) 
 
 func signalEqual(a, b vss.Signal) bool {
 	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.Subject == b.Subject
-}
-
-func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent) {
-	signal.Source = rawEvent.Source
-	signal.Producer = rawEvent.Producer
-	signal.CloudEventID = rawEvent.ID
-	signal.Subject = rawEvent.Subject
 }
 
 func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {

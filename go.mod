@@ -4,6 +4,8 @@ go 1.25.0
 
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26
 
+replace github.com/DIMO-Network/model-garage => ../model-garage
+
 require (
 	github.com/DIMO-Network/cloudevent v0.2.2
 	github.com/DIMO-Network/model-garage v0.9.1
@@ -11,6 +13,7 @@ require (
 	github.com/MicahParks/keyfunc/v3 v3.6.1
 	github.com/ethereum/go-ethereum v1.17.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/google/uuid v1.6.0
 	github.com/redpanda-data/benthos/v4 v4.55.0
 	github.com/redpanda-data/connect/v4 v4.63.0
 	github.com/segmentio/ksuid v1.0.4
@@ -151,7 +154,6 @@ require (
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/s2a-go v0.1.9 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.6 // indirect
 	github.com/googleapis/gax-go/v2 v2.14.2 // indirect
 	github.com/googleapis/go-sql-spanner v1.13.2 // indirect
@@ -213,6 +215,9 @@ require (
 	github.com/nsf/jsondiff v0.0.0-20210926074059-1e845ec5d249 // indirect
 	github.com/opensearch-project/opensearch-go/v3 v3.1.0 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/parquet-go/bitpack v1.0.0 // indirect
+	github.com/parquet-go/jsonlite v1.4.0 // indirect
+	github.com/parquet-go/parquet-go v0.28.0 // indirect
 	github.com/paulmach/orb v0.12.0 // indirect
 	github.com/peterh/liner v1.1.1-0.20190123174540-a2c9a5303de7 // indirect
 	github.com/pgvector/pgvector-go v0.2.2 // indirect
@@ -261,6 +266,7 @@ require (
 	github.com/twmb/franz-go/pkg/kadm v1.16.0 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.11.2 // indirect
 	github.com/twmb/franz-go/pkg/sr v1.4.0 // indirect
+	github.com/twpayne/go-geom v1.6.1 // indirect
 	github.com/urfave/cli/v2 v2.27.7 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
