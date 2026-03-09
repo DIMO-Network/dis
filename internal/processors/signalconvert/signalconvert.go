@@ -91,6 +91,7 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 		ID:          rawEvent.ID,
 		Time:        rawEvent.Time,
 		Type:        rawEvent.Type,
+		DataVersion: rawEvent.DataVersion,
 	}
 	signalCE := vss.PackSignals(header, signals)
 	msgCpy := msg.Copy()

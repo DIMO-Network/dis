@@ -43,6 +43,9 @@ func (s *sliceProcessor) Process(_ context.Context, msg *service.Message) (servi
 	}
 
 	signals := vss.UnpackSignals(signalCE)
+	if len(signals) == 0 {
+		return nil, nil
+	}
 	msgs := make([]*service.Message, 0, len(signals))
 	for _, sig := range signals {
 		msgCpy := msg.Copy()

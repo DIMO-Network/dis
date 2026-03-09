@@ -43,6 +43,9 @@ func (s *eventSliceProcessor) Process(_ context.Context, msg *service.Message) (
 	}
 
 	events := vss.UnpackEvents(eventCE)
+	if len(events) == 0 {
+		return nil, nil
+	}
 	msgs := make([]*service.Message, 0, len(events))
 	for _, e := range events {
 		msgCpy := msg.Copy()
