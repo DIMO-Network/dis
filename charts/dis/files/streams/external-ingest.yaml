@@ -6,7 +6,7 @@ input:
           jwt:
             token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
             token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
-          address: 0.0.0.0:9442
+          address: ${DIS_ATTESTATION_ADDRESS:0.0.0.0:9442}
           path: /
           allowed_verbs:
             - POST
@@ -22,7 +22,7 @@ input:
 
       - label: "dimo_http_connection_server"
         dimo_http_connection_server:
-          address: 0.0.0.0:9443
+          address: ${DIS_CONNECTION_ADDRESS:0.0.0.0:9443}
           path: /
           allowed_verbs:
             - POST
@@ -30,10 +30,10 @@ input:
           rate_limit: "connection_rate_limit"
           tls:
             enabled: true
-            client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
+            client_root_cas_file: ${TLS_CA_CERT_FILE:/etc/ssl/certs/dis/root_ca.crt}
             server_certs:
-              - cert_file: /etc/ssl/certs/dis/tls.crt
-                key_file: /etc/ssl/certs/dis/tls.key
+              - cert_file: ${TLS_CERT_FILE:/etc/ssl/certs/dis/tls.crt}
+                key_file: ${TLS_KEY_FILE:/etc/ssl/certs/dis/tls.key}
             require_mutual_tls: true
           sync_response:
             last_message_only: true
@@ -145,7 +145,7 @@ output:
                         max_interval: 30s
                     buffer:
                       file:
-                        directory: /var/lib/dis/buffer/signals
+                        directory: ${DIS_BUFFER_DIR:/var/lib/dis/buffer}/signals
                         max_size: 1073741824
                   - label: "kafka_signals"
                     kafka:
@@ -205,13 +205,13 @@ output:
                             - source
                             - producer
                             - cloud_event_id
+                            - type
+                            - data_version
                             - name
                             - timestamp
                             - duration_ns
                             - metadata
                             - tags
-                            - type
-                            - data_version
                           args_mapping: "root = this"
                           batching:
                             count: 500000
@@ -221,7 +221,7 @@ output:
                         max_interval: 30s
                     buffer:
                       file:
-                        directory: /var/lib/dis/buffer/events
+                        directory: ${DIS_BUFFER_DIR:/var/lib/dis/buffer}/events
                         max_size: 1073741824
                   - label: "kafka_events"
                     kafka:
@@ -261,49 +261,27 @@ output:
                           - http_server_tls_cipher_suite
                           - http_server_tls_subject
 
-          # Valid CloudEvents: S3 parquet + Kafka passthrough
+          # Valid CloudEvents: S3 parquet
           - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
             output:
-              broker:
-                pattern: fan_out
-                outputs:
-                  - label: "s3_raw_parquet"
-                    processors:
-                      - dimo_raw_parquet:
-                          prefix: "cloudevent/valid/"
-                    aws_s3:
-                      bucket: "${PARQUET_BUCKET}"
-                      region: "${S3_AWS_REGION}"
-                      path: ${!metadata("dimo_s3_upload_key")}
-                      credentials:
-                        id: "${S3_AWS_ACCESS_KEY_ID}"
-                        secret: "${S3_AWS_SECRET_ACCESS_KEY}"
-                      batching:
-                        count: 10000
-                        period: 5s
-                  - label: "kafka_valid_cloudevents"
-                    kafka:
-                      ack_replicas: false
-                      addresses:
-                        - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                      backoff:
-                        initial_interval: 1s
-                        max_elapsed_time: 30s
-                        max_interval: 5s
-                      client_id: ${CONTAINER_NAME:localhost}-valid-output
-                      compression: '${KAFKA_COMPRESSION:none}'
-                      max_msg_bytes: 52428800
-                      max_retries: 2
-                      max_in_flight: 20
-                      key: ${!metadata("dimo_cloudevent_subject")}
-                      partitioner: murmur2_hash
-                      batching:
-                        count: 0
-                        byte_size: 1_000_000
-                        period: 50ms
-                      target_version: 2.5.0
-                      timeout: 5s
-                      topic: '${KAFKA_VALID_CE_TOPIC:topic.device.validcloudevents}'
+              label: "s3_raw_parquet"
+              processors:
+                - dimo_raw_parquet:
+                    prefix: "cloudevent/valid/"
+                - mapping: |
+                    root = if metadata("dimo_s3_upload_key").or("") == "" { deleted() }
+              aws_s3:
+                bucket: "${PARQUET_BUCKET}"
+                region: "${S3_AWS_REGION}"
+                endpoint: "${S3_ENDPOINT:}"
+                force_path_style_urls: ${S3_FORCE_PATH_STYLE:false}
+                path: ${!metadata("dimo_s3_upload_key")}
+                credentials:
+                  id: "${S3_AWS_ACCESS_KEY_ID}"
+                  secret: "${S3_AWS_SECRET_ACCESS_KEY}"
+                batching:
+                  count: 10000
+                  period: 5s
 
           - check: ''
             output:

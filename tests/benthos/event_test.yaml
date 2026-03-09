@@ -18,31 +18,31 @@ tests:
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
-            events: 
-              - name: "tripStart"
+            events:
+              - name: "behavior.harshBraking"
                 timestamp: "2024-04-18T17:20:46.436008782Z"
                 metadata: '{"ignition":1,"speed":10}'
-                tags: ["behavior.harshCornering"]
     output_batches:
       - - {} # replay of original message
-        - json_equals: >
-            [
-              {
-                "id":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-                "type":"dimo.event",
-                "dataVersion":"",
-                "source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359",
-                "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "data":{
-                  "name":"tripStart",
-                  "timestamp":"2024-04-18T17:20:46.436008782Z",
-                  "metadata":"{\"ignition\":1,\"speed\":10}",
-                  "durationNs":0,
-                  "tags":["behavior.harshCornering"]
-                }
+        - json_contains: >
+            {
+              "specversion": "1.0",
+              "id": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
+              "type": "dimo.event",
+              "source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359",
+              "producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
+              "subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
+              "data": {
+                "events": [
+                  {
+                    "name": "behavior.harshBraking",
+                    "timestamp": "2024-04-18T17:20:46.436008782Z",
+                    "durationNs": 0,
+                    "metadata": "{\"ignition\":1,\"speed\":10}"
+                  }
+                ]
               }
-            ]
+            }
 
   - name: "Failed Event Conversion, Missing Event Name"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
@@ -63,13 +63,13 @@ tests:
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
-            events: 
+            events:
               - name: ""
                 timestamp: "2024-04-18T17:20:46.436008782Z"
                 metadata: '{"ignition":1,"speed":10}'
     output_batches:
       - - {} # replay of original message
-       
+
   - name: "Multiple Event Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
     environment:
@@ -89,46 +89,37 @@ tests:
           time: "2024-04-18T17:20:46.436008782Z"
           vehicleTokenId: 123
           data:
-            events: 
-              - name: "tripStart"
+            events:
+              - name: "behavior.harshBraking"
                 timestamp: "2024-04-18T17:20:46.436008782Z"
                 metadata: '{"ignition":1,"speed":10}'
-              - name: "tripEnd"
+              - name: "behavior.harshAcceleration"
                 timestamp: "2024-04-18T17:35:46.436008782Z"
                 durationNs: 15000000000
     output_batches:
       - - {} # replay of original message
-        - json_equals: >
-            [
-              {
-                "id":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-                "type":"dimo.event",
-                "dataVersion":"",
-                "source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359",
-                "subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "data":{
-                  "name":"tripStart",
-                  "timestamp":"2024-04-18T17:20:46.436008782Z",
-                  "metadata":"{\"ignition\":1,\"speed\":10}",
-                  "durationNs":0,
-                  "tags":null
-                }
-              },
-              {
-                "id":"0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-                "type":"dimo.event",
-                "dataVersion":"",
-                "source":"0x12343d054925bdEC534A9Cdf33a71807d72B1359",
-                "subject":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "producer":"did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
-                "data":{
-                  "name":"tripEnd",
-                  "timestamp":"2024-04-18T17:35:46.436008782Z",
-                  "metadata":"",
-                  "durationNs":15000000000,
-                  "tags":null
-                }
+        - json_contains: >
+            {
+              "specversion": "1.0",
+              "id": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
+              "type": "dimo.event",
+              "source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359",
+              "subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
+              "producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
+              "data": {
+                "events": [
+                  {
+                    "name": "behavior.harshBraking",
+                    "timestamp": "2024-04-18T17:20:46.436008782Z",
+                    "durationNs": 0,
+                    "metadata": "{\"ignition\":1,\"speed\":10}"
+                  },
+                  {
+                    "name": "behavior.harshAcceleration",
+                    "timestamp": "2024-04-18T17:35:46.436008782Z",
+                    "durationNs": 15000000000,
+                    "metadata": ""
+                  }
+                ]
               }
-            ]
- 
+            }

@@ -60,6 +60,13 @@ test: test-go test-benthos test-prometheus-alerts test-prometheus-rules ## Run a
 test-go: ## Run Go tests
 	@go test ./...
 
+test-integration: build ## Run integration tests (requires Docker/Podman)
+	docker compose -f docker-compose.integration.yaml up -d --wait
+	go test -tags integration -count=1 -timeout 120s ./tests/integration/... -v; \
+	status=$$?; \
+	docker compose -f docker-compose.integration.yaml down -v; \
+	exit $$status
+
 test-benthos: build ## Run Benthos tests
 	dis test --log debug -r ./tests/benthos/resources_mock.yaml ./tests/benthos/*_test.yaml
 
