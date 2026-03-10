@@ -34,12 +34,11 @@ isDev: true
 env:
   ENVIRONMENT: dev
   CLICKHOUSE_PORT: 9440
-  CLICKHOUSE_SIGNAL_DATABASE: dimo
+  CLICKHOUSE_DIMO_DATABASE: dimo
   CLICKHOUSE_INDEX_DATABASE: file_index
   KAFKA_SIGNALS_TOPIC: topic.device.signals
   KAFKA_EVENTS_TOPIC: topic.device.events
   KAFKA_VALID_CE_TOPIC: topic.device.validcloudevents
-  DEVICES_APIGRPC_ADDR: devices-api-dev:8086
   KAFKA_BOOTSTRAP_SERVERS: kafka-dev-dimo-kafka-kafka-brokers
   LOG_LEVEL: INFO
   ALLOWABLE_TIME_SKEW: 5m
