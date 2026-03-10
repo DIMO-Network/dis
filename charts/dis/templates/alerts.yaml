@@ -79,4 +79,110 @@ groups:
         annotations:
           summary: 'S3 parquet upload errors detected'
           description: 'S3 upload errors are occurring at >= 1/s in the last 5 minutes. Service: dis'
+      # Fingerprint Validation Errors
+      - alert: HighFingerprintValidationErrorRate
+        expr: sum(rate(dimo_error_count{namespace="{{ .Release.Namespace }}", container="dis", component="dimo_validate_fingerprint"}[5m])) BY (pod, job, namespace) / sum(rate(processor_received{namespace="{{ .Release.Namespace }}", container="dis", label="validate_fingerprint"}[5m])) BY (pod, job, namespace) >= 0.1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'High fingerprint validation error rate detected'
+          description: 'The error rate for fingerprint validation has exceeded 10% in the last 5 minutes. Service: dis'
+      # Output Connection Health
+      - alert: OutputConnectionFailed
+        expr: sum(increase(output_connection_failed{namespace="{{ .Release.Namespace }}", container="dis"}[5m])) BY (stream, label) > 0
+        for: 5m
+        labels:
+          severity: critical
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'Output connection failures detected'
+          description: 'Output connection failures detected for stream {{ "{{" }} $labels.stream {{ "}}" }} in the last 5 minutes. Service: dis'
+      - alert: OutputConnectionLost
+        expr: sum(increase(output_connection_lost{namespace="{{ .Release.Namespace }}", container="dis"}[5m])) BY (stream, label) > 0
+        for: 5m
+        labels:
+          severity: critical
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'Output connection lost'
+          description: 'Output connection lost for stream {{ "{{" }} $labels.stream {{ "}}" }} in the last 5 minutes. Service: dis'
+      # Output Errors by Stream
+      - alert: HighClickHouseOutputErrorRate
+        expr: sum(rate(output_error{namespace="{{ .Release.Namespace }}", container="dis", stream="output-clickhouse"}[5m])) >= 1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'ClickHouse output errors detected'
+          description: 'ClickHouse output errors are occurring at >= 1/s in the last 5 minutes. Service: dis'
+      - alert: HighParquetOutputErrorRate
+        expr: sum(rate(output_error{namespace="{{ .Release.Namespace }}", container="dis", stream="output-parquet"}[5m])) >= 1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'Parquet output errors detected'
+          description: 'Parquet output errors are occurring at >= 1/s in the last 5 minutes. Service: dis'
+      # S3 Parquet Fallback
+      - alert: S3ParquetFallbackTriggered
+        expr: sum(increase(output_sent{namespace="{{ .Release.Namespace }}", container="dis", label="s3_parquet_failure", stream="output-parquet"}[5m])) > 0
+        for: 1m
+        labels:
+          severity: critical
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'S3 parquet fallback path triggered'
+          description: 'The primary S3 upload path has failed and the fallback is being used. Service: dis'
+      # Buffer Backpressure
+      - alert: BufferBackpressure
+        expr: sum(buffer_received{namespace="{{ .Release.Namespace }}", container="dis"}) BY (stream) - sum(buffer_sent{namespace="{{ .Release.Namespace }}", container="dis"}) BY (stream) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'Buffer backpressure detected'
+          description: 'Buffer backpressure detected for stream {{ "{{" }} $labels.stream {{ "}}" }}, more than 1000 messages behind. Service: dis'
+      # No Output Activity
+      - alert: NoKafkaOutput
+        expr: sum(rate(output_sent{namespace="{{ .Release.Namespace }}", container="dis", stream="output-kafka"}[30m])) == 0
+        for: 30m
+        labels:
+          severity: critical
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'No Kafka output in 30 minutes'
+          description: 'No messages sent to Kafka in 30 minutes. Service: dis'
+      - alert: NoClickHouseOutput
+        expr: sum(rate(output_sent{namespace="{{ .Release.Namespace }}", container="dis", stream="output-clickhouse"}[30m])) == 0
+        for: 30m
+        labels:
+          severity: critical
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'No ClickHouse output in 30 minutes'
+          description: 'No messages sent to ClickHouse in 30 minutes. Service: dis'
+      - alert: NoParquetUploads
+        expr: sum(rate(dis_s3_uploads_total{namespace="{{ .Release.Namespace }}", container="dis"}[30m])) == 0
+        for: 30m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'No S3 parquet uploads in 30 minutes'
+          description: 'No parquet files uploaded to S3 in 30 minutes. Service: dis'
+      # Rate Limiting
+      - alert: HighRateLimitTriggered
+        expr: sum(rate(rate_limit_triggered{namespace="{{ .Release.Namespace }}", container="dis"}[5m])) >= 1
+        for: 5m
+        labels:
+          severity: warning
+          namespace: {{ .Release.Namespace }}
+        annotations:
+          summary: 'Rate limiting is being triggered'
+          description: 'Rate limiting is being triggered at >= 1/s in the last 5 minutes. Service: dis'
 {{- end -}}
