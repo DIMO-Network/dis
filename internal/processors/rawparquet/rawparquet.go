@@ -29,6 +29,10 @@ const (
 	MetaMessageContent = "dimo_message_content"
 	// MetaClickHouseCloudEvent is the content value for ClickHouse CE rows.
 	MetaClickHouseCloudEvent = "dimo_clickhouse_cloudevent"
+
+	MetricS3Uploads      = "dis_s3_uploads_total"
+	MetricS3UploadBytes  = "dis_s3_upload_bytes_total"
+	MetricS3UploadErrors = "dis_s3_upload_errors_total"
 )
 
 var configSpec = service.NewConfigSpec().
@@ -47,12 +51,22 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 	if err != nil {
 		return nil, fmt.Errorf("prefix: %w", err)
 	}
-	return &processor{prefix: prefix, logger: mgr.Logger()}, nil
+	m := mgr.Metrics()
+	return &processor{
+		prefix:       prefix,
+		logger:       mgr.Logger(),
+		uploads:      m.NewCounter(MetricS3Uploads),
+		uploadBytes:  m.NewCounter(MetricS3UploadBytes),
+		uploadErrors: m.NewCounter(MetricS3UploadErrors),
+	}, nil
 }
 
 type processor struct {
-	prefix string
-	logger *service.Logger
+	prefix       string
+	logger       *service.Logger
+	uploads      *service.MetricCounter
+	uploadBytes  *service.MetricCounter
+	uploadErrors *service.MetricCounter
 }
 
 func (p *processor) Close(context.Context) error { return nil }
@@ -96,10 +110,13 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	var buf bytes.Buffer
 	indexKeyMap, err := pq.Encode(&buf, events, objectKey)
 	if err != nil {
+		p.uploadErrors.Incr(1)
 		return nil, fmt.Errorf("encode parquet: %w", err)
 	}
 
 	parquetBytes := buf.Bytes()
+	p.uploads.Incr(1)
+	p.uploadBytes.Incr(int64(len(parquetBytes)))
 	parquetMsg := service.NewMessage(parquetBytes)
 	parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
 	parquetMsg.MetaSetMut(MetaParquetPath, objectKey)

@@ -60,7 +60,7 @@ func TestProcess_MultipleSignals(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := newSliceProcessor(nil)
+	proc := &sliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -125,7 +125,7 @@ func TestProcess_SingleSignal(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := newSliceProcessor(nil)
+	proc := &sliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -150,7 +150,7 @@ func TestProcess_EmptySignals(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := newSliceProcessor(nil)
+	proc := &sliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -161,7 +161,7 @@ func TestProcess_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	msg := service.NewMessage([]byte(`not valid json`))
-	proc := newSliceProcessor(nil)
+	proc := &sliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	assert.Error(t, err)

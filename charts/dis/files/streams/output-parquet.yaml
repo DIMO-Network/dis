@@ -1,8 +1,12 @@
 input:
-  broker:
-    inputs:
-      - inproc: "dimo_cloudevents"
-    batching:
+  inproc: "dimo_cloudevents"
+
+buffer:
+  memory:
+    limit: 10485760
+    batch_policy:
+      enabled: true
+      count: 5000
       period: "5s"
 
 pipeline:

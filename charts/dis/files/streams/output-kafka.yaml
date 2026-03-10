@@ -1,6 +1,10 @@
 input:
   inproc: "dimo_kafka"
 
+buffer:
+  memory:
+    limit: 10485760
+
 output:
   switch:
     retry_until_success: true

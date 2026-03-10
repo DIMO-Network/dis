@@ -31,6 +31,7 @@ type vssProcessor struct {
 	logger            *service.Logger
 	vehicleNFTAddress common.Address
 	chainID           uint64
+	signalsPerReport  *service.MetricTimer
 }
 
 // Close to fulfill the service.Processor interface.
@@ -102,6 +103,7 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 	msgCpy.SetStructured(signalCE)
 	msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
 	retBatch = append(retBatch, msgCpy)
+	v.signalsPerReport.Timing(int64(len(signals)))
 	return retBatch
 }
 

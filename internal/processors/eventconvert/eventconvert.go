@@ -17,7 +17,8 @@ const (
 )
 
 type eventsProcessor struct {
-	logger *service.Logger
+	logger          *service.Logger
+	eventsPerReport *service.MetricTimer
 }
 
 // Close to fulfill the service.Processor interface.
@@ -75,6 +76,7 @@ func (e *eventsProcessor) processMsg(ctx context.Context, msg *service.Message) 
 	msgCpy.SetStructured(eventCE)
 	msgCpy.MetaSetMut(processors.MessageContentKey, eventValidContentType)
 	retBatch = append(retBatch, msgCpy)
+	e.eventsPerReport.Timing(int64(len(events)))
 
 	return retBatch
 }

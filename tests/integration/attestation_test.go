@@ -17,6 +17,8 @@ import (
 func TestAttestationEndpoint(t *testing.T) {
 	clearMinIOObjects(t, "cloudevent/valid/")
 
+	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:555"
+
 	// Generate an Ethereum key pair for signing
 	privateKey, err := crypto.GenerateKey()
 	require.NoError(t, err)
@@ -24,7 +26,7 @@ func TestAttestationEndpoint(t *testing.T) {
 
 	// Build attestation data
 	attestationData := []map[string]any{
-		{"subject": "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:555"},
+		{"subject": subject},
 		{"insured": true},
 		{"provider": "Test Insurance"},
 		{"coverageStartDate": 1744751357},
@@ -42,7 +44,7 @@ func TestAttestationEndpoint(t *testing.T) {
 
 	payload := map[string]any{
 		"id":             "test-attestation-001",
-		"subject":        "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:555",
+		"subject":        subject,
 		"time":           "2025-03-27T18:35:46.436008782Z",
 		"vehicleTokenId": 555,
 		"signature":      "0x" + common.Bytes2Hex(sig),
@@ -56,13 +58,7 @@ func TestAttestationEndpoint(t *testing.T) {
 	// Send via JWT endpoint
 	resp := postJWTAttestation(t, payloadBytes, ethAddr)
 	drainAndClose(t, resp)
-	// DIS may return 408 if pipeline is congested from downstream backlog.
-	// Accept both 200 and 408 — the message may still be processed.
-	if resp.StatusCode == 408 {
-		t.Log("got 408 (pipeline congestion), checking parquet anyway")
-	} else {
-		assert.Equal(t, 200, resp.StatusCode)
-	}
+	require.Equal(t, 200, resp.StatusCode, "attestation endpoint should return 200 for valid payload")
 
 	// Wait for parquet batch flush (5s period + buffer)
 	time.Sleep(8 * time.Second)
@@ -76,7 +72,7 @@ func TestAttestationEndpoint(t *testing.T) {
 	for _, key := range keys {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {
-			if ev.Type == "dimo.attestation" && ev.Subject == "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:555" {
+			if ev.Type == "dimo.attestation" && ev.Subject == subject {
 				assert.Equal(t, "1.0", ev.SpecVersion)
 				assert.Equal(t, ethAddr.Hex(), ev.Source)
 				found = true
@@ -88,4 +84,11 @@ func TestAttestationEndpoint(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "attestation CloudEvent not found in parquet files")
+
+	// ── ClickHouse cloud_event table — 1 index row ───────────
+	ceRows := queryCloudEvents(t, subject)
+	require.Len(t, ceRows, 1, "expected 1 cloud_event index row (dimo.attestation)")
+	assert.Equal(t, "dimo.attestation", ceRows[0].EventType)
+	assert.Equal(t, ethAddr.Hex(), ceRows[0].Source)
+	assert.Equal(t, subject, ceRows[0].Subject)
 }

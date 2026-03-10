@@ -67,11 +67,7 @@ func TestTeslaFleetAPINoVIN(t *testing.T) {
 
 	resp := postMTLSWithConfig(t, payloadBytes, teslaTLSConfig)
 	drainAndClose(t, resp)
-	if resp.StatusCode == 408 {
-		t.Log("got 408 (pipeline congestion), checking results anyway")
-	} else {
-		require.Equal(t, 200, resp.StatusCode, "DIS should accept Tesla payload without VIN")
-	}
+	require.Equal(t, 200, resp.StatusCode, "DIS should accept Tesla payload without VIN")
 
 	time.Sleep(5 * time.Second)
 

@@ -45,12 +45,7 @@ func TestFutureTimestampSignalPruning(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	// DIS may return 408 when all signals are pruned and downstream has nothing to ack.
-	if resp.StatusCode == 408 {
-		t.Log("got 408 (expected when all signals pruned), checking Kafka anyway")
-	} else {
-		assert.Equal(t, 200, resp.StatusCode)
-	}
+	assert.Equal(t, 200, resp.StatusCode)
 
 	time.Sleep(3 * time.Second)
 
@@ -191,11 +186,7 @@ func TestSignalsAndEventsInSamePayload(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	if resp.StatusCode == 408 {
-		t.Log("got 408 (pipeline congestion), checking Kafka anyway")
-	} else {
-		assert.Equal(t, 200, resp.StatusCode)
-	}
+	assert.Equal(t, 200, resp.StatusCode)
 
 	time.Sleep(3 * time.Second)
 
@@ -210,9 +201,6 @@ func TestSignalsAndEventsInSamePayload(t *testing.T) {
 
 	// Verify event appears in Kafka events topic
 	eventMsgs := consumeKafka(t, "topic.device.events", eventOffset, 10*time.Second)
-	if len(eventMsgs) == 0 && resp.StatusCode == 408 {
-		t.Skip("skipping event check: not delivered due to pipeline congestion (known issue)")
-	}
 	require.Len(t, eventMsgs, 1, "expected exactly 1 event message")
 	eventCE := parseEventCE(t, eventMsgs[0])
 	assert.Equal(t, subject, eventCE.Subject)
@@ -229,11 +217,7 @@ func TestSignalsAndEventsInSamePayload(t *testing.T) {
 
 	// ── ClickHouse event table — exactly 1 event row ────────────
 	eventRows := queryEvents(t, subject)
-	if resp.StatusCode == 408 && len(eventRows) == 0 {
-		t.Log("skipping ClickHouse event check: event not delivered due to pipeline congestion")
-	} else {
-		require.Len(t, eventRows, 1, "expected exactly 1 event row in ClickHouse for mixed payload")
-		assert.Equal(t, "behavior.harshBraking", eventRows[0].Name)
-		assert.Equal(t, testSourceAddress, eventRows[0].Source)
-	}
+	require.Len(t, eventRows, 1, "expected exactly 1 event row in ClickHouse for mixed payload")
+	assert.Equal(t, "behavior.harshBraking", eventRows[0].Name)
+	assert.Equal(t, testSourceAddress, eventRows[0].Source)
 }

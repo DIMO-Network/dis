@@ -53,7 +53,7 @@ func TestProcess_MultipleEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := newEventSliceProcessor(nil)
+	proc := &eventSliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -120,7 +120,7 @@ func TestProcess_SingleEvent(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := newEventSliceProcessor(nil)
+	proc := &eventSliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func TestProcess_EmptyEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := newEventSliceProcessor(nil)
+	proc := &eventSliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestProcess_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	msg := service.NewMessage([]byte(`{broken`))
-	proc := newEventSliceProcessor(nil)
+	proc := &eventSliceProcessor{}
 
 	batch, err := proc.Process(context.Background(), msg)
 	assert.Error(t, err)

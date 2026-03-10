@@ -48,23 +48,12 @@ func TestDefaultModuleEvents(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-
-	// DIS may return 408 if pipeline is congested from ClickHouse event retry
-	// backlog (pre-existing timestamp parsing issue in event pipeline).
-	// Accept both 200 and 408 — the message may still be processed.
-	if resp.StatusCode == 408 {
-		t.Log("got 408 (pipeline congestion from known ClickHouse event retry issue), checking Kafka anyway")
-	} else {
-		assert.Equal(t, 200, resp.StatusCode)
-	}
+	assert.Equal(t, 200, resp.StatusCode)
 
 	time.Sleep(5 * time.Second)
 
 	// Check Kafka events topic
 	msgs := consumeKafka(t, "topic.device.events", startOffset, 10*time.Second)
-	if len(msgs) == 0 && resp.StatusCode == 408 {
-		t.Skip("skipping: event not delivered due to pipeline congestion (known issue)")
-	}
 	require.Len(t, msgs, 1, "expected exactly 1 event message")
 	ce := parseEventCE(t, msgs[0])
 	assert.Equal(t, subject, ce.Subject)
@@ -77,9 +66,6 @@ func TestDefaultModuleEvents(t *testing.T) {
 
 	// Check ClickHouse event table — should have exactly 2 event rows
 	eventRows := queryEvents(t, subject)
-	if resp.StatusCode == 408 && len(eventRows) == 0 {
-		t.Skip("skipping ClickHouse check: event not delivered due to pipeline congestion")
-	}
 	require.Len(t, eventRows, 2, "expected exactly 2 event rows in ClickHouse for 2 input events")
 
 	// Verify event names (queryEvents orders by name)

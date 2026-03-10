@@ -55,13 +55,7 @@ func TestRuptelaFullPipeline(t *testing.T) {
 	// Use Ruptela mTLS client cert (CN = Ruptela source address)
 	resp := postMTLSWithConfig(t, payloadBytes, ruptelaTLSConfig)
 	drainAndClose(t, resp)
-	// DIS may return 408 if pipeline is congested from inproc startup timing.
-	// The message is still processed, so accept both 200 and 408.
-	if resp.StatusCode == 408 {
-		t.Log("got 408 (pipeline congestion), checking results anyway")
-	} else {
-		require.Equal(t, 200, resp.StatusCode, "DIS should accept valid Ruptela payload")
-	}
+	require.Equal(t, 200, resp.StatusCode, "DIS should accept valid Ruptela payload")
 
 	// Wait for pipeline processing
 	time.Sleep(5 * time.Second)
