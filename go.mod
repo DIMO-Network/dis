@@ -4,13 +4,11 @@ go 1.25.0
 
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26
 
-replace github.com/DIMO-Network/model-garage => ../model-garage
-
 require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.7
 	github.com/DIMO-Network/cloudevent v0.2.5
-	github.com/DIMO-Network/model-garage v0.9.1
+	github.com/DIMO-Network/model-garage v1.0.2
 	github.com/DIMO-Network/shared v1.0.7
 	github.com/MicahParks/keyfunc/v3 v3.6.1
 	github.com/ethereum/go-ethereum v1.17.1

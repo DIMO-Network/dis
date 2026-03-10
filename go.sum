@@ -71,6 +71,8 @@ github.com/DIMO-Network/clickhouse-infra v0.0.7 h1:TAsjkFFKu3D5Xg6dwBcRBryjCVSlX
 github.com/DIMO-Network/clickhouse-infra v0.0.7/go.mod h1:XS80lhSJNWBWGgZ+m4j7++zFj1wAXfmtV2gJfhGlabQ=
 github.com/DIMO-Network/cloudevent v0.2.5 h1:3s6ZKtBXHYy0ujMYBdOBF9uJAc5C+EKEF7/SToW2cJA=
 github.com/DIMO-Network/cloudevent v0.2.5/go.mod h1:zFG6pf7ejwC0y3//mHpISDHR/blsSz8Lew2c4ebc8Lw=
+github.com/DIMO-Network/model-garage v1.0.2 h1:SqHWDgtzU0a0aUkdnV9jBaACJhHwS8sv1gcAi8OJRkU=
+github.com/DIMO-Network/model-garage v1.0.2/go.mod h1:i1OqL22+AV5ucwS+kehGQ/d0KWKhlglvYbo34vn8+EA=
 github.com/DIMO-Network/shared v1.0.7 h1:LfSgsqJ6R7EUyfo2GTfuhrCpoDcweJqe7eVOa4j7Xbo=
 github.com/DIMO-Network/shared v1.0.7/go.mod h1:lDHUKwwT2LW6Zvd42Nb33dXklRNTmfyOlbUNx2dQfGY=
 github.com/DataDog/zstd v1.5.2 h1:vUG4lAyuPCXO0TLbXvPv7EB7cNK1QV/luu55UHLrrn8=
