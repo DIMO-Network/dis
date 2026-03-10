@@ -51,7 +51,7 @@ env:
   TOKEN_EXCHANGE_ISSUER: https://auth.dev.dimo.zone
   CLICKHOUSE_DIMO_DATABASE: dimo
   CLICKHOUSE_INDEX_DATABASE: file_index
-  PARQUET_BUCKET: dimo-network-data-parquet-dev
+  PARQUET_BUCKET: dimo-storage-dev
   S3_AWS_REGION: us-east-2
 service:
   type: ClusterIP
