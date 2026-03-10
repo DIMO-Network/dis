@@ -23,7 +23,7 @@ output:
               max_interval: 5s
             client_id: ${CONTAINER_NAME:localhost}-kafka-signal-output
             compression: '${KAFKA_COMPRESSION:snappy}'
-            max_msg_bytes: 1000000
+            max_msg_bytes: 10485760
             max_retries: 1
             max_in_flight: 20
             key: ${!metadata("dimo_cloudevent_subject")}
@@ -60,7 +60,7 @@ output:
               max_interval: 5s
             client_id: ${CONTAINER_NAME:localhost}-kafka-event-output
             compression: '${KAFKA_COMPRESSION:snappy}'
-            max_msg_bytes: 1000000
+            max_msg_bytes: 10485760
             max_retries: 1
             max_in_flight: 20
             key: ${!metadata("dimo_cloudevent_subject")}
