@@ -47,6 +47,7 @@ func (v *processor) processMsg(ctx context.Context, msg *service.Message) servic
 	}
 	vinObj := vin.VIN(fingerprint.VIN)
 	if !vinObj.IsValidVIN() && !vinObj.IsValidJapanChassis() {
+		// Mark as error here, but consider dropping invalid fingerprints in a downstream processor if needed
 		processors.SetError(msg, processorName, "invalid VIN format in fingerprint", nil)
 		return batch
 	}
