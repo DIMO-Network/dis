@@ -85,7 +85,7 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 
 func setConnectionContentType(eventHdr *cloudevent.CloudEventHeader, msg *service.Message, logger *service.Logger) {
 	if !isValidConnectionHeader(eventHdr, logger) {
-		logger.Warnf("invalid cloud event header for source %s, marking as valid anyway", eventHdr.Source)
+		logger.Warnf("invalid cloud event header for header=%+v", eventHdr)
 	}
 	msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
 }
