@@ -30,9 +30,7 @@ output:
                         aws_s3:
                           bucket: "${PARQUET_BUCKET}"
                           region: "${S3_AWS_REGION}"
-                          endpoint: "${S3_ENDPOINT:}"
                           content_type: application/octet-stream
-                          force_path_style_urls: ${S3_FORCE_PATH_STYLE:false}
                           path: ${!metadata("dimo_s3_upload_key")}
                           credentials:
                             id: "${S3_AWS_ACCESS_KEY_ID}"
