@@ -121,6 +121,10 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
 	event.Source = source
 
+	if event.Subject == "" {
+		event.Subject = event.Producer
+	}
+
 	if event.Time.IsZero() {
 		event.Time = time.Now().UTC()
 	}
