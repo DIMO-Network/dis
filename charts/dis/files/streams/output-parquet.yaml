@@ -84,8 +84,7 @@ output:
                       output:
                         reject: metadata("fallback_error")
                         processors:
-                          - label: "retry_db_connection_error"
-                            resource: "handle_db_connection_error"
+                          - resource: "handle_db_connection_error"
                     - check: ''
                       output:
                         drop: {}
@@ -93,6 +92,5 @@ output:
                           - label: "set_ch_failure_component"
                             mutation: |
                               meta dimo_component = "insert_valid_cloudevent_clickhouse"
-                          - label: "handle_ch_failure_error"
-                            resource: "handle_db_error"
+                          - resource: "handle_db_error"
     - drop: {}
