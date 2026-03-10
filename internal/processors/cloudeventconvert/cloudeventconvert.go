@@ -24,13 +24,9 @@ const (
 	cloudEventTypeKey     = "dimo_cloudevent_type"
 	cloudEventProducerKey = "dimo_cloudevent_producer"
 	cloudEventSubjectKey  = "dimo_cloudevent_subject"
-	cloudEventIDKey       = "dimo_cloudevent_id"
-	cloudEventIndexKey    = "dimo_cloudevent_index"
-	// CloudEventIndexValueKey is the key for the index value for inserting a cloud event's metadata.
-	CloudEventIndexValueKey = "dimo_cloudevent_index_value"
+	cloudEventIDKey = "dimo_cloudevent_id"
 
-	cloudEventValidContentType   = "dimo_valid_cloudevent"
-	cloudEventPartialContentType = "dimo_partial_cloudevent"
+	cloudEventValidContentType = "dimo_valid_cloudevent"
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}

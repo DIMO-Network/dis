@@ -8,9 +8,6 @@ processor_resources:
   - label: "dimo_error_count"
     noop: {}
 
-  - label: "dimo_partial_index_count"
-    noop: {}
-
   - label: "dimo_bad_request_sync_response"
     noop: {}
 

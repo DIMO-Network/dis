@@ -40,12 +40,16 @@ func TestProcessBatch_SuccessfulConversion(t *testing.T) {
 	mockModule := &mockEventModule{
 		events: []vss.Event{
 			{
-				Name:       "tripStart",
-				Timestamp:  timestamp,
-				Subject:    "did:erc721:1:0x123:456",
-				Source:     "test-source",
-				Metadata:   `{"confidence": 0.95}`,
-				DurationNs: 0,
+				CloudEventHeader: cloudevent.CloudEventHeader{
+					Subject: "did:erc721:1:0x123:456",
+					Source:  "test-source",
+				},
+				Data: vss.EventData{
+					Name:       "tripStart",
+					Timestamp:  timestamp,
+					Metadata:   `{"confidence": 0.95}`,
+					DurationNs: 0,
+				},
 			},
 		},
 		err: nil,
@@ -75,27 +79,31 @@ func TestProcessBatch_SuccessfulConversion(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, eventValidContentType, content)
 
-	// Check structured data contains events
+	// Check structured data contains CloudEvent envelope with events
 	structured, err := eventsMsg.AsStructured()
 	require.NoError(t, err)
-	events, ok := structured.([]vss.Event)
+	eventCE, ok := structured.(vss.EventCloudEvent)
 	require.True(t, ok)
-	require.Len(t, events, 1)
-	assert.Equal(t, "tripStart", events[0].Name)
-	assert.Equal(t, "test-source", events[0].Source)
-	assert.Equal(t, "test-producer", events[0].Producer)
-	assert.Equal(t, "test-id", events[0].CloudEventID)
-	assert.Equal(t, "did:erc721:1:0x123:456", events[0].Subject)
-	assert.Equal(t, timestamp, events[0].Timestamp)
-	assert.Equal(t, uint64(0), events[0].DurationNs)
-	assert.Equal(t, "{\"confidence\": 0.95}", events[0].Metadata)
+	// Envelope header comes from the raw event
+	assert.Equal(t, "test-source", eventCE.Source)
+	assert.Equal(t, "test-producer", eventCE.Producer)
+	assert.Equal(t, "test-id", eventCE.ID)
+	assert.Equal(t, cloudevent.TypeEvents, eventCE.Type)
+	assert.Equal(t, "1.0", eventCE.DataVersion)
+	assert.Equal(t, "did:erc721:1:0x123:456", eventCE.Subject)
+	// Data payload contains events array
+	require.Len(t, eventCE.Data.Events, 1)
+	assert.Equal(t, "tripStart", eventCE.Data.Events[0].Name)
+	assert.Equal(t, timestamp, eventCE.Data.Events[0].Timestamp)
+	assert.Equal(t, uint64(0), eventCE.Data.Events[0].DurationNs)
+	assert.Equal(t, "{\"confidence\": 0.95}", eventCE.Data.Events[0].Metadata)
 }
 
 func TestProcessBatch_WithPartialError(t *testing.T) {
 	timestamp := time.Date(2023, 1, 1, 12, 0, 0, 0, time.UTC)
 
 	mockModule := &mockEventModule{
-		events: []vss.Event{{Name: "tripStart", Timestamp: timestamp, DurationNs: 0}},
+		events: []vss.Event{{Data: vss.EventData{Name: "tripStart", Timestamp: timestamp, DurationNs: 0}}},
 		err:    errors.New("partial conversion error"),
 	}
 
@@ -125,9 +133,9 @@ func TestProcessBatch_WithPartialError(t *testing.T) {
 	eventsMsg := batch[2]
 	structured, err := eventsMsg.AsStructured()
 	require.NoError(t, err)
-	events, ok := structured.([]vss.Event)
+	eventCE, ok := structured.(vss.EventCloudEvent)
 	require.True(t, ok)
-	require.Len(t, events, 1)
+	require.Len(t, eventCE.Data.Events, 1)
 }
 
 func TestProcessBatch_NonVehicleEventIgnored(t *testing.T) {
@@ -190,12 +198,13 @@ func createVehicleEventMessage(t *testing.T, timestamp time.Time) *service.Messa
 
 	event := &cloudevent.RawEvent{
 		CloudEventHeader: cloudevent.CloudEventHeader{
-			Type:     cloudevent.TypeEvent,
-			Subject:  "did:erc721:1:0x123:456",
-			Source:   "test-source",
-			Producer: "test-producer",
-			ID:       "test-id",
-			Time:     timestamp,
+			Type:        cloudevent.TypeEvents,
+			Subject:     "did:erc721:1:0x123:456",
+			Source:      "test-source",
+			Producer:    "test-producer",
+			ID:          "test-id",
+			DataVersion: "1.0",
+			Time:        timestamp,
 		},
 		Data: json.RawMessage(`{
 			"events": [

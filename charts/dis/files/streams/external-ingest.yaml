@@ -6,7 +6,7 @@ input:
           jwt:
             token_exchange_issuer: ${TOKEN_EXCHANGE_ISSUER:https://auth.dev.dimo.zone/dex}
             token_exchange_key_set_url: ${TOKEN_EXCHANGE_KEY_SET_URL:https://auth.dev.dimo.zone/keys}
-          address: 0.0.0.0:9442
+          address: ${DIS_ATTESTATION_ADDRESS:0.0.0.0:9442}
           path: /
           allowed_verbs:
             - POST
@@ -22,7 +22,7 @@ input:
 
       - label: "dimo_http_connection_server"
         dimo_http_connection_server:
-          address: 0.0.0.0:9443
+          address: ${DIS_CONNECTION_ADDRESS:0.0.0.0:9443}
           path: /
           allowed_verbs:
             - POST
@@ -30,10 +30,10 @@ input:
           rate_limit: "connection_rate_limit"
           tls:
             enabled: true
-            client_root_cas_file: /etc/ssl/certs/dis/root_ca.crt
+            client_root_cas_file: ${TLS_CA_CERT_FILE:/etc/ssl/certs/dis/root_ca.crt}
             server_certs:
-              - cert_file: /etc/ssl/certs/dis/tls.crt
-                key_file: /etc/ssl/certs/dis/tls.key
+              - cert_file: ${TLS_CERT_FILE:/etc/ssl/certs/dis/tls.crt}
+                key_file: ${TLS_KEY_FILE:/etc/ssl/certs/dis/tls.key}
             require_mutual_tls: true
           sync_response:
             last_message_only: true
@@ -78,9 +78,6 @@ pipeline:
         - mapping: root = deleted()
     - label: "valid_cloudevent_switch"
       switch:
-        - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent"'
-          processors:
-            - resource: "dimo_partial_index_count"
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
           processors:
             - label: validate_fingerprint
@@ -117,154 +114,18 @@ pipeline:
       - mapping: root = deleted()
 
 output:
-  fallback:
-    - label: "all_outputs"
-      switch:
-        retry_until_success: true
-        strict_mode: true
-        cases:
-          # Output for valid signals
-          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_signal"'
-            output:
-              label: "send_signal"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-signal-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 300000
-                max_retries: 1
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_subject")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 1000
-                  byte_size: 200_000 # 0.5MB
-                  period: 10ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_SIGNALS_TOPIC:topic.device.signals}'
-                metadata:
-                  exclude_prefixes:
-                    - dimo_cloudevent_index_value
-                    - dimo_cloudevent_index
-                    - dimo_cloudevent_producer
-                    - dimo_cloudevent_source
-                    - dimo_cloudevent_subject
-                    - dimo_cloudevent_type
-                    - dimo_cloudevent_id
-                    - dimo_cloudevent_type
-                    - dimo_message_content
-                    - http_server_remote_ip
-                    - http_server_request_path
-                    - http_server_tls_cipher_suite
-                    - http_server_tls_subject
-          # Output for valid events
-          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_event"'
-            output:
-              label: "send_event"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-event-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 300000
-                max_retries: 1
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_subject")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 1000
-                  byte_size: 200_000 # 0.5MB
-                  period: 10ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_EVENTS_TOPIC:topic.device.events}'
-                metadata:
-                  exclude_prefixes:
-                    - dimo_cloudevent_index_value
-                    - dimo_cloudevent_index
-                    - dimo_cloudevent_producer
-                    - dimo_cloudevent_source
-                    - dimo_cloudevent_subject
-                    - dimo_cloudevent_type
-                    - dimo_cloudevent_id
-                    - dimo_cloudevent_type
-                    - dimo_message_content
-                    - http_server_remote_ip
-                    - http_server_request_path
-                    - http_server_tls_cipher_suite
-                    - http_server_tls_subject
-          # Output for valid cloudevents
-          - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-            output:
-              label: "send_valid_cloudevent"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-valid-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 52428800
-                max_retries: 2
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_subject")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 0
-                  byte_size: 1_000_000 # 1MB
-                  period: 50ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_VALID_CE_TOPIC:topic.device.validcloudevents}'
-
-          # Output for partial cloudevents
-          - check: 'metadata("dimo_message_content").or("") == "dimo_partial_cloudevent" && metadata("dimo_cloudevent_index").or("") != ""'
-            output:
-              label: "send_partial_cloudevent"
-              kafka:
-                ack_replicas: false
-                addresses:
-                  - '${KAFKA_BOOTSTRAP_SERVERS:localhost}:${KAFKA_BOOTSTRAP_PORT:9092}'
-                backoff:
-                  initial_interval: 1s
-                  max_elapsed_time: 30s
-                  max_interval: 5s
-                client_id: ${CONTAINER_NAME:localhost}-partial-output
-                compression: '${KAFKA_COMPRESSION:none}'
-                max_msg_bytes: 52428800
-                max_retries: 2
-                max_in_flight: 20
-                key: ${!metadata("dimo_cloudevent_source")}_${!metadata("dimo_cloudevent_id")}
-                partitioner: murmur2_hash
-                batching:
-                  count: 0
-                  byte_size: 1_000_000 # 1MB
-                  period: 50ms
-                target_version: 2.5.0
-                timeout: 5s
-                topic: '${KAFKA_PARTIAL_CE_TOPIC:topic.device.partialcloudevents}'
-          - check: ''
-            output:
-              label: "drop_message"
-              drop: {}
-    - label: "error_output"
-      drop: { }
-      processors:
-        - mutation: |
-            meta response_message = "failed send message to kafka: " + error()
-        - resource: "dimo_internal_error_sync_response"
+  switch:
+    cases:
+      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
+        output:
+          label: "inproc_cloudevents"
+          inproc: "dimo_cloudevents"
+      - check: ''
+        output:
+          broker:
+            pattern: fan_out
+            outputs:
+              - label: "inproc_clickhouse"
+                inproc: "dimo_clickhouse"
+              - label: "inproc_kafka"
+                inproc: "dimo_kafka"

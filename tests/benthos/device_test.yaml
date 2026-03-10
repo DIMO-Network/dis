@@ -1,0 +1,362 @@
+tests:
+  # ── Ruptela Status Signal Conversion (full pipeline) ──────────────────────
+  - name: "Ruptela Status Signal Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 137
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      AFTERMARKET_NFT_ADDRESS: "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA"
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+          dimo_cloudevent_type: "dimo.status"
+        json_content:
+          ds: "r/v0/s"
+          signature: "0x6fb5849e21e66f3e"
+          time: "2024-09-27T08:33:26Z"
+          vehicleTokenId: 12
+          deviceTokenId: 392
+          data:
+            pos:
+              alt: 1048
+              dir: 7370
+              hdop: 6
+              lat: 522721466
+              lon: -9014316
+              sat: 20
+              spd: 65535
+            prt: 0
+            signals:
+              "29": "37FF"
+              "100": "012C"
+              "101": "D5"
+              "109": "7F"
+              "359": "9"
+            trigger: 7
+    output_batches:
+      - - {} # replay of original message
+        - json_contains:
+            specversion: "1.0"
+            type: "dimo.signals"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+            subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
+            producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
+
+  # ── Ruptela Location Signal Conversion (full pipeline) ────────────────────
+  - name: "Ruptela Location Signal Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 137
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      AFTERMARKET_NFT_ADDRESS: "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA"
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+          dimo_cloudevent_type: "dimo.status"
+        json_content:
+          ds: "r/v0/loc"
+          signature: "0xb6b130b31b4cd731"
+          time: "2024-09-26T14:19:14Z"
+          vehicleTokenId: 12
+          deviceTokenId: 392
+          data:
+            location:
+              - alt: 1232
+                dir: 19730
+                hdop: 0
+                lat: 432699983
+                lon: -715014200
+                ts: 1727360340
+              - alt: 12
+                dir: 9390
+                hdop: 1
+                lat: 442699983
+                lon: -715014200
+                ts: 1727360341
+    output_batches:
+      - - {} # replay of original message
+        - json_contains:
+            specversion: "1.0"
+            type: "dimo.signals"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+            subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
+            producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
+            dataversion: "r/v0/loc"
+
+  # ── Ruptela Combined Status+Event CE Conversion ──────────────────────────
+  # When OIDs 135/136/143 have non-zero values, the CE conversion produces
+  # both dimo.status and dimo.event CloudEvents from a single r/v0/s payload
+  - name: "Ruptela Status With Events CloudEvent Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
+    environment:
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      AFTERMARKET_NFT_ADDRESS: "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA"
+      DIMO_REGISTRY_CHAIN_ID: 137
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+        json_content:
+          ds: "r/v0/s"
+          signature: "0xabc123"
+          time: "2024-09-27T08:33:26Z"
+          vehicleTokenId: 12
+          deviceTokenId: 392
+          data:
+            pos:
+              alt: 1048
+              dir: 7370
+              hdop: 6
+              lat: 522721466
+              lon: -9014316
+              sat: 20
+              spd: 65535
+            prt: 0
+            signals:
+              "29": "37FF"
+              "135": "35"
+              "136": "A"
+              "143": "7"
+            trigger: 7
+    output_batches:
+      - - json_contains:
+            specversion: "1.0"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+            type: "dimo.status"
+            dataversion: "r/v0/s"
+            subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
+            producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
+            datacontenttype: "application/json"
+            signature: "0xabc123"
+            time: "2024-09-27T08:33:26Z"
+        - json_contains:
+            specversion: "1.0"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+            type: "dimo.events"
+            dataversion: "r/v0/s"
+            subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
+            producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
+            datacontenttype: "application/json"
+            signature: "0xabc123"
+            time: "2024-09-27T08:33:26Z"
+
+  # ── Ruptela CloudEvent Conversion (raw → CE, status only) ─────────────────
+  - name: "Ruptela CloudEvent Conversion with Full Payload"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
+    environment:
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      AFTERMARKET_NFT_ADDRESS: "0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA"
+      DIMO_REGISTRY_CHAIN_ID: 137
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+        json_content:
+          ds: "r/v0/s"
+          signature: "0x6fb5849e21e66f3e0619f148bc032153aa4c90be4cd175e83c1f959e1bc551d940d516fe74f50aed380e432406675c583e75155bf1c77b9ec0761b1dbe1ab87e1c"
+          time: "2024-09-27T08:33:26Z"
+          vehicleTokenId: 12
+          deviceTokenId: 392
+          data:
+            pos:
+              alt: 1048
+              dir: 7370
+              hdop: 6
+              lat: 522721466
+              lon: -9014316
+              sat: 20
+              spd: 65535
+            prt: 0
+            signals:
+              "29": "37FF"
+              "100": "012C"
+              "101": "D5"
+              "359": "9"
+            trigger: 7
+    output_batches:
+      - - json_contains:
+            specversion: "1.0"
+            datacontenttype: "application/json"
+            source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
+            type: "dimo.status"
+            dataversion: "r/v0/s"
+            subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
+            producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
+            time: "2024-09-27T08:33:26Z"
+            signature: "0x6fb5849e21e66f3e0619f148bc032153aa4c90be4cd175e83c1f959e1bc551d940d516fe74f50aed380e432406675c583e75155bf1c77b9ec0761b1dbe1ab87e1c"
+
+  # ── AutoPi CloudEvent Conversion (raw → CE) ──────────────────────────────
+  # AutoPi CE conversion produces 2 CEs: vehicle status + device status
+  - name: "AutoPi CloudEvent Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#convert_cloudevent"
+    environment:
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      DIMO_REGISTRY_CHAIN_ID: 137
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
+        json_content:
+          data:
+            timestamp: 1713460846435
+            device:
+              rpiUptimeSecs: 218
+              batteryVoltage: 12.28
+            vehicle:
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  value: 107
+          vehicleTokenId: 33
+          deviceTokenId: 100
+          signature: "0x72208df3"
+          time: "2024-04-18T17:20:46.436008782Z"
+          type: "com.dimo.device.status.v2"
+    output_batches:
+      - - json_contains:
+            specversion: "1.0"
+            source: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
+            type: "dimo.status"
+            datacontenttype: "application/json"
+            dataversion: "v2"
+            subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:33"
+            signature: "0x72208df3"
+            time: "2024-04-18T17:20:46.436008782Z"
+        - json_contains:
+            specversion: "1.0"
+            source: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
+            type: "dimo.status"
+            datacontenttype: "application/json"
+            dataversion: "v2"
+            producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:100"
+            signature: "0x72208df3"
+            time: "2024-04-18T17:20:46.436008782Z"
+
+  # ── AutoPi Signal Conversion (full pipeline) ──────────────────────────────
+  # AutoPi produces 3 messages: original + SignalCloudEvent + device CE passthrough
+  - name: "AutoPi Signal Conversion"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 137
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
+          dimo_cloudevent_type: "dimo.status"
+        json_content:
+          data:
+            timestamp: 1713460846435
+            device:
+              rpiUptimeSecs: 218
+              batteryVoltage: 12.28
+            vehicle:
+              signals:
+                - timestamp: 1713460826633
+                  name: "coolantTemp"
+                  value: 107
+                - timestamp: 1713460846435
+                  name: "vehicleSpeed"
+                  value: 39
+                - timestamp: 1713460846435
+                  name: "rpm"
+                  value: 2000
+                - timestamp: 1713460846435
+                  name: "fuelLevel"
+                  value: 50
+          vehicleTokenId: 33
+          deviceTokenId: 100
+          signature: "0x72208df3"
+          time: "2024-04-18T17:20:46.436008782Z"
+          type: "com.dimo.device.status.v2"
+    output_batches:
+      - - {} # replay of original message
+        - json_contains: >
+            {
+              "specversion": "1.0",
+              "type": "dimo.signals",
+              "source": "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897",
+              "subject": "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:33",
+              "producer": "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:100",
+              "dataversion": "v2",
+              "data": {
+                "signals": [
+                  {
+                    "name": "powertrainCombustionEngineECT",
+                    "valueNumber": 107,
+                    "valueString": ""
+                  },
+                  {
+                    "name": "powertrainCombustionEngineSpeed",
+                    "valueNumber": 2000,
+                    "valueString": ""
+                  },
+                  {
+                    "name": "powertrainFuelSystemRelativeLevel",
+                    "valueNumber": 50,
+                    "valueString": ""
+                  },
+                  {
+                    "name": "speed",
+                    "valueNumber": 39,
+                    "valueString": ""
+                  }
+                ]
+              }
+            }
+        - {} # device status CE passthrough
+
+  # ── AutoPi DTC Error Codes (full pipeline) ────────────────────────────────
+  # AutoPi converts DTC comma-separated string to JSON array
+  - name: "AutoPi DTC Error Codes"
+    target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
+    environment:
+      DIMO_REGISTRY_CHAIN_ID: 137
+      VEHICLE_NFT_ADDRESS: "0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF"
+      RPC_URL: https://rpc-amoy.polygon.technology/
+    input_batch:
+      - metadata:
+          dimo_message_content: 'dimo_content_connection'
+          dimo_cloudevent_source: "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897"
+          dimo_cloudevent_type: "dimo.status"
+        json_content:
+          data:
+            vehicle:
+              signals:
+                - timestamp: 1713460823243
+                  name: "obdDTCList"
+                  value: "P00BD,P0456,P0446"
+          vehicleTokenId: 33
+          deviceTokenId: 100
+          signature: "0x72208df3"
+          time: "2024-04-18T17:20:46.436008782Z"
+          type: "com.dimo.device.status.v2"
+    output_batches:
+      - - {} # replay of original message
+        - json_contains: >
+            {
+              "specversion": "1.0",
+              "type": "dimo.signals",
+              "source": "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897",
+              "subject": "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:33",
+              "producer": "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:100",
+              "dataversion": "v2",
+              "data": {
+                "signals": [
+                  {
+                    "name": "obdDTCList",
+                    "valueNumber": 0,
+                    "valueString": "[\"P00BD\",\"P0456\",\"P0446\"]"
+                  }
+                ]
+              }
+            }
+        - {} # device status CE passthrough

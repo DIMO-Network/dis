@@ -1,6 +1,7 @@
 package eventconvert
 
 import (
+	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
 
@@ -19,7 +20,9 @@ func init() {
 }
 
 func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProcessor, error) {
+	m := mgr.Metrics()
 	return &eventsProcessor{
-		logger: mgr.Logger(),
+		logger:          mgr.Logger(),
+		eventsPerReport: m.NewTimer(processors.MetricEventsPerReport),
 	}, nil
 }

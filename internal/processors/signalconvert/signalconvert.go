@@ -24,13 +24,14 @@ const (
 var (
 	errLatLongMismatch = errors.New("latitude and longitude mismatch")
 	errFutureTimestamp = errors.New("future timestamp")
-	pruneSignal        = vss.Signal{Name: pruneSignalName}
+	pruneSignal        = vss.Signal{Data: vss.SignalData{Name: pruneSignalName}}
 )
 
 type vssProcessor struct {
 	logger            *service.Logger
 	vehicleNFTAddress common.Address
 	chainID           uint64
+	signalsPerReport  *service.MetricTimer
 }
 
 // Close to fulfill the service.Processor interface.
@@ -83,13 +84,26 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 		retBatch = append(retBatch, errMsg)
 	}
 
-	for i := range signals {
-		msgCpy := msg.Copy()
-		setMetaData(&signals[i], rawEvent)
-		msgCpy.SetStructured(signals[i])
-		msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
-		retBatch = append(retBatch, msgCpy)
+	if len(signals) == 0 {
+		return retBatch
 	}
+
+	header := cloudevent.CloudEventHeader{
+		SpecVersion: rawEvent.SpecVersion,
+		Subject:     rawEvent.Subject,
+		Source:      rawEvent.Source,
+		Producer:    rawEvent.Producer,
+		ID:          rawEvent.ID,
+		Time:        rawEvent.Time,
+		Type:        cloudevent.TypeSignals,
+		DataVersion: rawEvent.DataVersion,
+	}
+	signalCE := vss.PackSignals(header, signals)
+	msgCpy := msg.Copy()
+	msgCpy.SetStructured(signalCE)
+	msgCpy.MetaSetMut(processors.MessageContentKey, signalValidContentType)
+	retBatch = append(retBatch, msgCpy)
+	v.signalsPerReport.Timing(int64(len(signals)))
 	return retBatch
 }
 
@@ -98,14 +112,14 @@ func (v *vssProcessor) processMsg(ctx context.Context, msg *service.Message) ser
 func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) {
 	var errs error
 	slices.SortFunc(signals, func(a, b vss.Signal) int {
-		return cmp.Or(a.Timestamp.Compare(b.Timestamp), cmp.Compare(a.Name, b.Name))
+		return cmp.Or(a.Data.Timestamp.Compare(b.Data.Timestamp), cmp.Compare(a.Data.Name, b.Data.Name))
 	})
 	for i := range signals {
 		signal := &signals[i]
 
 		// prune future signals
-		if processors.IsFutureTimestamp(signal.Timestamp) {
-			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Name, signal.Timestamp))
+		if processors.IsFutureTimestamp(signal.Data.Timestamp) {
+			errs = errors.Join(errs, fmt.Errorf("%w, signal '%s' has timestamp: %v", errFutureTimestamp, signal.Data.Name, signal.Data.Timestamp))
 			signals[i] = pruneSignal
 			continue
 		}
@@ -122,7 +136,7 @@ func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) 
 	// remove all the pruned signals
 	var prunedSignals []vss.Signal
 	for _, signal := range signals {
-		if signal.Name != pruneSignalName {
+		if signal.Data.Name != pruneSignalName {
 			prunedSignals = append(prunedSignals, signal)
 		}
 	}
@@ -130,14 +144,7 @@ func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) 
 }
 
 func signalEqual(a, b vss.Signal) bool {
-	return a.Name == b.Name && a.Timestamp.Equal(b.Timestamp) && a.Subject == b.Subject
-}
-
-func setMetaData(signal *vss.Signal, rawEvent *cloudevent.RawEvent) {
-	signal.Source = rawEvent.Source
-	signal.Producer = rawEvent.Producer
-	signal.CloudEventID = rawEvent.ID
-	signal.Subject = rawEvent.Subject
+	return a.Data.Name == b.Data.Name && a.Data.Timestamp.Equal(b.Data.Timestamp)
 }
 
 func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {

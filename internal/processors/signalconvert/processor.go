@@ -3,6 +3,7 @@ package signalconvert
 import (
 	"fmt"
 
+	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/redpanda-data/benthos/v4/public/service"
 )
@@ -37,9 +38,11 @@ func ctor(cfg *service.ParsedConfig, mgr *service.Resources) (service.BatchProce
 	if !common.IsHexAddress(vehicleAddress) {
 		return nil, fmt.Errorf("invalid vehicle contract address: %s", vehicleAddress)
 	}
+	m := mgr.Metrics()
 	return &vssProcessor{
 		logger:            mgr.Logger(),
 		vehicleNFTAddress: common.HexToAddress(vehicleAddress),
 		chainID:           uint64(chainID),
+		signalsPerReport:  m.NewTimer(processors.MetricSignalsPerReport),
 	}, nil
 }
