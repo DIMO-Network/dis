@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -81,6 +82,26 @@ processor_resources:
 		if err := os.WriteFile(filepath.Join(streamsDir, name), data, 0o644); err != nil {
 			return err
 		}
+	}
+
+	// Patch output-parquet.yaml to point aws_s3 at local MinIO
+	parquetCfgPath := filepath.Join(streamsDir, "output-parquet.yaml")
+	parquetCfg, err := os.ReadFile(parquetCfgPath)
+	if err != nil {
+		return fmt.Errorf("read parquet config for patching: %w", err)
+	}
+	patched := strings.Replace(string(parquetCfg),
+		`                        aws_s3:
+                          bucket: "${PARQUET_BUCKET}"
+                          region: "${S3_AWS_REGION}"`,
+		`                        aws_s3:
+                          bucket: "${PARQUET_BUCKET}"
+                          region: "${S3_AWS_REGION}"
+                          endpoint: "${S3_ENDPOINT}"
+                          force_path_style_urls: ${S3_FORCE_PATH_STYLE}`,
+		1)
+	if err := os.WriteFile(parquetCfgPath, []byte(patched), 0o644); err != nil {
+		return fmt.Errorf("write patched parquet config: %w", err)
 	}
 
 	// Create buffer directories
