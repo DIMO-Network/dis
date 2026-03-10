@@ -41,21 +41,37 @@ import (
 )
 
 func main() {
-	host := envOrDefault("CLICKHOUSE_HOST", "localhost")
-	port := envOrDefault("CLICKHOUSE_PORT", "9440")
-	user := envOrDefault("CLICKHOUSE_USER", "default")
-	pass := envOrDefault("CLICKHOUSE_PASSWORD", "")
-	dimoDB := envOrDefault("CLICKHOUSE_DIMO_DATABASE", "dimo")
-	indexDB := envOrDefault("CLICKHOUSE_INDEX_DATABASE", "dimo_index")
+	if shouldRunMigrations() {
+		host := envOrDefault("CLICKHOUSE_HOST", "localhost")
+		port := envOrDefault("CLICKHOUSE_PORT", "9440")
+		user := envOrDefault("CLICKHOUSE_USER", "default")
+		pass := envOrDefault("CLICKHOUSE_PASSWORD", "")
+		dimoDB := envOrDefault("CLICKHOUSE_DIMO_DATABASE", "dimo")
+		indexDB := envOrDefault("CLICKHOUSE_INDEX_DATABASE", "dimo_index")
 
-	secure := envOrDefault("CLICKHOUSE_SECURE", "true")
-	dimoDSN := fmt.Sprintf("clickhouse://%s:%s/%s?username=%s&password=%s&secure=%s&dial_timeout=5s", host, port, dimoDB, user, pass, secure)
-	indexDSN := fmt.Sprintf("clickhouse://%s:%s/%s?username=%s&password=%s&secure=%s&dial_timeout=5s", host, port, indexDB, user, pass, secure)
+		secure := envOrDefault("CLICKHOUSE_SECURE", "true")
+		dimoDSN := fmt.Sprintf("clickhouse://%s:%s/%s?username=%s&password=%s&secure=%s&dial_timeout=5s", host, port, dimoDB, user, pass, secure)
+		indexDSN := fmt.Sprintf("clickhouse://%s:%s/%s?username=%s&password=%s&secure=%s&dial_timeout=5s", host, port, indexDB, user, pass, secure)
 
-	runMigration("signal", dimoDSN, sigmigrations.BaseFS)
-	runMigration("file_index", indexDSN, indexmigrations.BaseFS)
+		runMigration("signal", dimoDSN, sigmigrations.BaseFS)
+		runMigration("file_index", indexDSN, indexmigrations.BaseFS)
+	}
 
 	service.RunCLI(context.Background())
+}
+
+// shouldRunMigrations returns true only when the binary is running as a server
+// (no subcommand or explicit "run" command). Skips migrations for CLI commands
+// like "lint", "test", "list", etc. that don't need a database.
+func shouldRunMigrations() bool {
+	if len(os.Args) < 2 {
+		return true
+	}
+	switch os.Args[1] {
+	case "lint", "test", "list", "create", "echo", "blobl":
+		return false
+	}
+	return true
 }
 
 func envOrDefault(key, fallback string) string {
