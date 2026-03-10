@@ -51,3 +51,6 @@ autoscaling:
 image:
   pullPolicy: IfNotPresent
   tag: 0.4.2
+
+kafka:
+  clusterName: kafka-prod-dimo-kafka

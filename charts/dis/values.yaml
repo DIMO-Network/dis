@@ -131,3 +131,24 @@ serviceMonitor:
   path: /metrics
   port: mon-http
   interval: 30s
+kafka:
+  clusterName: kafka-dev-dimo-kafka
+  topics:
+    - name: topic.device.signals
+      config:
+        segment.ms: '3600000'
+        compression.type: producer
+        cleanup.policy: delete
+        retention.ms: '7200000'
+    - name: topic.device.events
+      config:
+        segment.ms: '3600000'
+        compression.type: producer
+        cleanup.policy: delete
+        retention.ms: '7200000'
+    - name: topic.device.validcloudevents
+      config:
+        segment.ms: '3600000'
+        compression.type: producer
+        cleanup.policy: delete
+        retention.ms: '7200000'
