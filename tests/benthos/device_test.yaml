@@ -39,7 +39,7 @@ tests:
       - - {} # replay of original message
         - json_contains:
             specversion: "1.0"
-            type: "dimo.status"
+            type: "dimo.signals"
             source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
             subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
             producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
@@ -81,7 +81,7 @@ tests:
       - - {} # replay of original message
         - json_contains:
             specversion: "1.0"
-            type: "dimo.status"
+            type: "dimo.signals"
             source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
             subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
             producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
@@ -137,7 +137,7 @@ tests:
         - json_contains:
             specversion: "1.0"
             source: "0xF26421509Efe92861a587482100c6d728aBf1CD0"
-            type: "dimo.event"
+            type: "dimo.events"
             dataversion: "r/v0/s"
             subject: "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:12"
             producer: "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:392"
@@ -282,7 +282,7 @@ tests:
         - json_contains: >
             {
               "specversion": "1.0",
-              "type": "dimo.status",
+              "type": "dimo.signals",
               "source": "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897",
               "subject": "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:33",
               "producer": "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:100",
@@ -344,7 +344,7 @@ tests:
         - json_contains: >
             {
               "specversion": "1.0",
-              "type": "dimo.status",
+              "type": "dimo.signals",
               "source": "0x5e31bBc786D7bEd95216383787deA1ab0f1c1897",
               "subject": "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:33",
               "producer": "did:erc721:137:0x9c94C395cBcBDe662235E0A9d3bB87Ad708561BA:100",

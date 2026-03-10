@@ -132,8 +132,6 @@ tests:
                 - timestamp: 1713460826633
                   name: "coolantTemp"
                   value: 107
-          metadata_equals:
-            dimo_cloudevent_index: adid:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123!2024-04-18T17:20:46Z!dimo.status!0xSampleIntegrationAddr!0123
 
   - name: "Test Signal Conversion"
     target_processors: "../../charts/dis/files/streams/external-ingest.yaml#/pipeline/processors"
@@ -170,7 +168,7 @@ tests:
             {
               "specversion": "1.0",
               "id": "0000000000000099bA5738a18d83D41847dfFbDC6101d37C69c9B0cF0000007b",
-              "type": "dimo.status",
+              "type": "dimo.signals",
               "source": "0x12343d054925bdEC534A9Cdf33a71807d72B1359",
               "producer": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
               "subject": "did:erc721:153:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:123",
