@@ -219,3 +219,11 @@ Specify a subcommand:
   config-gen           Generate Benthos config files
   generate             Run all generate commands
 ```
+
+## Local Testing
+
+Local testing: The go.mod replace directive (replace github.com/DIMO-Network/model-garage => ../model-garage)
+so that you can run against changes to the model-garage repo without having to release.
+
+Key learning: The DIS integration tests run against a pre-built bin/dis binary, so code changes require go build -o bin/dis ./ before re-running tests. 
+

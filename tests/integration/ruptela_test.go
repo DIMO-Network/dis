@@ -12,10 +12,225 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestRuptelaCommandEngineBlock(t *testing.T) {
+	clearMinIOObjects(t, "cloudevent/valid/")
+	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:555"
+	clearClickHouseForSubject(t, subject)
+
+	// Command payload with engine block signal (405 = "1" means block).
+	// Also includes behavior counters (135/136/143) which should still produce events.
+	payload := map[string]any{
+		"ds":             "r/v0/cmd",
+		"signature":      "0xdeadbeef",
+		"subject":        subject,
+		"vehicleTokenId": 555,
+		"deviceTokenId":  10,
+		"time":           "2024-09-27T08:33:26Z",
+		"data": map[string]any{
+			"signals": map[string]string{
+				"135": "0",
+				"136": "0",
+				"143": "0",
+				"405": "1", // engine block (non-zero = block)
+			},
+		},
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	eventOffset := kafkaEndOffset(t, "topic.device.events")
+
+	resp := postMTLSWithConfig(t, payloadBytes, ruptelaTLSConfig)
+	drainAndClose(t, resp)
+	require.Equal(t, 200, resp.StatusCode, "DIS should accept valid Ruptela command payload")
+
+	// Wait for pipeline processing
+	time.Sleep(5 * time.Second)
+
+	// ── 1. Kafka events topic — 1 event payload with engine block ──
+	eventMsgs := consumeKafka(t, "topic.device.events", eventOffset, 10*time.Second)
+	require.Len(t, eventMsgs, 1, "expected exactly 1 event message")
+	eventCE := func() *vss.EventCloudEvent { ce := parseEventCE(t, eventMsgs[0]); return &ce }()
+	assert.Equal(t, "1.0", eventCE.SpecVersion)
+	assert.Equal(t, "dimo.events", eventCE.Type)
+	assert.Equal(t, ruptelaSourceAddress, eventCE.Source)
+
+	require.Len(t, eventCE.Data.Events, 1, "expected 1 event: engineBlock from OID 405")
+
+	assert.Equal(t, "security.engineBlock", eventCE.Data.Events[0].Name)
+
+	// ── 2. ClickHouse event table — 1 engine block row ──────────
+	eventRows := queryEvents(t, subject)
+	require.Len(t, eventRows, 1, "expected 1 event row in ClickHouse")
+	assert.Equal(t, "security.engineBlock", eventRows[0].Name)
+	assert.Equal(t, ruptelaSourceAddress, eventRows[0].Source)
+	assert.Equal(t, "dimo.event", eventRows[0].Type)
+
+	// ── 3. S3 (MinIO) parquet — only dimo.events CE ─────────────
+	time.Sleep(6 * time.Second)
+	keys := listMinIOObjects(t, "cloudevent/valid/")
+	require.NotEmpty(t, keys, "no parquet files found in MinIO")
+
+	var pqFound int
+	for _, key := range keys {
+		events := readParquetFromMinIO(t, key)
+		for _, ev := range events {
+			if ev.Subject == subject {
+				pqFound++
+				assert.Equal(t, ruptelaSourceAddress, ev.Source)
+				assert.Equal(t, "1.0", ev.SpecVersion)
+			}
+		}
+	}
+	t.Logf("Found %d parquet rows for subject %s", pqFound, subject)
+	// Command DS produces only dimo.events CE (no status or fingerprint)
+	assert.Equal(t, 1, pqFound, "expected 1 CloudEvent in parquet (dimo.events only for cmd DS)")
+
+	// ── 4. ClickHouse cloud_event table — 1 index row ───────────
+	ceRows := queryCloudEvents(t, subject)
+	require.Len(t, ceRows, 1, "expected 1 cloud_event index row (dimo.events only)")
+	assert.Equal(t, "dimo.events", ceRows[0].EventType)
+	assert.Equal(t, ruptelaSourceAddress, ceRows[0].Source)
+	assert.NotEmpty(t, ceRows[0].IndexKey, "index_key should be set")
+}
+
+func TestRuptelaCommandEngineUnblock(t *testing.T) {
+	clearMinIOObjects(t, "cloudevent/valid/")
+	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:556"
+	clearClickHouseForSubject(t, subject)
+
+	// Command payload with engine unblock signal (405 = "0" means unblock).
+	payload := map[string]any{
+		"ds":             "r/v0/cmd",
+		"signature":      "0xdeadbeef",
+		"subject":        subject,
+		"vehicleTokenId": 556,
+		"deviceTokenId":  10,
+		"time":           "2024-09-27T08:33:26Z",
+		"data": map[string]any{
+			"signals": map[string]string{
+				"135": "0",
+				"136": "0",
+				"143": "0",
+				"405": "0", // engine unblock (zero = unblock)
+			},
+		},
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	eventOffset := kafkaEndOffset(t, "topic.device.events")
+
+	resp := postMTLSWithConfig(t, payloadBytes, ruptelaTLSConfig)
+	drainAndClose(t, resp)
+	require.Equal(t, 200, resp.StatusCode, "DIS should accept valid Ruptela command payload")
+
+	time.Sleep(5 * time.Second)
+
+	// ── 1. Kafka events topic — 1 event payload with engine unblock ──
+	eventMsgs := consumeKafka(t, "topic.device.events", eventOffset, 10*time.Second)
+	require.Len(t, eventMsgs, 1, "expected exactly 1 event message")
+	eventCE := func() *vss.EventCloudEvent { ce := parseEventCE(t, eventMsgs[0]); return &ce }()
+	assert.Equal(t, "1.0", eventCE.SpecVersion)
+	assert.Equal(t, "dimo.events", eventCE.Type)
+	assert.Equal(t, ruptelaSourceAddress, eventCE.Source)
+
+	require.Len(t, eventCE.Data.Events, 1, "expected 1 event: engineUnblock from OID 405")
+
+	assert.Equal(t, "security.engineUnblock", eventCE.Data.Events[0].Name)
+
+	// ── 2. ClickHouse event table — 1 engine unblock row ────────
+	eventRows := queryEvents(t, subject)
+	require.Len(t, eventRows, 1, "expected 1 event row in ClickHouse")
+	assert.Equal(t, "security.engineUnblock", eventRows[0].Name)
+	assert.Equal(t, ruptelaSourceAddress, eventRows[0].Source)
+	assert.Equal(t, "dimo.event", eventRows[0].Type)
+
+	// ── 3. S3 (MinIO) parquet — only dimo.events CE ─────────────
+	time.Sleep(6 * time.Second)
+	keys := listMinIOObjects(t, "cloudevent/valid/")
+	require.NotEmpty(t, keys, "no parquet files found in MinIO")
+
+	var pqFound int
+	for _, key := range keys {
+		events := readParquetFromMinIO(t, key)
+		for _, ev := range events {
+			if ev.Subject == subject {
+				pqFound++
+				assert.Equal(t, ruptelaSourceAddress, ev.Source)
+				assert.Equal(t, "1.0", ev.SpecVersion)
+			}
+		}
+	}
+	t.Logf("Found %d parquet rows for subject %s", pqFound, subject)
+	assert.Equal(t, 1, pqFound, "expected 1 CloudEvent in parquet (dimo.events only for cmd DS)")
+
+	// ── 4. ClickHouse cloud_event table — 1 index row ───────────
+	ceRows := queryCloudEvents(t, subject)
+	require.Len(t, ceRows, 1, "expected 1 cloud_event index row (dimo.events only)")
+	assert.Equal(t, "dimo.events", ceRows[0].EventType)
+	assert.Equal(t, ruptelaSourceAddress, ceRows[0].Source)
+	assert.NotEmpty(t, ceRows[0].IndexKey, "index_key should be set")
+}
+
+func TestRuptelaStatusDS_Signal405_NoEngineEvent(t *testing.T) {
+	// Signal 405 from status DS ("r/v0/s") should NOT produce engine block/unblock events.
+	// Only the command DS ("r/v0/cmd") should trigger engine security events.
+	clearMinIOObjects(t, "cloudevent/valid/")
+	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:557"
+	clearClickHouseForSubject(t, subject)
+
+	payload := map[string]any{
+		"ds":             "r/v0/s",
+		"signature":      "0xdeadbeef",
+		"subject":        subject,
+		"vehicleTokenId": 557,
+		"deviceTokenId":  10,
+		"time":           "2024-09-27T08:33:26Z",
+		"data": map[string]any{
+			"signals": map[string]string{
+				"96":  "6B", // include a real signal so the payload is valid
+				"135": "0",
+				"136": "0",
+				"143": "0",
+				"405": "1", // engine block value, but from status DS — should be ignored
+			},
+		},
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	require.NoError(t, err)
+	t.Logf("Input payload: %s", string(payloadBytes))
+
+	eventOffset := kafkaEndOffset(t, "topic.device.events")
+
+	resp := postMTLSWithConfig(t, payloadBytes, ruptelaTLSConfig)
+	drainAndClose(t, resp)
+	require.Equal(t, 200, resp.StatusCode, "DIS should accept valid Ruptela status payload")
+
+	time.Sleep(5 * time.Second)
+
+	// No events should be produced — behavior counters are all zero and
+	// engine block from status DS should be ignored.
+	eventMsgs := consumeKafka(t, "topic.device.events", eventOffset, 10*time.Second)
+	assert.Empty(t, eventMsgs, "signal 405 from status DS should NOT produce engine events")
+
+	// ClickHouse event table should have no engine events for this subject
+	eventRows := queryEvents(t, subject)
+	for _, r := range eventRows {
+		assert.NotEqual(t, "security.engineBlock", r.Name, "engine block should not appear from status DS")
+		assert.NotEqual(t, "security.engineUnblock", r.Name, "engine unblock should not appear from status DS")
+	}
+}
+
 func TestRuptelaFullPipeline(t *testing.T) {
 	clearMinIOObjects(t, "cloudevent/valid/")
-
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:444"
+	clearClickHouseForSubject(t, subject)
 
 	// Ruptela status payload with both signals and event counters.
 	// Signal 96 = powertrainCombustionEngineECT (hex 0x6B=107, 107-40=67°C)
