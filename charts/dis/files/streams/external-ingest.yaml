@@ -57,7 +57,8 @@ pipeline:
     # If label name change, update the alerts
     - label: "convert_cloudevent_errors"
       catch:
-        - log:
+        - label: "log_cloudevent_convert_error"
+          log:
             level: WARN
             message: "failed to convert to cloudevent: ${!error()}"
             fields_mapping: |
@@ -67,7 +68,8 @@ pipeline:
                 type = this.type.or("unknown")
                 id = this.id.or("unknown")
         # mutate message for http response and metrics
-        - mutation: |
+        - label: "set_cloudevent_convert_error_meta"
+          mutation: |
               meta dimo_component = "dimo_cloudevent_convert"
               meta response_message = "failed to convert to cloudevent: " + error()
         # Update error count metric
@@ -75,7 +77,8 @@ pipeline:
         # Send bad request response
         - resource: "dimo_bad_request_sync_response"
         # Drop the message
-        - mapping: root = deleted()
+        - label: "delete_cloudevent_convert_error"
+          mapping: root = deleted()
     - label: "valid_cloudevent_switch"
       switch:
         - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
@@ -92,9 +95,11 @@ pipeline:
     # If label name change, update the alerts
     - label: "processing_errors"
       catch:
-      -  mutation: |
+      - label: "set_processing_error_meta"
+        mutation: |
             meta response_message = if metadata("dimo_error_message").or("")  == error() { "failed to process cloudevent: " + error() } else { metadata("dimo_error_message").or("error") +": " + error()}
-      - log:
+      - label: "log_processing_error"
+        log:
           level: WARN
           message: "failed to process cloudevent"
           fields_mapping: |
@@ -111,7 +116,8 @@ pipeline:
       # Send bad request response
       - resource: "dimo_bad_request_sync_response"
       # Drop the message
-      - mapping: root = deleted()
+      - label: "delete_processing_error"
+        mapping: root = deleted()
 
 output:
   switch:

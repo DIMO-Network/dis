@@ -23,9 +23,11 @@ processor_resources:
 
   - label: "handle_db_error"
     processors:
-      - group_by_value:
+      - label: "group_db_error"
+        group_by_value:
           value: ${! metadata("cloudevent_id").or("") } ${! metadata("cloudevent_source").or("") }
-      - select_parts:
+      - label: "select_db_error"
+        select_parts:
           parts: [0]
       - label: "log_db_error"
         log:
@@ -43,9 +45,11 @@ processor_resources:
 
   - label: "handle_db_connection_error"
     processors:
-      - group_by_value:
+      - label: "group_db_connection_error"
+        group_by_value:
           value: ${! metadata("cloudevent_id").or("") } ${! metadata("cloudevent_source").or("") }
-      - select_parts:
+      - label: "select_db_connection_error"
+        select_parts:
           parts: [0]
       - label: "log_db_connection_error"
         log:
@@ -63,14 +67,18 @@ processor_resources:
 
   - label: "dimo_bad_request_sync_response"
     processors:
-      - mapping: |
+      - label: "bad_request_response_mapping"
+        mapping: |
           meta response_status = 400
           root = metadata("response_message").or("Bad Request")
-      - sync_response: {}
+      - label: "bad_request_sync_response"
+        sync_response: {}
 
   - label: "dimo_internal_error_sync_response"
     processors:
-      - mapping: |
+      - label: "internal_error_response_mapping"
+        mapping: |
           meta response_status = 500
           root  =  metadata("response_message").or("Internal Error: Please try again later")
-      - sync_response: {}
+      - label: "internal_error_sync_response"
+        sync_response: {}

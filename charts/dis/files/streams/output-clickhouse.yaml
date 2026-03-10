@@ -14,7 +14,8 @@ output:
         output:
           label: "clickhouse_signals"
           processors:
-            - dimo_signal_to_slice: {}
+            - label: "signal_to_slice"
+              dimo_signal_to_slice: {}
           retry:
             output:
               sql_insert:
@@ -34,7 +35,8 @@ output:
         output:
           label: "clickhouse_events"
           processors:
-            - dimo_event_to_slice: {}
+            - label: "event_to_slice"
+              dimo_event_to_slice: {}
           retry:
             output:
               sql_insert:

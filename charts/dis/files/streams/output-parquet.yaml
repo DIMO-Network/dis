@@ -11,7 +11,8 @@ buffer:
 
 pipeline:
   processors:
-    - dimo_raw_parquet:
+    - label: "convert_cloudevent_to_parquet"
+      dimo_raw_parquet:
         prefix: "cloudevent/valid/"
 
 output:
@@ -41,7 +42,8 @@ output:
               - label: "s3_parquet_failure"
                 drop: {}
                 processors:
-                  - log:
+                  - label: "insert_valid_cloudevent_parquet_s3_failure"
+                    log:
                       level: ERROR
                       message: 'failed to store parquet file: ${!metadata("fallback_error").or("unknown")}'
 
@@ -64,11 +66,14 @@ output:
                             period: "2s"
                             check: ""
                         processors:
-                          - catch:
-                              -  mutation: |
+                          - label: "handle_clickhouse_ce_error"
+                            catch:
+                              - label: "set_clickhouse_ce_component"
+                                mutation: |
                                    meta dimo_component = "clickhouse_cloudevent"
                               - resource: "handle_db_error"
-                              - mapping: root = deleted()
+                              - label: "delete_clickhouse_ce_error"
+                                mapping: root = deleted()
                     - check: ''
                       output:
                         drop: {}
@@ -79,12 +84,15 @@ output:
                       output:
                         reject: metadata("fallback_error")
                         processors:
-                          - resource: "handle_db_connection_error"
+                          - label: "retry_db_connection_error"
+                            resource: "handle_db_connection_error"
                     - check: ''
                       output:
                         drop: {}
                         processors:
-                          -  mutation: |
+                          - label: "set_ch_failure_component"
+                            mutation: |
                               meta dimo_component = "insert_valid_cloudevent_clickhouse"
-                          - resource: "handle_db_error"
+                          - label: "handle_ch_failure_error"
+                            resource: "handle_db_error"
     - drop: {}
