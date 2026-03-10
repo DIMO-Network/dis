@@ -1,4 +1,4 @@
-replicaCount: 4
+replicaCount: 3
 podAnnotations:
   config.linkerd.io/proxy-cpu-limit: 2000m
   config.linkerd.io/proxy-cpu-request: 500m
