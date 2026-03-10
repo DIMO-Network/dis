@@ -85,6 +85,21 @@ type SignalRow struct {
 	ValueString  string    `db:"value_string"`
 }
 
+// clearClickHouseForSubject deletes all rows for a subject from signal, event, and cloud_event tables.
+func clearClickHouseForSubject(t *testing.T, subject string) {
+	t.Helper()
+	_, err := clickhouseDB.Exec("ALTER TABLE dimo.signal DELETE WHERE subject = ?", subject)
+	require.NoError(t, err)
+	_, err = clickhouseDB.Exec("ALTER TABLE dimo.event DELETE WHERE subject = ?", subject)
+	require.NoError(t, err)
+
+	indexDB, err := sql.Open("clickhouse", clickhouseIndexDSN)
+	require.NoError(t, err)
+	defer indexDB.Close()
+	_, err = indexDB.Exec("ALTER TABLE cloud_event DELETE WHERE subject = ?", subject)
+	require.NoError(t, err)
+}
+
 // querySignals queries the ClickHouse signal table for a given subject.
 // Logs full row data for each result.
 func querySignals(t *testing.T, subject string) []SignalRow {

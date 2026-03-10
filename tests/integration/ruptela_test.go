@@ -14,8 +14,8 @@ import (
 
 func TestRuptelaCommandEngineBlock(t *testing.T) {
 	clearMinIOObjects(t, "cloudevent/valid/")
-
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:555"
+	clearClickHouseForSubject(t, subject)
 
 	// Command payload with engine block signal (405 = "1" means block).
 	// Also includes behavior counters (135/136/143) which should still produce events.
@@ -98,8 +98,8 @@ func TestRuptelaCommandEngineBlock(t *testing.T) {
 
 func TestRuptelaCommandEngineUnblock(t *testing.T) {
 	clearMinIOObjects(t, "cloudevent/valid/")
-
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:556"
+	clearClickHouseForSubject(t, subject)
 
 	// Command payload with engine unblock signal (405 = "0" means unblock).
 	payload := map[string]any{
@@ -181,8 +181,8 @@ func TestRuptelaStatusDS_Signal405_NoEngineEvent(t *testing.T) {
 	// Signal 405 from status DS ("r/v0/s") should NOT produce engine block/unblock events.
 	// Only the command DS ("r/v0/cmd") should trigger engine security events.
 	clearMinIOObjects(t, "cloudevent/valid/")
-
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:557"
+	clearClickHouseForSubject(t, subject)
 
 	payload := map[string]any{
 		"ds":             "r/v0/s",
@@ -229,8 +229,8 @@ func TestRuptelaStatusDS_Signal405_NoEngineEvent(t *testing.T) {
 
 func TestRuptelaFullPipeline(t *testing.T) {
 	clearMinIOObjects(t, "cloudevent/valid/")
-
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:444"
+	clearClickHouseForSubject(t, subject)
 
 	// Ruptela status payload with both signals and event counters.
 	// Signal 96 = powertrainCombustionEngineECT (hex 0x6B=107, 107-40=67°C)
