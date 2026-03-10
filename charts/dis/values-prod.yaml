@@ -15,6 +15,8 @@ env:
   SYNTHETIC_NFT_ADDRESS: '0x4804e8D1661cd1a1e5dDdE1ff458A7f878c0aC6D'
   TOKEN_EXCHANGE_KEY_SET_URL: https://auth.dimo.zone/keys
   TOKEN_EXCHANGE_ISSUER: https://auth.dimo.zone
+  CLICKHOUSE_DIMO_DATABASE: dimo
+  CLICKHOUSE_INDEX_DATABASE: file_index
 ingress:
   enabled: true
   className: nginx-direct
