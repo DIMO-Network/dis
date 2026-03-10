@@ -8,7 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-"time"
+	"time"
 )
 
 func writeDISConfig() error {

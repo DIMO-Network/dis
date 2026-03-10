@@ -39,20 +39,9 @@ output:
             output:
               sql_insert:
                 driver: clickhouse
-                dsn: "${CLICKHOUSE_DSN}"
-                table: "${CLICKHOUSE_DATABASE:dimo}.event"
-                columns:
-                  - subject
-                  - source
-                  - producer
-                  - cloud_event_id
-                  - type
-                  - data_version
-                  - name
-                  - timestamp
-                  - duration_ns
-                  - metadata
-                  - tags
+                dsn: clickhouse://${CLICKHOUSE_HOST}:${CLICKHOUSE_PORT}/${CLICKHOUSE_DIMO_DATABASE}?username=${CLICKHOUSE_USER}&password=${CLICKHOUSE_PASSWORD}&secure=${CLICKHOUSE_SECURE:true}&max_execution_time=600
+                table: event
+                columns: []
                 args_mapping: "root = this"
                 batching:
                   count: 500000

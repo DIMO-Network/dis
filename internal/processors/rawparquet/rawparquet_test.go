@@ -33,7 +33,9 @@ func makeRawEventMsg(t *testing.T, id, subject string) *service.Message {
 
 func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 	t.Parallel()
-	proc := &processor{prefix: "raw/test/", logger: service.MockResources().Logger()}
+	res := service.MockResources()
+	m := res.Metrics()
+	proc := &processor{prefix: "raw/test/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "id-1", "did:erc721:1:0xV:1"),
@@ -87,17 +89,20 @@ func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 
 func TestProcessBatch_Empty(t *testing.T) {
 	t.Parallel()
-	proc := &processor{prefix: "raw/", logger: service.MockResources().Logger()}
+	res := service.MockResources()
+	m := res.Metrics()
+	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
 
 	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{})
 	require.NoError(t, err)
-	require.Len(t, result, 1)
-	assert.Empty(t, result[0])
+	assert.Empty(t, result)
 }
 
 func TestProcessBatch_AllInvalid(t *testing.T) {
 	t.Parallel()
-	proc := &processor{prefix: "raw/", logger: service.MockResources().Logger()}
+	res := service.MockResources()
+	m := res.Metrics()
+	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
 
 	msgs := service.MessageBatch{
 		service.NewMessage([]byte(`not json`)),
@@ -111,7 +116,9 @@ func TestProcessBatch_AllInvalid(t *testing.T) {
 
 func TestProcessBatch_MixedValidInvalid(t *testing.T) {
 	t.Parallel()
-	proc := &processor{prefix: "raw/", logger: service.MockResources().Logger()}
+	res := service.MockResources()
+	m := res.Metrics()
+	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "good-1", "did:erc721:1:0xV:1"),
@@ -133,7 +140,9 @@ func TestProcessBatch_MixedValidInvalid(t *testing.T) {
 
 func TestProcessBatch_SingleMessage(t *testing.T) {
 	t.Parallel()
-	proc := &processor{prefix: "cloudevent/valid/", logger: service.MockResources().Logger()}
+	res := service.MockResources()
+	m := res.Metrics()
+	proc := &processor{prefix: "cloudevent/valid/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "solo", "did:erc721:1:0xV:99"),

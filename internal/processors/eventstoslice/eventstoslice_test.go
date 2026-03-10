@@ -53,7 +53,11 @@ func TestProcess_MultipleEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := &eventSliceProcessor{}
+	m := service.MockResources().Metrics()
+	proc := &eventSliceProcessor{
+		rowsTotal: m.NewCounter("rows", "table"),
+		errTotal:  m.NewCounter("errs", "table"),
+	}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -120,7 +124,11 @@ func TestProcess_SingleEvent(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := &eventSliceProcessor{}
+	m := service.MockResources().Metrics()
+	proc := &eventSliceProcessor{
+		rowsTotal: m.NewCounter("rows", "table"),
+		errTotal:  m.NewCounter("errs", "table"),
+	}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -146,7 +154,11 @@ func TestProcess_EmptyEvents(t *testing.T) {
 	require.NoError(t, err)
 
 	msg := service.NewMessage(payload)
-	proc := &eventSliceProcessor{}
+	m := service.MockResources().Metrics()
+	proc := &eventSliceProcessor{
+		rowsTotal: m.NewCounter("rows", "table"),
+		errTotal:  m.NewCounter("errs", "table"),
+	}
 
 	batch, err := proc.Process(context.Background(), msg)
 	require.NoError(t, err)
@@ -157,7 +169,11 @@ func TestProcess_InvalidJSON(t *testing.T) {
 	t.Parallel()
 
 	msg := service.NewMessage([]byte(`{broken`))
-	proc := &eventSliceProcessor{}
+	m := service.MockResources().Metrics()
+	proc := &eventSliceProcessor{
+		rowsTotal: m.NewCounter("rows", "table"),
+		errTotal:  m.NewCounter("errs", "table"),
+	}
 
 	batch, err := proc.Process(context.Background(), msg)
 	assert.Error(t, err)

@@ -73,7 +73,7 @@ func (p *processor) Close(context.Context) error { return nil }
 
 func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) ([]service.MessageBatch, error) {
 	if len(msgs) == 0 {
-		return []service.MessageBatch{msgs}, nil
+		return []service.MessageBatch{}, nil
 	}
 
 	type goodMsg struct {

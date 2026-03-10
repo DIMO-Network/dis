@@ -144,7 +144,7 @@ func pruneFutureAndDuplicateSignals(signals []vss.Signal) ([]vss.Signal, error) 
 }
 
 func signalEqual(a, b vss.Signal) bool {
-	return a.Data.Name == b.Data.Name && a.Data.Timestamp.Equal(b.Data.Timestamp) && a.Subject == b.Subject
+	return a.Data.Name == b.Data.Name && a.Data.Timestamp.Equal(b.Data.Timestamp)
 }
 
 func (v *vssProcessor) isVehicleSignalMessage(rawEvent *cloudevent.RawEvent) bool {
