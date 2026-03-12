@@ -170,3 +170,125 @@ func TestBuildObjectKey_Format(t *testing.T) {
 	assert.Contains(t, key, "raw/data/2024/03/07/batch-")
 	assert.Contains(t, key, ".parquet")
 }
+
+func makeLargeRawEventMsg(t *testing.T, id, subject string, extraBytes int) *service.Message {
+	t.Helper()
+	padding := make([]byte, extraBytes)
+	for i := range padding {
+		padding[i] = 'x'
+	}
+	ev := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			SpecVersion: "1.0",
+			ID:          id,
+			Source:      "0xSource",
+			Subject:     subject,
+			Producer:    "did:nft:137:0xProd:1",
+			Time:        time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC),
+			Type:        "dimo.attestation",
+		},
+		Data: json.RawMessage(`"` + string(padding) + `"`),
+	}
+	b, err := json.Marshal(ev)
+	require.NoError(t, err)
+	return service.NewMessage(b)
+}
+
+func TestProcessBatch_LargeEventBypassesParquet(t *testing.T) {
+	t.Parallel()
+	res := service.MockResources()
+	m := res.Metrics()
+	const threshold = 200
+	proc := &processor{
+		prefix:              "cloudevent/valid/",
+		largeEventThreshold: threshold,
+		logger:              res.Logger(),
+		uploads:             m.NewCounter("uploads"),
+		uploadBytes:         m.NewCounter("bytes"),
+		uploadErrors:        m.NewCounter("errors"),
+	}
+
+	smallMsg := makeRawEventMsg(t, "small-1", "did:erc721:1:0xV:1")
+	largeMsg := makeLargeRawEventMsg(t, "large-1", "did:erc721:1:0xV:2", threshold+100)
+
+	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{smallMsg, largeMsg})
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+
+	batch := result[0]
+	// 1 parquet + 1 CH row (small) + 1 S3 msg + 1 CH row (large) = 4
+	require.Len(t, batch, 4)
+
+	// First message is the parquet for the small event.
+	parquetKey, exists := batch[0].MetaGet(MetaS3UploadKey)
+	assert.True(t, exists)
+	assert.Contains(t, parquetKey, ".parquet")
+	assert.Equal(t, "1", mustMeta(t, batch[0], MetaParquetCount))
+
+	// Second message is the CH row for the small event.
+	assert.Equal(t, MetaClickHouseCloudEvent, mustMeta(t, batch[1], MetaMessageContent))
+
+	// Third message is the direct S3 message for the large event.
+	largeKey, exists := batch[2].MetaGet(MetaLargeObjectKey)
+	assert.True(t, exists)
+	assert.Contains(t, largeKey, "single-")
+	assert.Contains(t, largeKey, ".json")
+	assert.NotContains(t, largeKey, ".parquet")
+	s3Key, exists := batch[2].MetaGet(MetaS3UploadKey)
+	assert.True(t, exists)
+	assert.Equal(t, largeKey, s3Key)
+	assert.Equal(t, "application/json", mustMeta(t, batch[2], MetaS3ContentType))
+
+	// Fourth message is the CH row for the large event.
+	assert.Equal(t, MetaClickHouseCloudEvent, mustMeta(t, batch[3], MetaMessageContent))
+}
+
+func TestProcessBatch_AllLarge(t *testing.T) {
+	t.Parallel()
+	res := service.MockResources()
+	m := res.Metrics()
+	const threshold = 100
+	proc := &processor{
+		prefix:              "cloudevent/valid/",
+		largeEventThreshold: threshold,
+		logger:              res.Logger(),
+		uploads:             m.NewCounter("uploads"),
+		uploadBytes:         m.NewCounter("bytes"),
+		uploadErrors:        m.NewCounter("errors"),
+	}
+
+	msgs := service.MessageBatch{
+		makeLargeRawEventMsg(t, "large-1", "did:erc721:1:0xV:1", threshold+50),
+		makeLargeRawEventMsg(t, "large-2", "did:erc721:1:0xV:2", threshold+50),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+
+	batch := result[0]
+	// 2 large events × (1 S3 msg + 1 CH row) = 4 messages, no parquet
+	require.Len(t, batch, 4)
+
+	for _, msg := range batch {
+		// No message should have MetaParquetPath (that's only on parquet messages)
+		_, hasParquetPath := msg.MetaGet(MetaParquetPath)
+		assert.False(t, hasParquetPath, "no parquet message should be emitted when all events are large")
+	}
+}
+
+func TestBuildSingleObjectKey_Format(t *testing.T) {
+	t.Parallel()
+	ts := time.Date(2024, 3, 7, 0, 0, 0, 0, time.UTC)
+	key := buildSingleObjectKey("cloudevent/valid/", ts)
+
+	assert.Contains(t, key, "cloudevent/valid/2024/03/07/single-")
+	assert.Contains(t, key, ".json")
+}
+
+func mustMeta(t *testing.T, msg *service.Message, key string) string {
+	t.Helper()
+	val, exists := msg.MetaGet(key)
+	require.True(t, exists, "metadata key %q not found", key)
+	return val
+}

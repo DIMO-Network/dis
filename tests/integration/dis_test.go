@@ -181,6 +181,9 @@ func startDIS() error {
 
 		// Log level
 		"LOG_LEVEL=DEBUG",
+
+		// Large-event threshold — set low so integration tests don't need multi-MB payloads
+		"LARGE_ATTESTATION_THRESHOLD_BYTES=1024",
 	)
 
 	disCmd.Stdout = os.Stdout
