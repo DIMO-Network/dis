@@ -98,6 +98,8 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			p.logger.Warnf("message %d: get bytes: %v, skipping", i, err)
 			continue
 		}
+		// TODO(elffjs): Must we do this? This may already be on msg as "structured data".
+		// We use this a lot upstream.
 		var ev cloudevent.RawEvent
 		if err := json.Unmarshal(b, &ev); err != nil {
 			p.logger.Warnf("message %d: unmarshal cloudevent: %v, skipping", i, err)
