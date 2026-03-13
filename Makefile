@@ -81,7 +81,8 @@ test-prometheus-rules: test-prometheus-prepare ## Run Prometheus rules tests
 	@promtool test rules ./tests/prom/rules-tests.yaml
 
 lint-benthos: build  ## Run Benthos linter
-	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_DIMO_DATABASE="" CLICKHOUSE_INDEX_DATABASE=""  CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
+	@CLICKHOUSE_HOST="" CLICKHOUSE_PORT="" CLICKHOUSE_DIMO_DATABASE="" CLICKHOUSE_INDEX_DATABASE="" CLICKHOUSE_USER="" CLICKHOUSE_PASSWORD="" \
+	PARQUET_BUCKET="" S3_AWS_REGION="" S3_AWS_ACCESS_KEY_ID="" S3_AWS_SECRET_ACCESS_KEY="" \
 	dis lint -r ./charts/dis/files/resources.yaml ./charts/dis/files/config.yaml ./charts/dis/files/streams/*
 lint: lint-benthos ## Run linter for benthos config and go code
 	golangci-lint version
