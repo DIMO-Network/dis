@@ -32,9 +32,9 @@ const (
 	// MetaClickHouseCloudEvent is the content value for ClickHouse CE rows.
 	MetaClickHouseCloudEvent = "dimo_clickhouse_cloudevent"
 
-	MetricS3Uploads           = "dis_s3_uploads_total"
-	MetricS3UploadBytes       = "dis_s3_upload_bytes_total"
-	MetricS3UploadErrors      = "dis_s3_upload_errors_total"
+	MetricS3Uploads      = "dis_s3_uploads_total"
+	MetricS3UploadBytes  = "dis_s3_upload_bytes_total"
+	MetricS3UploadErrors = "dis_s3_upload_errors_total"
 )
 
 var configSpec = service.NewConfigSpec().
@@ -91,7 +91,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		event    cloudevent.RawEvent
 		rawBytes []byte
 	}
-	var good []goodMsg
+	var small, large []goodMsg
 	for i, msg := range msgs {
 		b, err := msg.AsBytes()
 		if err != nil {
@@ -103,15 +103,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			p.logger.Warnf("message %d: unmarshal cloudevent: %v, skipping", i, err)
 			continue
 		}
-		good = append(good, goodMsg{event: ev, rawBytes: b})
-	}
-
-	if len(good) == 0 {
-		return []service.MessageBatch{}, nil
-	}
-
-	var small, large []goodMsg
-	for _, g := range good {
+		g := goodMsg{event: ev, rawBytes: b}
 		if p.largeEventThreshold > 0 && len(g.rawBytes) >= p.largeEventThreshold {
 			large = append(large, g)
 			continue
@@ -119,8 +111,12 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		small = append(small, g)
 	}
 
+	if len(small) == 0 && len(large) == 0 {
+		return []service.MessageBatch{}, nil
+	}
+
 	now := time.Now().UTC()
-	out := make(service.MessageBatch, 0, 1+len(good)+len(large))
+	out := make(service.MessageBatch, 0, 1+len(small)+2*len(large))
 
 	if len(small) > 0 {
 		events := make([]cloudevent.RawEvent, len(small))
@@ -128,7 +124,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			events[i] = g.event
 		}
 
-		objectKey := buildObjectKey(p.prefix, now)
+		objectKey := buildBatchObjectKey(p.prefix, now)
 		var buf bytes.Buffer
 		indexKeyMap, err := pq.Encode(&buf, events, objectKey)
 		if err != nil {
@@ -175,7 +171,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	return []service.MessageBatch{out}, nil
 }
 
-func buildObjectKey(prefix string, t time.Time) string {
+func buildBatchObjectKey(prefix string, t time.Time) string {
 	return fmt.Sprintf("%s%d/%02d/%02d/batch-%s.parquet",
 		prefix, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
 }

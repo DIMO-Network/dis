@@ -195,10 +195,10 @@ func TestProcessBatch_SingleMessage(t *testing.T) {
 	assert.Equal(t, "1", parquetCount)
 }
 
-func TestBuildObjectKey_Format(t *testing.T) {
+func TestBuildBatchObjectKey_Format(t *testing.T) {
 	t.Parallel()
 	ts := time.Date(2024, 3, 7, 0, 0, 0, 0, time.UTC)
-	key := buildObjectKey("raw/data/", ts)
+	key := buildBatchObjectKey("raw/data/", ts)
 
 	assert.Contains(t, key, "raw/data/2024/03/07/batch-")
 	assert.Contains(t, key, ".parquet")
