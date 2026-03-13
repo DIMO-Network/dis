@@ -66,8 +66,6 @@ func newTestProcessor(prefix string, largeEventThreshold int) *processor {
 		logger:              res.Logger(),
 		uploads:             m.NewCounter("uploads"),
 		uploadBytes:         m.NewCounter("bytes"),
-		singleUploads:       m.NewCounter("single_uploads"),
-		singleUploadBytes:   m.NewCounter("single_bytes"),
 		uploadErrors:        m.NewCounter("errors"),
 	}
 }

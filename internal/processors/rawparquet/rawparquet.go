@@ -34,8 +34,6 @@ const (
 
 	MetricS3Uploads           = "dis_s3_uploads_total"
 	MetricS3UploadBytes       = "dis_s3_upload_bytes_total"
-	MetricS3SingleUploads     = "dis_s3_single_uploads_total"
-	MetricS3SingleUploadBytes = "dis_s3_single_upload_bytes_total"
 	MetricS3UploadErrors      = "dis_s3_upload_errors_total"
 )
 
@@ -69,8 +67,6 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 		logger:              mgr.Logger(),
 		uploads:             m.NewCounter(MetricS3Uploads),
 		uploadBytes:         m.NewCounter(MetricS3UploadBytes),
-		singleUploads:       m.NewCounter(MetricS3SingleUploads),
-		singleUploadBytes:   m.NewCounter(MetricS3SingleUploadBytes),
 		uploadErrors:        m.NewCounter(MetricS3UploadErrors),
 	}, nil
 }
@@ -81,8 +77,6 @@ type processor struct {
 	logger              *service.Logger
 	uploads             *service.MetricCounter
 	uploadBytes         *service.MetricCounter
-	singleUploads       *service.MetricCounter
-	singleUploadBytes   *service.MetricCounter
 	uploadErrors        *service.MetricCounter
 }
 
@@ -164,8 +158,8 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 
 	for _, g := range large {
 		singleKey := buildSingleObjectKey(p.prefix, now)
-		p.singleUploads.Incr(1)
-		p.singleUploadBytes.Incr(int64(len(g.rawBytes)))
+		p.uploads.Incr(1)
+		p.uploadBytes.Incr(int64(len(g.rawBytes)))
 
 		s3Msg := service.NewMessage(g.rawBytes)
 		s3Msg.MetaSetMut(MetaS3UploadKey, singleKey)
