@@ -21,6 +21,8 @@ import (
 const (
 	// MetaS3UploadKey is the object key for the Parquet file (path within bucket).
 	MetaS3UploadKey = "dimo_s3_upload_key"
+	// MetaS3ContentType is the object content type for downstream S3 uploads.
+	MetaS3ContentType = "dimo_s3_content_type"
 	// MetaParquetPath is the object key (path) for downstream use.
 	MetaParquetPath  = "dimo_parquet_path"
 	MetaParquetSize  = "dimo_parquet_size"
@@ -30,14 +32,19 @@ const (
 	// MetaClickHouseCloudEvent is the content value for ClickHouse CE rows.
 	MetaClickHouseCloudEvent = "dimo_clickhouse_cloudevent"
 
-	MetricS3Uploads      = "dis_s3_uploads_total"
-	MetricS3UploadBytes  = "dis_s3_upload_bytes_total"
-	MetricS3UploadErrors = "dis_s3_upload_errors_total"
+	MetricS3Uploads           = "dis_s3_uploads_total"
+	MetricS3UploadBytes       = "dis_s3_upload_bytes_total"
+	MetricS3SingleUploads     = "dis_s3_single_uploads_total"
+	MetricS3SingleUploadBytes = "dis_s3_single_upload_bytes_total"
+	MetricS3UploadErrors      = "dis_s3_upload_errors_total"
 )
 
 var configSpec = service.NewConfigSpec().
 	Summary("Converts a batch of CloudEvents to a single Parquet message with day-partitioned path, plus originals with index metadata.").
-	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/)."))
+	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/).")).
+	Field(service.NewIntField("large_event_threshold").
+		Description("Events with serialized size >= this (bytes) are stored as individual S3 JSON objects. 0 disables.").
+		Default(0))
 
 func init() {
 	err := service.RegisterBatchProcessor("dimo_raw_parquet", configSpec, ctor)
@@ -51,22 +58,32 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 	if err != nil {
 		return nil, fmt.Errorf("prefix: %w", err)
 	}
+	largeEventThreshold, err := conf.FieldInt("large_event_threshold")
+	if err != nil {
+		return nil, fmt.Errorf("large_event_threshold: %w", err)
+	}
 	m := mgr.Metrics()
 	return &processor{
-		prefix:       prefix,
-		logger:       mgr.Logger(),
-		uploads:      m.NewCounter(MetricS3Uploads),
-		uploadBytes:  m.NewCounter(MetricS3UploadBytes),
-		uploadErrors: m.NewCounter(MetricS3UploadErrors),
+		prefix:              prefix,
+		largeEventThreshold: largeEventThreshold,
+		logger:              mgr.Logger(),
+		uploads:             m.NewCounter(MetricS3Uploads),
+		uploadBytes:         m.NewCounter(MetricS3UploadBytes),
+		singleUploads:       m.NewCounter(MetricS3SingleUploads),
+		singleUploadBytes:   m.NewCounter(MetricS3SingleUploadBytes),
+		uploadErrors:        m.NewCounter(MetricS3UploadErrors),
 	}, nil
 }
 
 type processor struct {
-	prefix       string
-	logger       *service.Logger
-	uploads      *service.MetricCounter
-	uploadBytes  *service.MetricCounter
-	uploadErrors *service.MetricCounter
+	prefix              string
+	largeEventThreshold int
+	logger              *service.Logger
+	uploads             *service.MetricCounter
+	uploadBytes         *service.MetricCounter
+	singleUploads       *service.MetricCounter
+	singleUploadBytes   *service.MetricCounter
+	uploadErrors        *service.MetricCounter
 }
 
 func (p *processor) Close(context.Context) error { return nil }
@@ -77,8 +94,8 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	}
 
 	type goodMsg struct {
-		event cloudevent.RawEvent
-		msg   *service.Message
+		event    cloudevent.RawEvent
+		rawBytes []byte
 	}
 	var good []goodMsg
 	for i, msg := range msgs {
@@ -92,42 +109,71 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			p.logger.Warnf("message %d: unmarshal cloudevent: %v, skipping", i, err)
 			continue
 		}
-		good = append(good, goodMsg{event: ev, msg: msg})
+		good = append(good, goodMsg{event: ev, rawBytes: b})
 	}
 
 	if len(good) == 0 {
 		return []service.MessageBatch{}, nil
 	}
 
-	events := make([]cloudevent.RawEvent, len(good))
-	for i, g := range good {
-		events[i] = g.event
+	var small, large []goodMsg
+	for _, g := range good {
+		if p.largeEventThreshold > 0 && len(g.rawBytes) >= p.largeEventThreshold {
+			large = append(large, g)
+			continue
+		}
+		small = append(small, g)
 	}
 
 	now := time.Now().UTC()
-	objectKey := buildObjectKey(p.prefix, now)
+	out := make(service.MessageBatch, 0, 1+len(good)+len(large))
 
-	var buf bytes.Buffer
-	indexKeyMap, err := pq.Encode(&buf, events, objectKey)
-	if err != nil {
-		p.uploadErrors.Incr(1)
-		return nil, fmt.Errorf("encode parquet: %w", err)
+	if len(small) > 0 {
+		events := make([]cloudevent.RawEvent, len(small))
+		for i, g := range small {
+			events[i] = g.event
+		}
+
+		objectKey := buildObjectKey(p.prefix, now)
+		var buf bytes.Buffer
+		indexKeyMap, err := pq.Encode(&buf, events, objectKey)
+		if err != nil {
+			p.uploadErrors.Incr(1)
+			return nil, fmt.Errorf("encode parquet: %w", err)
+		}
+
+		parquetBytes := buf.Bytes()
+		p.uploads.Incr(1)
+		p.uploadBytes.Incr(int64(len(parquetBytes)))
+		parquetMsg := service.NewMessage(parquetBytes)
+		parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
+		parquetMsg.MetaSetMut(MetaS3ContentType, "application/octet-stream")
+		parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
+		parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
+		parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(small)))
+		out = append(out, parquetMsg)
+
+		for i, g := range small {
+			chMsg := service.NewMessage(nil)
+			row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[i])
+			chMsg.SetStructured(row)
+			chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
+			out = append(out, chMsg)
+		}
 	}
 
-	parquetBytes := buf.Bytes()
-	p.uploads.Incr(1)
-	p.uploadBytes.Incr(int64(len(parquetBytes)))
-	parquetMsg := service.NewMessage(parquetBytes)
-	parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
-	parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
-	parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
-	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(good)))
+	for _, g := range large {
+		singleKey := buildSingleObjectKey(p.prefix, now)
+		p.singleUploads.Incr(1)
+		p.singleUploadBytes.Incr(int64(len(g.rawBytes)))
 
-	out := make(service.MessageBatch, 0, 1+len(good))
-	out = append(out, parquetMsg)
-	for i, g := range good {
+		s3Msg := service.NewMessage(g.rawBytes)
+		s3Msg.MetaSetMut(MetaS3UploadKey, singleKey)
+		s3Msg.MetaSetMut(MetaS3ContentType, "application/json")
+		out = append(out, s3Msg)
+
 		chMsg := service.NewMessage(nil)
-		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[i])
+		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, singleKey)
 		chMsg.SetStructured(row)
 		chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
 		out = append(out, chMsg)
@@ -137,5 +183,10 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 
 func buildObjectKey(prefix string, t time.Time) string {
 	return fmt.Sprintf("%s%d/%02d/%02d/batch-%s.parquet",
+		prefix, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
+}
+
+func buildSingleObjectKey(prefix string, t time.Time) string {
+	return fmt.Sprintf("%s%d/%02d/%02d/single-%s.json",
 		prefix, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
 }

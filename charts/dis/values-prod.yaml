@@ -13,6 +13,7 @@ env:
   TOKEN_EXCHANGE_KEY_SET_URL: https://auth.dimo.zone/keys
   TOKEN_EXCHANGE_ISSUER: https://auth.dimo.zone
   PARQUET_BUCKET: dimo-storage-prod
+  LARGE_EVENT_THRESHOLD: "1048576"
 ingress:
   enabled: true
   className: nginx-direct

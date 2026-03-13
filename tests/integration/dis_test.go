@@ -162,6 +162,7 @@ func startDIS() error {
 		fmt.Sprintf("S3_AWS_SECRET_ACCESS_KEY=%s", minioSecretKey),
 		fmt.Sprintf("S3_ENDPOINT=http://localhost:%d", 19090),
 		"S3_FORCE_PATH_STYLE=true",
+		"LARGE_EVENT_THRESHOLD=1048576",
 
 		// Buffer
 		fmt.Sprintf("DIS_BUFFER_DIR=%s/buffer", tmpDir),

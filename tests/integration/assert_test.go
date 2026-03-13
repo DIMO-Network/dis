@@ -251,9 +251,7 @@ func listMinIOObjects(t *testing.T, prefix string) []string {
 	return keys
 }
 
-// readParquetFromMinIO downloads a parquet file from MinIO and decodes it.
-// Logs full event data for each row.
-func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
+func readMinIOObject(t *testing.T, key string) []byte {
 	t.Helper()
 	ctx := context.Background()
 	obj, err := minioClient.GetObject(ctx, minioBucket, key, minio.GetObjectOptions{})
@@ -262,6 +260,22 @@ func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
 
 	data, err := io.ReadAll(obj)
 	require.NoError(t, err)
+	return data
+}
+
+func statMinIOObject(t *testing.T, key string) minio.ObjectInfo {
+	t.Helper()
+	ctx := context.Background()
+	info, err := minioClient.StatObject(ctx, minioBucket, key, minio.StatObjectOptions{})
+	require.NoError(t, err)
+	return info
+}
+
+// readParquetFromMinIO downloads a parquet file from MinIO and decodes it.
+// Logs full event data for each row.
+func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
+	t.Helper()
+	data := readMinIOObject(t, key)
 
 	reader := bytes.NewReader(data)
 	events, err := parquet.Decode(reader, int64(len(data)))
@@ -293,4 +307,3 @@ func parseEventCE(t *testing.T, msg []byte) vss.EventCloudEvent {
 	require.NoError(t, err, "failed to parse EventCloudEvent: %s", string(msg))
 	return ce
 }
-
