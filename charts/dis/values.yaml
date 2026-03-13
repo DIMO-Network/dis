@@ -50,7 +50,7 @@ env:
   TOKEN_EXCHANGE_ISSUER: https://auth.dev.dimo.zone
   PARQUET_BUCKET: dimo-storage-dev
   S3_AWS_REGION: us-east-2
-  LARGE_EVENT_THRESHOLD: "1048576"
+  LARGE_EVENT_THRESHOLD: "1048576" # 1 MiB
 service:
   type: ClusterIP
   ports:

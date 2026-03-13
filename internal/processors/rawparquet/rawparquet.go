@@ -41,8 +41,8 @@ var configSpec = service.NewConfigSpec().
 	Summary("Converts a batch of CloudEvents to a single Parquet message with day-partitioned path, plus originals with index metadata.").
 	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/).")).
 	Field(service.NewIntField("large_event_threshold").
-		Description("Events with serialized size >= this (bytes) are stored as individual S3 JSON objects. 0 disables.").
-		Default(0))
+		Description("If an event's byte size meets or exceeds this number then it will be stored as an individual S3 object. 0 disables.").
+		Default(0)) // Benthos convention seems to be to not name these _bytes.
 
 func init() {
 	err := service.RegisterBatchProcessor("dimo_raw_parquet", configSpec, ctor)
