@@ -139,6 +139,8 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		p.uploadBytes.Incr(int64(len(parquetBytes)))
 		parquetMsg := service.NewMessage(parquetBytes)
 		parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
+		// TODO(elffjs): Parquet has an official MIME type "application/vnd.apache.parquet".
+		// Should we use this instead?
 		parquetMsg.MetaSetMut(MetaS3ContentType, "application/octet-stream")
 		parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
 		parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
