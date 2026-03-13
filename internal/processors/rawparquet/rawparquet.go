@@ -99,16 +99,31 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		return []service.MessageBatch{}, nil
 	}
 
-	events := make([]cloudevent.RawEvent, len(good))
+	// Deduplicate events by ID for parquet encoding, preferring dimo.status.
+	// Status and fingerprint may share the same ID; we store one parquet entry
+	// per ID but create ClickHouse index rows for all events.
+	parquetEvents := make([]cloudevent.RawEvent, 0, len(good))
+	parquetIdx := make([]int, len(good))
+	seenID := make(map[string]int, len(good))
+
 	for i, g := range good {
-		events[i] = g.event
+		if idx, dup := seenID[g.event.ID]; dup {
+			parquetIdx[i] = idx
+			if g.event.Type == "dimo.status" {
+				parquetEvents[idx] = g.event
+			}
+		} else {
+			parquetIdx[i] = len(parquetEvents)
+			seenID[g.event.ID] = len(parquetEvents)
+			parquetEvents = append(parquetEvents, g.event)
+		}
 	}
 
 	now := time.Now().UTC()
 	objectKey := buildObjectKey(p.prefix, now)
 
 	var buf bytes.Buffer
-	indexKeyMap, err := pq.Encode(&buf, events, objectKey)
+	indexKeyMap, err := pq.Encode(&buf, parquetEvents, objectKey)
 	if err != nil {
 		p.uploadErrors.Incr(1)
 		return nil, fmt.Errorf("encode parquet: %w", err)
@@ -121,13 +136,13 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
 	parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
 	parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
-	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(good)))
+	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(parquetEvents)))
 
 	out := make(service.MessageBatch, 0, 1+len(good))
 	out = append(out, parquetMsg)
 	for i, g := range good {
 		chMsg := service.NewMessage(nil)
-		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[i])
+		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[parquetIdx[i]])
 		chMsg.SetStructured(row)
 		chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
 		out = append(out, chMsg)

@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,31 +44,31 @@ func TestCloudEventParquet(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	assert.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, 200, resp.StatusCode)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// ── 1. Kafka signals topic — verify the signal CE was produced ──
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
 	require.Len(t, msgs, 1, "expected exactly 1 signal message")
 	ce := parseSignalCE(t, msgs[0])
-	assert.Equal(t, subject, ce.Subject)
-	assert.Equal(t, "dimo.signals", ce.Type)
-	assert.Equal(t, testSourceAddress, ce.Source)
+	require.Equal(t, subject, ce.Subject)
+	require.Equal(t, "dimo.signals", ce.Type)
+	require.Equal(t, testSourceAddress, ce.Source)
 	require.Len(t, ce.Data.Signals, 1, "expected exactly 1 signal in Kafka CE")
-	assert.Equal(t, "speed", ce.Data.Signals[0].Name)
-	assert.InDelta(t, 55.0, ce.Data.Signals[0].ValueNumber, 0.01)
+	require.Equal(t, "speed", ce.Data.Signals[0].Name)
+	require.InDelta(t, 55.0, ce.Data.Signals[0].ValueNumber, 0.01)
 
 	// ── 2. ClickHouse — verify signal row was written ──────────────
 	rows := querySignals(t, subject)
 	require.Len(t, rows, 1, "expected exactly 1 signal row in ClickHouse")
-	assert.Equal(t, "speed", rows[0].Name)
-	assert.InDelta(t, 55.0, rows[0].ValueNumber, 0.01)
-	assert.Equal(t, testSourceAddress, rows[0].Source)
+	require.Equal(t, "speed", rows[0].Name)
+	require.InDelta(t, 55.0, rows[0].ValueNumber, 0.01)
+	require.Equal(t, testSourceAddress, rows[0].Source)
 
 	// ── 3. MinIO parquet — verify CloudEvent was archived ──────────
-	// Wait for parquet batch flush (5s period + buffer)
-	time.Sleep(6 * time.Second)
+	// Wait for parquet batch flush
+	time.Sleep(750 * time.Millisecond)
 
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
@@ -80,10 +79,10 @@ func TestCloudEventParquet(t *testing.T) {
 		for _, ev := range events {
 			if ev.Subject == subject {
 				pqFound = true
-				assert.Equal(t, testSourceAddress, ev.Source)
-				assert.Equal(t, "dimo.status", ev.Type)
-				assert.Equal(t, "1.0", ev.SpecVersion)
-				assert.Equal(t, subject, ev.Producer)
+				require.Equal(t, testSourceAddress, ev.Source)
+				require.Equal(t, "dimo.status", ev.Type)
+				require.Equal(t, "1.0", ev.SpecVersion)
+				require.Equal(t, subject, ev.Producer)
 				break
 			}
 		}
@@ -91,5 +90,5 @@ func TestCloudEventParquet(t *testing.T) {
 			break
 		}
 	}
-	assert.True(t, pqFound, "expected CloudEvent not found in parquet file")
+	require.True(t, pqFound, "expected CloudEvent not found in parquet file")
 }

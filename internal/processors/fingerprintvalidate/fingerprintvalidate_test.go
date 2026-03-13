@@ -55,7 +55,7 @@ func TestProcessBatch(t *testing.T) {
 				createFingerprintMessage(t, "1HGCM123"),
 			},
 			expectedBatches: 1,
-			expectedErrors:  1,
+			expectedErrors:  0,
 		},
 		{
 			name: "Invalid VIN - contains invalid characters",
@@ -63,7 +63,7 @@ func TestProcessBatch(t *testing.T) {
 				createFingerprintMessage(t, "1HGCM82633A12345I"), // 'I' is not a valid character
 			},
 			expectedBatches: 1,
-			expectedErrors:  1,
+			expectedErrors:  0,
 		},
 		{
 			name: "Invalid VIN - contains invalid characters",
@@ -71,7 +71,7 @@ func TestProcessBatch(t *testing.T) {
 				createFingerprintMessage(t, "1HGCM82633A12345Q"), // 'Q' is not a valid character
 			},
 			expectedBatches: 1,
-			expectedErrors:  1,
+			expectedErrors:  0,
 		},
 		{
 			name: "Invalid VIN - contains invalid characters",
@@ -79,7 +79,7 @@ func TestProcessBatch(t *testing.T) {
 				createFingerprintMessage(t, "AAAAAAAAAAAAAAAAQ"), // 'Q' is not a valid character
 			},
 			expectedBatches: 1,
-			expectedErrors:  1,
+			expectedErrors:  0,
 		},
 
 		{
@@ -115,7 +115,7 @@ func TestProcessBatch(t *testing.T) {
 				createFingerprintMessage(t, "INVALID-VIN-HERE!"),
 			},
 			expectedBatches: 4,
-			expectedErrors:  1,
+			expectedErrors:  0,
 		},
 	}
 

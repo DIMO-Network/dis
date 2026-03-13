@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,29 +42,29 @@ func TestDefaultModuleSignals(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	assert.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, 200, resp.StatusCode)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// Check Kafka signals topic
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
 	require.Len(t, msgs, 1, "expected exactly 1 signal message")
 	ce := parseSignalCE(t, msgs[0])
-	assert.Equal(t, subject, ce.Subject)
-	assert.Equal(t, "1.0", ce.SpecVersion)
-	assert.Equal(t, "dimo.signals", ce.Type)
-	assert.Equal(t, testSourceAddress, ce.Source)
-	assert.Equal(t, subject, ce.Producer)
+	require.Equal(t, subject, ce.Subject)
+	require.Equal(t, "1.0", ce.SpecVersion)
+	require.Equal(t, "dimo.signals", ce.Type)
+	require.Equal(t, testSourceAddress, ce.Source)
+	require.Equal(t, subject, ce.Producer)
 	require.Len(t, ce.Data.Signals, 1)
-	assert.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
-	assert.InDelta(t, 107.0, ce.Data.Signals[0].ValueNumber, 0.01)
+	require.Equal(t, "powertrainCombustionEngineECT", ce.Data.Signals[0].Name)
+	require.InDelta(t, 107.0, ce.Data.Signals[0].ValueNumber, 0.01)
 
 	// Check ClickHouse — exactly 1 signal row for this subject
 	rows := querySignals(t, subject)
 	require.Len(t, rows, 1, "expected exactly 1 signal row in ClickHouse for 1 input signal")
-	assert.Equal(t, "powertrainCombustionEngineECT", rows[0].Name)
-	assert.Equal(t, testSourceAddress, rows[0].Source)
-	assert.Equal(t, subject, rows[0].Producer)
-	assert.InDelta(t, 107.0, rows[0].ValueNumber, 0.01)
-	assert.NotEmpty(t, rows[0].CloudEventID, "cloud_event_id should be set")
+	require.Equal(t, "powertrainCombustionEngineECT", rows[0].Name)
+	require.Equal(t, testSourceAddress, rows[0].Source)
+	require.Equal(t, subject, rows[0].Producer)
+	require.InDelta(t, 107.0, rows[0].ValueNumber, 0.01)
+	require.NotEmpty(t, rows[0].CloudEventID, "cloud_event_id should be set")
 }

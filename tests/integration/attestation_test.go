@@ -10,7 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,8 +59,8 @@ func TestAttestationEndpoint(t *testing.T) {
 	drainAndClose(t, resp)
 	require.Equal(t, 200, resp.StatusCode, "attestation endpoint should return 200 for valid payload")
 
-	// Wait for parquet batch flush (5s period + buffer)
-	time.Sleep(8 * time.Second)
+	// Wait for parquet batch flush
+	time.Sleep(1 * time.Second)
 
 	// Check MinIO for parquet files
 	keys := listMinIOObjects(t, "cloudevent/valid/")
@@ -73,8 +72,8 @@ func TestAttestationEndpoint(t *testing.T) {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {
 			if ev.Type == "dimo.attestation" && ev.Subject == subject {
-				assert.Equal(t, "1.0", ev.SpecVersion)
-				assert.Equal(t, ethAddr.Hex(), ev.Source)
+				require.Equal(t, "1.0", ev.SpecVersion)
+				require.Equal(t, ethAddr.Hex(), ev.Source)
 				found = true
 				break
 			}
@@ -83,12 +82,12 @@ func TestAttestationEndpoint(t *testing.T) {
 			break
 		}
 	}
-	assert.True(t, found, "attestation CloudEvent not found in parquet files")
+	require.True(t, found, "attestation CloudEvent not found in parquet files")
 
 	// ── ClickHouse cloud_event table — 1 index row ───────────
 	ceRows := queryCloudEvents(t, subject)
 	require.Len(t, ceRows, 1, "expected 1 cloud_event index row (dimo.attestation)")
-	assert.Equal(t, "dimo.attestation", ceRows[0].EventType)
-	assert.Equal(t, ethAddr.Hex(), ceRows[0].Source)
-	assert.Equal(t, subject, ceRows[0].Subject)
+	require.Equal(t, "dimo.attestation", ceRows[0].EventType)
+	require.Equal(t, ethAddr.Hex(), ceRows[0].Source)
+	require.Equal(t, subject, ceRows[0].Subject)
 }

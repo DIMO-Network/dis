@@ -7,7 +7,7 @@ tests:
   - interval: 6m
     # Series data.
     input_series:
-      - series: 'processor_sent{container="dis", label="convert_cloudevent", namespace="dev"}'
+      - series: 'input_received{container="dis", namespace="dev"}'
         values: '0 0 0 0 0 0 0 0 0 0'
 
     alert_rule_test:
@@ -19,23 +19,23 @@ tests:
               namespace: dev
             exp_annotations:
               summary: "No data received in 30 minutes"
-              description: "Please check dis service and networking. Service: dis"
+              description: "No HTTP input received by dis service in 30 minutes."
   - interval: 1m
     # Series data.
     input_series:
-      - series: 'processor_sent{container="dis", label="dimo_internal_error_sync_response", namespace="dev"}'
+      - series: 'processor_sent{container="dis", label="dimo_bad_request_sync_response", namespace="dev"}'
         values: '100 200 300 400 500 600 700 800 900 1000'
 
     alert_rule_test:
       - eval_time: 10m
-        alertname: High500ErrorRate
+        alertname: High400ErrorRate
         exp_alerts:
           - exp_labels:
               severity: warning
               namespace: dev
             exp_annotations:
-              summary: "High internal error rate detected"
-              description: "There is at least 1 internal error per second for the last 5 minutes in the dis."
+              summary: "High rate of 400 errors detected"
+              description: "The rate of 400 (Bad Request) errors has exceeded 1 per second in the last 5 minutes. Service: dis"
   - interval: 1m
     # Series data.
     input_series:

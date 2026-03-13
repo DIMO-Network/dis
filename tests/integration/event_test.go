@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,21 +47,21 @@ func TestDefaultModuleEvents(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	assert.Equal(t, 200, resp.StatusCode)
+	require.Equal(t, 200, resp.StatusCode)
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// Check Kafka events topic
 	msgs := consumeKafka(t, "topic.device.events", startOffset, 10*time.Second)
 	require.Len(t, msgs, 1, "expected exactly 1 event message")
 	ce := parseEventCE(t, msgs[0])
-	assert.Equal(t, subject, ce.Subject)
-	assert.Equal(t, "1.0", ce.SpecVersion)
-	assert.Equal(t, "dimo.events", ce.Type)
-	assert.Equal(t, testSourceAddress, ce.Source)
+	require.Equal(t, subject, ce.Subject)
+	require.Equal(t, "1.0", ce.SpecVersion)
+	require.Equal(t, "dimo.events", ce.Type)
+	require.Equal(t, testSourceAddress, ce.Source)
 	require.Len(t, ce.Data.Events, 2)
-	assert.Equal(t, "behavior.harshBraking", ce.Data.Events[0].Name)
-	assert.Equal(t, "behavior.harshAcceleration", ce.Data.Events[1].Name)
+	require.Equal(t, "behavior.harshBraking", ce.Data.Events[0].Name)
+	require.Equal(t, "behavior.harshAcceleration", ce.Data.Events[1].Name)
 
 	// Check ClickHouse event table — should have exactly 2 event rows
 	eventRows := queryEvents(t, subject)
@@ -72,20 +71,20 @@ func TestDefaultModuleEvents(t *testing.T) {
 	eventNames := make([]string, len(eventRows))
 	for i, r := range eventRows {
 		eventNames[i] = r.Name
-		assert.Equal(t, testSourceAddress, r.Source, "source mismatch for event %s", r.Name)
-		assert.Equal(t, subject, r.Producer, "producer mismatch for event %s", r.Name)
-		assert.NotEmpty(t, r.CloudEventID, "cloud_event_id should be set for event %s", r.Name)
+		require.Equal(t, testSourceAddress, r.Source, "source mismatch for event %s", r.Name)
+		require.Equal(t, subject, r.Producer, "producer mismatch for event %s", r.Name)
+		require.NotEmpty(t, r.CloudEventID, "cloud_event_id should be set for event %s", r.Name)
 	}
-	assert.Contains(t, eventNames, "behavior.harshBraking")
-	assert.Contains(t, eventNames, "behavior.harshAcceleration")
+	require.Contains(t, eventNames, "behavior.harshBraking")
+	require.Contains(t, eventNames, "behavior.harshAcceleration")
 
 	// Verify metadata on harshBraking event
 	for _, r := range eventRows {
 		if r.Name == "behavior.harshBraking" {
-			assert.NotEmpty(t, r.Metadata, "harshBraking should have metadata")
+			require.NotEmpty(t, r.Metadata, "harshBraking should have metadata")
 		}
 		if r.Name == "behavior.harshAcceleration" {
-			assert.Equal(t, uint64(15000000000), r.DurationNs, "harshAcceleration should have 15s duration")
+			require.Equal(t, uint64(15000000000), r.DurationNs, "harshAcceleration should have 15s duration")
 		}
 	}
 }
