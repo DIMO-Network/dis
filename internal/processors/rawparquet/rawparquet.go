@@ -21,6 +21,8 @@ import (
 const (
 	// MetaS3UploadKey is the object key for the Parquet file (path within bucket).
 	MetaS3UploadKey = "dimo_s3_upload_key"
+	// MetaS3ContentType is the object content type for downstream S3 uploads.
+	MetaS3ContentType = "dimo_s3_content_type"
 	// MetaParquetPath is the object key (path) for downstream use.
 	MetaParquetPath  = "dimo_parquet_path"
 	MetaParquetSize  = "dimo_parquet_size"
@@ -37,7 +39,13 @@ const (
 
 var configSpec = service.NewConfigSpec().
 	Summary("Converts a batch of CloudEvents to a single Parquet message with day-partitioned path, plus originals with index metadata.").
-	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/)."))
+	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/).")).
+	Field(service.NewStringField("large_event_prefix").
+		Description("Path prefix for large single-event JSON objects (e.g. cloudevent/blobs/).").
+		Default("cloudevent/blobs/")).
+	Field(service.NewIntField("large_event_threshold").
+		Description("If an event's byte size meets or exceeds this number then it will be stored as an individual S3 object. 0 disables.").
+		Default(0)) // Benthos convention seems to be to not name these _bytes.
 
 func init() {
 	err := service.RegisterBatchProcessor("dimo_raw_parquet", configSpec, ctor)
@@ -51,22 +59,34 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 	if err != nil {
 		return nil, fmt.Errorf("prefix: %w", err)
 	}
+	largeEventPrefix, err := conf.FieldString("large_event_prefix")
+	if err != nil {
+		return nil, fmt.Errorf("large_event_prefix: %w", err)
+	}
+	largeEventThreshold, err := conf.FieldInt("large_event_threshold")
+	if err != nil {
+		return nil, fmt.Errorf("large_event_threshold: %w", err)
+	}
 	m := mgr.Metrics()
 	return &processor{
-		prefix:       prefix,
-		logger:       mgr.Logger(),
-		uploads:      m.NewCounter(MetricS3Uploads),
-		uploadBytes:  m.NewCounter(MetricS3UploadBytes),
-		uploadErrors: m.NewCounter(MetricS3UploadErrors),
+		prefix:              prefix,
+		largeEventPrefix:    largeEventPrefix,
+		largeEventThreshold: largeEventThreshold,
+		logger:              mgr.Logger(),
+		uploads:             m.NewCounter(MetricS3Uploads),
+		uploadBytes:         m.NewCounter(MetricS3UploadBytes),
+		uploadErrors:        m.NewCounter(MetricS3UploadErrors),
 	}, nil
 }
 
 type processor struct {
-	prefix       string
-	logger       *service.Logger
-	uploads      *service.MetricCounter
-	uploadBytes  *service.MetricCounter
-	uploadErrors *service.MetricCounter
+	prefix              string
+	largeEventPrefix    string
+	largeEventThreshold int
+	logger              *service.Logger
+	uploads             *service.MetricCounter
+	uploadBytes         *service.MetricCounter
+	uploadErrors        *service.MetricCounter
 }
 
 func (p *processor) Close(context.Context) error { return nil }
@@ -77,36 +97,43 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	}
 
 	type goodMsg struct {
-		event cloudevent.RawEvent
-		msg   *service.Message
+		event    cloudevent.RawEvent
+		rawBytes []byte
 	}
-	var good []goodMsg
+	var small, large []goodMsg
 	for i, msg := range msgs {
 		b, err := msg.AsBytes()
 		if err != nil {
 			p.logger.Warnf("message %d: get bytes: %v, skipping", i, err)
 			continue
 		}
+		// TODO(elffjs): Must we do this? This may already be on msg as "structured data".
+		// We use this a lot upstream.
 		var ev cloudevent.RawEvent
 		if err := json.Unmarshal(b, &ev); err != nil {
 			p.logger.Warnf("message %d: unmarshal cloudevent: %v, skipping", i, err)
 			continue
 		}
-		good = append(good, goodMsg{event: ev, msg: msg})
+		g := goodMsg{event: ev, rawBytes: b}
+		if p.largeEventThreshold > 0 && len(g.rawBytes) >= p.largeEventThreshold {
+			large = append(large, g)
+			continue
+		}
+		small = append(small, g)
 	}
 
-	if len(good) == 0 {
+	if len(small) == 0 && len(large) == 0 {
 		return []service.MessageBatch{}, nil
 	}
 
 	// Deduplicate events by ID for parquet encoding, preferring dimo.status.
 	// Status and fingerprint may share the same ID; we store one parquet entry
-	// per ID but create ClickHouse index rows for all events.
-	parquetEvents := make([]cloudevent.RawEvent, 0, len(good))
-	parquetIdx := make([]int, len(good))
-	seenID := make(map[string]int, len(good))
+	// per ID but create ClickHouse index rows for all small events.
+	parquetEvents := make([]cloudevent.RawEvent, 0, len(small))
+	parquetIdx := make([]int, len(small))
+	seenID := make(map[string]int, len(small))
 
-	for i, g := range good {
+	for i, g := range small {
 		if idx, dup := seenID[g.event.ID]; dup {
 			parquetIdx[i] = idx
 			if g.event.Type == "dimo.status" {
@@ -118,31 +145,52 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			parquetEvents = append(parquetEvents, g.event)
 		}
 	}
-
 	now := time.Now().UTC()
-	objectKey := buildObjectKey(p.prefix, now)
+	out := make(service.MessageBatch, 0, 1+len(small)+2*len(large))
 
-	var buf bytes.Buffer
-	indexKeyMap, err := pq.Encode(&buf, parquetEvents, objectKey)
-	if err != nil {
-		p.uploadErrors.Incr(1)
-		return nil, fmt.Errorf("encode parquet: %w", err)
+	if len(small) > 0 {
+		objectKey := buildBatchObjectKey(p.prefix, now)
+		var buf bytes.Buffer
+		indexKeyMap, err := pq.Encode(&buf, parquetEvents, objectKey)
+		if err != nil {
+			p.uploadErrors.Incr(1)
+			return nil, fmt.Errorf("encode parquet: %w", err)
+		}
+
+		parquetBytes := buf.Bytes()
+		p.uploads.Incr(1)
+		p.uploadBytes.Incr(int64(len(parquetBytes)))
+		parquetMsg := service.NewMessage(parquetBytes)
+		parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
+		// TODO(elffjs): Parquet has an official MIME type "application/vnd.apache.parquet".
+		// Should we use this instead?
+		parquetMsg.MetaSetMut(MetaS3ContentType, "application/octet-stream")
+		parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
+		parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
+		parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(parquetEvents)))
+		out = append(out, parquetMsg)
+
+		for i, g := range small {
+			chMsg := service.NewMessage(nil)
+			row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[parquetIdx[i]])
+			chMsg.SetStructured(row)
+			chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
+			out = append(out, chMsg)
+		}
 	}
 
-	parquetBytes := buf.Bytes()
-	p.uploads.Incr(1)
-	p.uploadBytes.Incr(int64(len(parquetBytes)))
-	parquetMsg := service.NewMessage(parquetBytes)
-	parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
-	parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
-	parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
-	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(parquetEvents)))
+	for _, g := range large {
+		singleKey := buildSingleObjectKey(p.largeEventPrefix, g.event.Subject, now)
+		p.uploads.Incr(1)
+		p.uploadBytes.Incr(int64(len(g.rawBytes)))
 
-	out := make(service.MessageBatch, 0, 1+len(good))
-	out = append(out, parquetMsg)
-	for i, g := range good {
+		s3Msg := service.NewMessage(g.rawBytes)
+		s3Msg.MetaSetMut(MetaS3UploadKey, singleKey)
+		s3Msg.MetaSetMut(MetaS3ContentType, "application/json")
+		out = append(out, s3Msg)
+
 		chMsg := service.NewMessage(nil)
-		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[parquetIdx[i]])
+		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, singleKey)
 		chMsg.SetStructured(row)
 		chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
 		out = append(out, chMsg)
@@ -150,7 +198,12 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	return []service.MessageBatch{out}, nil
 }
 
-func buildObjectKey(prefix string, t time.Time) string {
+func buildBatchObjectKey(prefix string, t time.Time) string {
 	return fmt.Sprintf("%s%d/%02d/%02d/batch-%s.parquet",
 		prefix, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
+}
+
+func buildSingleObjectKey(prefix, subject string, t time.Time) string {
+	return fmt.Sprintf("%s%s/%d/%02d/%02d/single-%s.json",
+		prefix, subject, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
 }
