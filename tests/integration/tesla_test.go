@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/model-garage/pkg/vss"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,15 +69,15 @@ func TestTeslaFleetAPINoVIN(t *testing.T) {
 	drainAndClose(t, resp)
 	require.Equal(t, 200, resp.StatusCode, "DIS should accept Tesla payload without VIN")
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// ── 1. Kafka signals topic — 1 signal payload ───────────────
 	signalMsgs := consumeKafka(t, "topic.device.signals", signalOffset, 10*time.Second)
 	require.Len(t, signalMsgs, 1, "expected exactly 1 signal message")
 	signalCE := func() *vss.SignalCloudEvent { ce := parseSignalCE(t, signalMsgs[0]); return &ce }()
-	assert.Equal(t, "dimo.signals", signalCE.Type)
-	assert.Equal(t, teslaSourceAddress, signalCE.Source)
-	assert.Equal(t, subject, signalCE.Subject)
+	require.Equal(t, "dimo.signals", signalCE.Type)
+	require.Equal(t, teslaSourceAddress, signalCE.Source)
+	require.Equal(t, subject, signalCE.Subject)
 
 	// Tesla Fleet API produces 14 signals (same as with-VIN payload minus VIN-related changes)
 	require.Len(t, signalCE.Data.Signals, 14, "expected 14 signals from Tesla Fleet API payload")
@@ -86,13 +86,13 @@ func TestTeslaFleetAPINoVIN(t *testing.T) {
 	for _, s := range signalCE.Data.Signals {
 		signalsByName[s.Name] = s.ValueNumber
 	}
-	assert.InDelta(t, 23.0, signalsByName["powertrainTractionBatteryStateOfChargeCurrent"], 0.01, "battery_level=23")
-	assert.InDelta(t, 19.0, signalsByName["exteriorAirTemperature"], 0.01, "outside_temp=19")
-	assert.InDelta(t, 312.0, signalsByName["chassisAxleRow1WheelLeftTirePressure"], 0.01, "tpms_pressure_fl=3.12 → 312 kPa")
-	assert.InDelta(t, 42.0, signalsByName["powertrainTractionBatteryChargingAddedEnergy"], 0.01, "charge_energy_added=42")
-	assert.InDelta(t, 80.0, signalsByName["powertrainTractionBatteryChargingChargeLimit"], 0.01, "charge_limit_soc=80")
-	assert.InDelta(t, 1.0, signalsByName["powertrainTractionBatteryChargingIsCharging"], 0.01, "charging_state=Charging → 1")
-	assert.InDelta(t, 40.2336, signalsByName["speed"], 0.01, "speed=25 mph → 40.2336 km/h")
+	require.InDelta(t, 23.0, signalsByName["powertrainTractionBatteryStateOfChargeCurrent"], 0.01, "battery_level=23")
+	require.InDelta(t, 19.0, signalsByName["exteriorAirTemperature"], 0.01, "outside_temp=19")
+	require.InDelta(t, 312.0, signalsByName["chassisAxleRow1WheelLeftTirePressure"], 0.01, "tpms_pressure_fl=3.12 → 312 kPa")
+	require.InDelta(t, 42.0, signalsByName["powertrainTractionBatteryChargingAddedEnergy"], 0.01, "charge_energy_added=42")
+	require.InDelta(t, 80.0, signalsByName["powertrainTractionBatteryChargingChargeLimit"], 0.01, "charge_limit_soc=80")
+	require.InDelta(t, 1.0, signalsByName["powertrainTractionBatteryChargingIsCharging"], 0.01, "charging_state=Charging → 1")
+	require.InDelta(t, 40.2336, signalsByName["speed"], 0.01, "speed=25 mph → 40.2336 km/h")
 
 	// ── 2. ClickHouse signal table — 14 signal rows ─────────────
 	signalRows := querySignals(t, subject)
@@ -101,17 +101,17 @@ func TestTeslaFleetAPINoVIN(t *testing.T) {
 	chSignalsByName := make(map[string]SignalRow)
 	for _, r := range signalRows {
 		chSignalsByName[r.Name] = r
-		assert.Equal(t, teslaSourceAddress, r.Source, "source mismatch for signal %s", r.Name)
+		require.Equal(t, teslaSourceAddress, r.Source, "source mismatch for signal %s", r.Name)
 	}
-	assert.InDelta(t, 23.0, chSignalsByName["powertrainTractionBatteryStateOfChargeCurrent"].ValueNumber, 0.01)
-	assert.InDelta(t, 19.0, chSignalsByName["exteriorAirTemperature"].ValueNumber, 0.01)
+	require.InDelta(t, 23.0, chSignalsByName["powertrainTractionBatteryStateOfChargeCurrent"].ValueNumber, 0.01)
+	require.InDelta(t, 19.0, chSignalsByName["exteriorAirTemperature"].ValueNumber, 0.01)
 
 	// ── 3. No events for Tesla ──────────────────────────────────
 	eventRows := queryEvents(t, subject)
 	require.Len(t, eventRows, 0, "Tesla should produce no events")
 
 	// ── 4. S3 (MinIO) parquet — only 1 CE (dimo.status, no VIN → no fingerprint)
-	time.Sleep(6 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
 
@@ -121,18 +121,18 @@ func TestTeslaFleetAPINoVIN(t *testing.T) {
 		for _, ev := range events {
 			if ev.Subject == subject {
 				pqFound++
-				assert.Equal(t, teslaSourceAddress, ev.Source)
-				assert.Equal(t, "dimo.status", ev.Type, "only dimo.status CE expected (no VIN)")
+				require.Equal(t, teslaSourceAddress, ev.Source)
+				require.Equal(t, "dimo.status", ev.Type, "only dimo.status CE expected (no VIN)")
 			}
 		}
 	}
-	assert.Equal(t, 1, pqFound, "expected 1 CloudEvent in parquet (dimo.status only, no fingerprint)")
+	require.Equal(t, 1, pqFound, "expected 1 CloudEvent in parquet (dimo.status only, no fingerprint)")
 
 	// ── 5. ClickHouse cloud_event table — 1 index row ───────────
 	ceRows := queryCloudEvents(t, subject)
 	require.Len(t, ceRows, 1, "expected 1 cloud_event index row (dimo.status only)")
-	assert.Equal(t, "dimo.status", ceRows[0].EventType)
-	assert.Equal(t, teslaSourceAddress, ceRows[0].Source)
+	require.Equal(t, "dimo.status", ceRows[0].EventType)
+	require.Equal(t, teslaSourceAddress, ceRows[0].Source)
 }
 
 func TestTeslaFleetAPIFullPipeline(t *testing.T) {
@@ -201,15 +201,15 @@ func TestTeslaFleetAPIFullPipeline(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode, "DIS should accept valid Tesla payload")
 
 	// Wait for pipeline processing
-	time.Sleep(5 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// ── 1. Kafka signals topic — 1 signal payload ───────────────
 	signalMsgs := consumeKafka(t, "topic.device.signals", signalOffset, 10*time.Second)
 	require.Len(t, signalMsgs, 1, "expected exactly 1 signal message")
 	signalCE := func() *vss.SignalCloudEvent { ce := parseSignalCE(t, signalMsgs[0]); return &ce }()
-	assert.Equal(t, "1.0", signalCE.SpecVersion)
-	assert.Equal(t, "dimo.signals", signalCE.Type)
-	assert.Equal(t, teslaSourceAddress, signalCE.Source)
+	require.Equal(t, "1.0", signalCE.SpecVersion)
+	require.Equal(t, "dimo.signals", signalCE.Type)
+	require.Equal(t, teslaSourceAddress, signalCE.Source)
 
 	// Tesla Fleet API produces 14 signals from the test payload
 	require.Len(t, signalCE.Data.Signals, 14, "expected 14 signals from Tesla Fleet API payload")
@@ -218,13 +218,13 @@ func TestTeslaFleetAPIFullPipeline(t *testing.T) {
 	for _, s := range signalCE.Data.Signals {
 		signalsByName[s.Name] = s.ValueNumber
 	}
-	assert.InDelta(t, 23.0, signalsByName["powertrainTractionBatteryStateOfChargeCurrent"], 0.01, "battery_level=23")
-	assert.InDelta(t, 19.0, signalsByName["exteriorAirTemperature"], 0.01, "outside_temp=19")
-	assert.InDelta(t, 312.0, signalsByName["chassisAxleRow1WheelLeftTirePressure"], 0.01, "tpms_pressure_fl=3.12 → 312 kPa")
-	assert.InDelta(t, 42.0, signalsByName["powertrainTractionBatteryChargingAddedEnergy"], 0.01, "charge_energy_added=42")
-	assert.InDelta(t, 80.0, signalsByName["powertrainTractionBatteryChargingChargeLimit"], 0.01, "charge_limit_soc=80")
-	assert.InDelta(t, 1.0, signalsByName["powertrainTractionBatteryChargingIsCharging"], 0.01, "charging_state=Charging → 1")
-	assert.InDelta(t, 40.2336, signalsByName["speed"], 0.01, "speed=25 mph → 40.2336 km/h")
+	require.InDelta(t, 23.0, signalsByName["powertrainTractionBatteryStateOfChargeCurrent"], 0.01, "battery_level=23")
+	require.InDelta(t, 19.0, signalsByName["exteriorAirTemperature"], 0.01, "outside_temp=19")
+	require.InDelta(t, 312.0, signalsByName["chassisAxleRow1WheelLeftTirePressure"], 0.01, "tpms_pressure_fl=3.12 → 312 kPa")
+	require.InDelta(t, 42.0, signalsByName["powertrainTractionBatteryChargingAddedEnergy"], 0.01, "charge_energy_added=42")
+	require.InDelta(t, 80.0, signalsByName["powertrainTractionBatteryChargingChargeLimit"], 0.01, "charge_limit_soc=80")
+	require.InDelta(t, 1.0, signalsByName["powertrainTractionBatteryChargingIsCharging"], 0.01, "charging_state=Charging → 1")
+	require.InDelta(t, 40.2336, signalsByName["speed"], 0.01, "speed=25 mph → 40.2336 km/h")
 
 	// ── 2. Kafka events topic — Tesla produces no events ─────────
 	// (Tesla module has no EventConvert registered)
@@ -236,45 +236,55 @@ func TestTeslaFleetAPIFullPipeline(t *testing.T) {
 	chSignalsByName := make(map[string]SignalRow)
 	for _, r := range signalRows {
 		chSignalsByName[r.Name] = r
-		assert.Equal(t, teslaSourceAddress, r.Source, "source mismatch for signal %s", r.Name)
+		require.Equal(t, teslaSourceAddress, r.Source, "source mismatch for signal %s", r.Name)
 	}
-	assert.InDelta(t, 23.0, chSignalsByName["powertrainTractionBatteryStateOfChargeCurrent"].ValueNumber, 0.01)
-	assert.InDelta(t, 19.0, chSignalsByName["exteriorAirTemperature"].ValueNumber, 0.01)
+	require.InDelta(t, 23.0, chSignalsByName["powertrainTractionBatteryStateOfChargeCurrent"].ValueNumber, 0.01)
+	require.InDelta(t, 19.0, chSignalsByName["exteriorAirTemperature"].ValueNumber, 0.01)
 
 	// ── 4. ClickHouse event table — 0 event rows ────────────────
 	eventRows := queryEvents(t, subject)
 	require.Len(t, eventRows, 0, "Tesla should produce no events")
 
 	// ── 5. S3 (MinIO) parquet — 2 CEs (dimo.status + dimo.fingerprint)
-	time.Sleep(6 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
 
-	var pqFound int
+	var pqEvents []cloudevent.RawEvent
 	for _, key := range keys {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {
 			if ev.Subject == subject {
-				pqFound++
-				assert.Equal(t, teslaSourceAddress, ev.Source)
-				assert.Equal(t, "1.0", ev.SpecVersion)
+				pqEvents = append(pqEvents, ev)
+				require.Equal(t, teslaSourceAddress, ev.Source)
+				require.Equal(t, "1.0", ev.SpecVersion)
 			}
 		}
 	}
-	t.Logf("Found %d parquet rows for subject %s", pqFound, subject)
-	// Tesla produces 2 CEs: dimo.status + dimo.fingerprint (VIN present)
-	assert.Equal(t, 2, pqFound, "expected 2 CloudEvents in parquet (dimo.status + dimo.fingerprint)")
+	t.Logf("Found %d parquet rows for subject %s", len(pqEvents), subject)
+	// Tesla produces 1 parquet entry (status+fingerprint share the same ID, deduplicated)
+	require.Len(t, pqEvents, 1, "expected 1 CloudEvent in parquet (dimo.status, fingerprint deduplicated)")
+	require.Equal(t, "dimo.status", pqEvents[0].Type, "parquet entry should be dimo.status (fingerprint deduplicated)")
 
 	// ── 6. ClickHouse cloud_event table — 2 index rows ──────────
 	ceRows := queryCloudEvents(t, subject)
 	require.Len(t, ceRows, 2, "expected 2 cloud_event index rows (dimo.status + dimo.fingerprint)")
 
-	ceTypes := make(map[string]bool)
+	ceByType := make(map[string]CloudEventRow)
 	for _, r := range ceRows {
-		ceTypes[r.EventType] = true
-		assert.Equal(t, teslaSourceAddress, r.Source)
-		assert.NotEmpty(t, r.IndexKey, "index_key should be set")
+		ceByType[r.EventType] = r
+		require.Equal(t, teslaSourceAddress, r.Source)
+		require.NotEmpty(t, r.IndexKey, "index_key should be set")
 	}
-	assert.True(t, ceTypes["dimo.status"], "missing dimo.status in cloud_event table")
-	assert.True(t, ceTypes["dimo.fingerprint"], "missing dimo.fingerprint in cloud_event table")
+	require.Contains(t, ceByType, "dimo.status", "missing dimo.status in cloud_event table")
+	require.Contains(t, ceByType, "dimo.fingerprint", "missing dimo.fingerprint in cloud_event table")
+
+	statusID := ceByType["dimo.status"].ID
+	fingerprintID := ceByType["dimo.fingerprint"].ID
+
+	// Status and fingerprint share the same ID (identical payload, deduplicated in parquet)
+	require.Equal(t, statusID, fingerprintID,
+		"dimo.status and dimo.fingerprint must share the same cloud event ID")
+	require.Equal(t, ceByType["dimo.status"].IndexKey, ceByType["dimo.fingerprint"].IndexKey,
+		"dimo.status and dimo.fingerprint must point to the same parquet entry")
 }

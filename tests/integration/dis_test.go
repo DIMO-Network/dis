@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 )
@@ -102,6 +103,22 @@ processor_resources:
 		1)
 	if err := os.WriteFile(parquetCfgPath, []byte(patched), 0o644); err != nil {
 		return fmt.Errorf("write patched parquet config: %w", err)
+	}
+
+	// Patch all batch periods to 1s so integration tests don't wait for long flushes
+	periodRe := regexp.MustCompile(`(period:\s*)"?\d+s"?`)
+	for _, name := range streamFiles {
+		path := filepath.Join(streamsDir, name)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		patched := periodRe.ReplaceAllString(string(data), `${1}"250ms"`)
+		if patched != string(data) {
+			if err := os.WriteFile(path, []byte(patched), 0o644); err != nil {
+				return fmt.Errorf("patch batch periods in %s: %w", name, err)
+			}
+		}
 	}
 
 	// Create buffer directories

@@ -1,4 +1,4 @@
-replicaCount: 3
+replicaCount: 2
 podAnnotations:
   config.linkerd.io/proxy-cpu-limit: 2000m
   config.linkerd.io/proxy-cpu-request: 500m
@@ -48,6 +48,6 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 image:
   pullPolicy: IfNotPresent
-  tag: 0.4.5
+  tag: 0.4.6
 kafka:
   clusterName: kafka-prod-dimo-kafka

@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,11 +21,11 @@ func TestMalformedJSON(t *testing.T) {
 	resp := postMTLS(t, payload)
 	drainAndClose(t, resp)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// Verify no messages leaked to Kafka
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
-	assert.Empty(t, msgs, "malformed JSON should not produce any signal")
+	require.Empty(t, msgs, "malformed JSON should not produce any signal")
 }
 
 func TestUnsupportedCloudEventType(t *testing.T) {
@@ -55,11 +54,11 @@ func TestUnsupportedCloudEventType(t *testing.T) {
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// Verify no signals appeared for this subject
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
-	assert.Empty(t, msgs, "unsupported CloudEvent type should not produce signals")
+	require.Empty(t, msgs, "unsupported CloudEvent type should not produce signals")
 }
 
 func TestEmptyPayload(t *testing.T) {
@@ -70,11 +69,11 @@ func TestEmptyPayload(t *testing.T) {
 	resp := postMTLS(t, payload)
 	drainAndClose(t, resp)
 
-	time.Sleep(2 * time.Second)
+	time.Sleep(750 * time.Millisecond)
 
 	// Verify no messages leaked to Kafka
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
-	assert.Empty(t, msgs, "empty payload should not produce any signal")
+	require.Empty(t, msgs, "empty payload should not produce any signal")
 }
 
 func TestInvalidJWT(t *testing.T) {
@@ -88,7 +87,7 @@ func TestInvalidJWT(t *testing.T) {
 	require.NoError(t, err)
 	drainAndClose(t, resp)
 
-	assert.NotEqual(t, 200, resp.StatusCode, "invalid JWT should not return 200")
+	require.NotEqual(t, 200, resp.StatusCode, "invalid JWT should not return 200")
 }
 
 func TestMissingJWT(t *testing.T) {
@@ -102,5 +101,5 @@ func TestMissingJWT(t *testing.T) {
 	require.NoError(t, err)
 	drainAndClose(t, resp)
 
-	assert.NotEqual(t, 200, resp.StatusCode, "missing JWT should not return 200")
+	require.NotEqual(t, 200, resp.StatusCode, "missing JWT should not return 200")
 }

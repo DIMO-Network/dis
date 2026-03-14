@@ -48,7 +48,7 @@ func (v *processor) processMsg(ctx context.Context, msg *service.Message) servic
 	vinObj := vin.VIN(fingerprint.VIN)
 	if !vinObj.IsValidVIN() && !vinObj.IsValidJapanChassis() {
 		v.logger.Debugf("invalid VIN format in fingerprint: subject=%s source=%s vin=%s", rawEvent.Subject, rawEvent.Source, fingerprint.VIN)
-		return batch
+		return service.MessageBatch{}
 	}
 	return batch
 }
