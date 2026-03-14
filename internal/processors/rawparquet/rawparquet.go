@@ -40,6 +40,9 @@ const (
 var configSpec = service.NewConfigSpec().
 	Summary("Converts a batch of CloudEvents to a single Parquet message with day-partitioned path, plus originals with index metadata.").
 	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/).")).
+	Field(service.NewStringField("large_event_prefix").
+		Description("Path prefix for large single-event JSON objects (e.g. cloudevent/blobs/).").
+		Default("cloudevent/blobs/")).
 	Field(service.NewIntField("large_event_threshold").
 		Description("If an event's byte size meets or exceeds this number then it will be stored as an individual S3 object. 0 disables.").
 		Default(0)) // Benthos convention seems to be to not name these _bytes.
@@ -56,6 +59,10 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 	if err != nil {
 		return nil, fmt.Errorf("prefix: %w", err)
 	}
+	largeEventPrefix, err := conf.FieldString("large_event_prefix")
+	if err != nil {
+		return nil, fmt.Errorf("large_event_prefix: %w", err)
+	}
 	largeEventThreshold, err := conf.FieldInt("large_event_threshold")
 	if err != nil {
 		return nil, fmt.Errorf("large_event_threshold: %w", err)
@@ -63,6 +70,7 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 	m := mgr.Metrics()
 	return &processor{
 		prefix:              prefix,
+		largeEventPrefix:    largeEventPrefix,
 		largeEventThreshold: largeEventThreshold,
 		logger:              mgr.Logger(),
 		uploads:             m.NewCounter(MetricS3Uploads),
@@ -73,6 +81,7 @@ func ctor(conf *service.ParsedConfig, mgr *service.Resources) (service.BatchProc
 
 type processor struct {
 	prefix              string
+	largeEventPrefix    string
 	largeEventThreshold int
 	logger              *service.Logger
 	uploads             *service.MetricCounter
@@ -157,7 +166,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	}
 
 	for _, g := range large {
-		singleKey := buildSingleObjectKey(p.prefix, now)
+		singleKey := buildSingleObjectKey(p.largeEventPrefix, g.event.Subject, now)
 		p.uploads.Incr(1)
 		p.uploadBytes.Incr(int64(len(g.rawBytes)))
 
@@ -180,7 +189,7 @@ func buildBatchObjectKey(prefix string, t time.Time) string {
 		prefix, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
 }
 
-func buildSingleObjectKey(prefix string, t time.Time) string {
-	return fmt.Sprintf("%s%d/%02d/%02d/single-%s.json",
-		prefix, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
+func buildSingleObjectKey(prefix, subject string, t time.Time) string {
+	return fmt.Sprintf("%s%s/%d/%02d/%02d/single-%s.json",
+		prefix, subject, t.Year(), int(t.Month()), t.Day(), uuid.New().String())
 }

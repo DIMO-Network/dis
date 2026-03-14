@@ -62,6 +62,7 @@ func newTestProcessor(prefix string, largeEventThreshold int) *processor {
 	m := res.Metrics()
 	return &processor{
 		prefix:              prefix,
+		largeEventPrefix:    "cloudevent/blobs/",
 		largeEventThreshold: largeEventThreshold,
 		logger:              res.Logger(),
 		uploads:             m.NewCounter("uploads"),
@@ -223,7 +224,8 @@ func TestProcessBatch_LargeEventsOnly(t *testing.T) {
 	for i := 0; i < len(batch); i += 2 {
 		s3Key, exists := batch[i].MetaGet(MetaS3UploadKey)
 		require.True(t, exists)
-		assert.Contains(t, s3Key, "single-")
+		assert.Contains(t, s3Key, "cloudevent/blobs/did:erc721:1:0xV:")
+		assert.Contains(t, s3Key, "/single-")
 		assert.Contains(t, s3Key, ".json")
 
 		contentType, exists := batch[i].MetaGet(MetaS3ContentType)
@@ -281,7 +283,8 @@ func TestProcessBatch_MixedSmallAndLarge(t *testing.T) {
 
 	s3Key, exists := batch[3].MetaGet(MetaS3UploadKey)
 	require.True(t, exists)
-	assert.Contains(t, s3Key, "single-")
+	assert.Contains(t, s3Key, "cloudevent/blobs/did:erc721:1:0xV:2/")
+	assert.Contains(t, s3Key, "/single-")
 	assert.Contains(t, s3Key, ".json")
 	contentType, exists = batch[3].MetaGet(MetaS3ContentType)
 	require.True(t, exists)
@@ -313,7 +316,7 @@ func TestProcessBatch_ThresholdDisabled(t *testing.T) {
 	s3Key, exists := result[0][0].MetaGet(MetaS3UploadKey)
 	require.True(t, exists)
 	assert.Contains(t, s3Key, ".parquet")
-	assert.NotContains(t, s3Key, "single-")
+	assert.NotContains(t, s3Key, "/single-")
 
 	rowVal, err := result[0][1].AsStructured()
 	require.NoError(t, err)
@@ -327,8 +330,8 @@ func TestProcessBatch_ThresholdDisabled(t *testing.T) {
 func TestBuildSingleObjectKey_Format(t *testing.T) {
 	t.Parallel()
 	ts := time.Date(2024, 3, 7, 0, 0, 0, 0, time.UTC)
-	key := buildSingleObjectKey("raw/data/", ts)
+	key := buildSingleObjectKey("cloudevent/blobs/", "did:erc721:1:0xV:1", ts)
 
-	assert.Contains(t, key, "raw/data/2024/03/07/single-")
+	assert.Contains(t, key, "cloudevent/blobs/did:erc721:1:0xV:1/2024/03/07/single-")
 	assert.Contains(t, key, ".json")
 }

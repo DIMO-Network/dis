@@ -97,6 +97,7 @@ func TestAttestationEndpoint(t *testing.T) {
 
 func TestAttestationEndpoint_LargePayloadStoredAsJSON(t *testing.T) {
 	clearMinIOObjects(t, "cloudevent/valid/")
+	clearMinIOObjects(t, "cloudevent/blobs/")
 
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:556"
 	clearClickHouseForSubject(t, subject)
@@ -144,7 +145,7 @@ func TestAttestationEndpoint_LargePayloadStoredAsJSON(t *testing.T) {
 
 	time.Sleep(8 * time.Second)
 
-	keys := listMinIOObjects(t, "cloudevent/valid/")
+	keys := listMinIOObjects(t, "cloudevent/blobs/")
 	require.NotEmpty(t, keys, "no objects found in MinIO")
 
 	var jsonKey string
@@ -155,6 +156,7 @@ func TestAttestationEndpoint_LargePayloadStoredAsJSON(t *testing.T) {
 		}
 	}
 	require.NotEmpty(t, jsonKey, "expected direct json object in MinIO")
+	assert.Contains(t, jsonKey, "cloudevent/blobs/"+subject+"/")
 
 	raw := readMinIOObject(t, jsonKey)
 	var ev cloudevent.RawEvent
