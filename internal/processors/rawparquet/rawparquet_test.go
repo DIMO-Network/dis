@@ -215,6 +215,7 @@ func chRowKey(t *testing.T, msg *service.Message) string {
 	val, err := msg.AsStructured()
 	require.NoError(t, err)
 	row := val.([]any)
+	// The last element in the CH row slice is the parquet index key.
 	return row[len(row)-1].(string)
 }
 
@@ -232,12 +233,14 @@ func TestProcessBatch_DeduplicatesSameID(t *testing.T) {
 	require.Len(t, result, 1)
 
 	batch := result[0]
+	// 1 parquet message + 2 ClickHouse rows.
 	require.Len(t, batch, 3, "should be 1 parquet + 2 CH rows")
 
 	parquetCount, exists := batch[0].MetaGet(MetaParquetCount)
 	assert.True(t, exists)
 	assert.Equal(t, "1", parquetCount, "only 1 unique event should be encoded in parquet")
 
+	// Both CH rows should reference the same parquet key.
 	key1 := chRowKey(t, batch[1])
 	key2 := chRowKey(t, batch[2])
 	assert.Equal(t, key1, key2, "duplicate-ID CH rows should reference the same parquet key")
@@ -247,6 +250,7 @@ func TestProcessBatch_DeduplicatesPrefersStatus(t *testing.T) {
 	t.Parallel()
 	proc := newTestProcessor("raw/test/", 0)
 
+	// Fingerprint arrives before status - parquet should still contain the status event.
 	msgs := service.MessageBatch{
 		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.fingerprint"),
 		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.status"),
@@ -263,6 +267,7 @@ func TestProcessBatch_DeduplicatesPrefersStatus(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, "1", parquetCount)
 
+	// Both CH rows should reference the same parquet key.
 	key1 := chRowKey(t, batch[1])
 	key2 := chRowKey(t, batch[2])
 	assert.Equal(t, key1, key2)
@@ -308,12 +313,14 @@ func TestProcessBatch_MixedDedupAndUnique(t *testing.T) {
 	require.Len(t, result, 1)
 
 	batch := result[0]
+	// 1 parquet + 3 CH rows.
 	require.Len(t, batch, 4, "should be 1 parquet + 3 CH rows")
 
 	parquetCount, exists := batch[0].MetaGet(MetaParquetCount)
 	assert.True(t, exists)
-	assert.Equal(t, "2", parquetCount, "2 unique events should be encoded in parquet")
+	assert.Equal(t, "2", parquetCount, "2 unique events (dup-id counted once + unique-id)")
 
+	// The two dup-id CH rows should share a key.
 	key1 := chRowKey(t, batch[1])
 	key2 := chRowKey(t, batch[2])
 	key3 := chRowKey(t, batch[3])

@@ -1,0 +1,80 @@
+input:
+  inproc: "dimo_large_cloudevents"
+
+buffer:
+  memory:
+    limit: 10485760
+
+pipeline:
+  processors:
+    - label: "archive_large_cloudevent"
+      dimo_large_cloudevent_archive:
+        prefix: "cloudevent/valid/"
+
+output:
+  label: "insert_large_cloudevent"
+  fallback:
+    - broker:
+        pattern: fan_out_sequential_fail_fast
+        outputs:
+          - fallback:
+              - label: "insert_large_cloudevent_s3"
+                switch:
+                  cases:
+                    - check: 'metadata("dimo_s3_upload_key").or("") != ""'
+                      output:
+                        aws_s3:
+                          bucket: "${PARQUET_BUCKET}"
+                          region: "${S3_AWS_REGION}"
+                          content_type: ${!metadata("dimo_s3_content_type").or("application/json")}
+                          path: ${!metadata("dimo_s3_upload_key")}
+                          credentials:
+                            id: "${S3_AWS_ACCESS_KEY_ID}"
+                            secret: "${S3_AWS_SECRET_ACCESS_KEY}"
+                    - check: ''
+                      output:
+                        drop: {}
+              - label: "s3_large_cloudevent_failure"
+                drop: {}
+                processors:
+                  - label: "insert_large_cloudevent_s3_failure"
+                    log:
+                      level: ERROR
+                      message: 'failed to store large cloudevent: ${!metadata("fallback_error").or("unknown")}'
+
+          - fallback:
+              - label: "clickhouse_large_cloudevent"
+                switch:
+                  cases:
+                    - check: 'metadata("dimo_message_content").or("") == "dimo_clickhouse_cloudevent"'
+                      output:
+                        resource: "clickhouse_cloudevent_insert"
+                        processors:
+                          - label: "handle_clickhouse_large_ce_error"
+                            catch:
+                              - label: "set_clickhouse_large_ce_component"
+                                mutation: |
+                                   meta dimo_component = "clickhouse_large_cloudevent"
+                              - resource: "handle_db_error"
+                              - label: "delete_clickhouse_large_ce_error"
+                                mapping: root = deleted()
+                    - check: ''
+                      output:
+                        drop: {}
+              - label: "insert_large_cloudevent_clickhouse_failure"
+                switch:
+                  cases:
+                    - check: 'metadata("fallback_error").or("").contains("bad connection")'
+                      output:
+                        reject: metadata("fallback_error")
+                        processors:
+                          - resource: "handle_db_connection_error"
+                    - check: ''
+                      output:
+                        drop: {}
+                        processors:
+                          - label: "set_large_ch_failure_component"
+                            mutation: |
+                              meta dimo_component = "insert_large_cloudevent_clickhouse"
+                          - resource: "handle_db_error"
+    - drop: {}
