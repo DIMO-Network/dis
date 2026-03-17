@@ -95,7 +95,7 @@ func TestCloudEventParquet(t *testing.T) {
 }
 
 func TestCloudEventDocument(t *testing.T) {
-	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:9001"
+	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:9003"
 	blobPrefix := "cloudevent/blobs/" + subject + "/"
 
 	clearClickHouseForSubject(t, subject)
@@ -109,7 +109,7 @@ func TestCloudEventDocument(t *testing.T) {
 		"producer":       subject,
 		"type":           "dimo.status",
 		"time":           "2024-04-18T17:20:46.436008782Z",
-		"vehicleTokenId": 9001,
+		"vehicleTokenId": 9003,
 		"data": map[string]any{
 			"timestamp": 1713460846435,
 			"signals": []map[string]any{
