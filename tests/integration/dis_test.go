@@ -68,6 +68,7 @@ processor_resources:
 	streamFiles := []string{
 		"external-ingest.yaml",
 		"output-parquet.yaml",
+		"output-document.yaml",
 		"output-clickhouse.yaml",
 		"output-kafka.yaml",
 	}
@@ -103,6 +104,26 @@ processor_resources:
 		1)
 	if err := os.WriteFile(parquetCfgPath, []byte(patched), 0o644); err != nil {
 		return fmt.Errorf("write patched parquet config: %w", err)
+	}
+
+	// Patch output-document.yaml to point aws_s3 at local MinIO
+	docCfgPath := filepath.Join(streamsDir, "output-document.yaml")
+	docCfg, err := os.ReadFile(docCfgPath)
+	if err != nil {
+		return fmt.Errorf("read document config for patching: %w", err)
+	}
+	patched = strings.Replace(string(docCfg),
+		`                        aws_s3:
+                          bucket: "${PARQUET_BUCKET}"
+                          region: "${S3_AWS_REGION}"`,
+		`                        aws_s3:
+                          bucket: "${PARQUET_BUCKET}"
+                          region: "${S3_AWS_REGION}"
+                          endpoint: "${S3_ENDPOINT}"
+                          force_path_style_urls: ${S3_FORCE_PATH_STYLE}`,
+		1)
+	if err := os.WriteFile(docCfgPath, []byte(patched), 0o644); err != nil {
+		return fmt.Errorf("write patched document config: %w", err)
 	}
 
 	// Patch all batch periods to 1s so integration tests don't wait for long flushes
@@ -179,6 +200,9 @@ func startDIS() error {
 		fmt.Sprintf("S3_AWS_SECRET_ACCESS_KEY=%s", minioSecretKey),
 		fmt.Sprintf("S3_ENDPOINT=http://localhost:%d", 19090),
 		"S3_FORCE_PATH_STYLE=true",
+
+		// Document threshold (low for testing)
+		"DOCUMENT_SIZE_THRESHOLD=1024",
 
 		// Buffer
 		fmt.Sprintf("DIS_BUFFER_DIR=%s/buffer", tmpDir),

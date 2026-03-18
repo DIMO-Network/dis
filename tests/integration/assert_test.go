@@ -276,6 +276,27 @@ func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
 	return events
 }
 
+// readJSONFromMinIO downloads a JSON file from MinIO and unmarshals it as a RawEvent.
+func readJSONFromMinIO(t *testing.T, key string) cloudevent.RawEvent {
+	t.Helper()
+	ctx := context.Background()
+	obj, err := minioClient.GetObject(ctx, minioBucket, key, minio.GetObjectOptions{})
+	require.NoError(t, err)
+	defer obj.Close()
+
+	data, err := io.ReadAll(obj)
+	require.NoError(t, err)
+
+	var ev cloudevent.RawEvent
+	err = json.Unmarshal(data, &ev)
+	require.NoError(t, err, "failed to unmarshal CloudEvent JSON from MinIO: %s", string(data))
+
+	dataJSON, _ := json.Marshal(ev.Data)
+	t.Logf("JSON %s: id=%s subject=%s type=%s source=%s producer=%s time=%v data=%s",
+		key, ev.ID, ev.Subject, ev.Type, ev.Source, ev.Producer, ev.Time, string(dataJSON))
+	return ev
+}
+
 // parseSignalCE parses a Kafka message as a SignalCloudEvent.
 func parseSignalCE(t *testing.T, msg []byte) vss.SignalCloudEvent {
 	t.Helper()
