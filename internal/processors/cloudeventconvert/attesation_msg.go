@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
@@ -65,8 +66,26 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 		return nil, fmt.Errorf("failed to validate headers: %w", err)
 	}
 
-	event.Type = cloudevent.TypeAttestation
+	if event.Type == "" {
+		event.Type = cloudevent.TypeAttestation
+	}
+	if !isValidAttestationType(event.Type) {
+		return nil, fmt.Errorf("invalid attestation type %q: must be dimo.attestation, dimo.raw.*, or dimo.document.*", event.Type)
+	}
 	return &event, nil
+}
+
+func isValidAttestationType(t string) bool {
+	switch {
+	case t == cloudevent.TypeAttestation:
+		return true
+	case strings.HasPrefix(t, "dimo.raw.") && len(t) > len("dimo.raw."):
+		return true
+	case strings.HasPrefix(t, "dimo.document.") && len(t) > len("dimo.document."):
+		return true
+	default:
+		return false
+	}
 }
 
 // verifySignature attempts to verify the signed data.
