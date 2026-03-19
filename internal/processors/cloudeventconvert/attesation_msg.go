@@ -26,7 +26,7 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 		return service.MessageBatch{msg}
 	}
 
-	validSignature, err := c.verifySignature(event, common.HexToAddress(source))
+	validSignature, err := c.verifySignature(event, common.HexToAddress(event.Source))
 	if err != nil {
 		processors.SetError(msg, processorName, "failed to check message signature", err)
 		return service.MessageBatch{msg}
@@ -62,7 +62,19 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 		}
 	}
 
-	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, source, ksuid.New().String()); err != nil {
+	// If the payload includes a source, use it (delegation support);
+	// otherwise fall back to the JWT holder's address.
+	resolvedSource := source
+	if event.Source != "" {
+		resolvedSource = event.Source
+	}
+	if !common.IsHexAddress(resolvedSource) {
+		return nil, fmt.Errorf("invalid source address: %s", resolvedSource)
+	}
+	// Normalize to EIP-55 checksummed form for consistent storage.
+	resolvedSource = common.HexToAddress(resolvedSource).Hex()
+
+	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, resolvedSource, ksuid.New().String()); err != nil {
 		return nil, fmt.Errorf("failed to validate headers: %w", err)
 	}
 
