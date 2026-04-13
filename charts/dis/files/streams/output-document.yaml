@@ -3,7 +3,7 @@ input:
 
 buffer:
   memory:
-    limit: 10485760
+    limit: 52428800
 
 pipeline:
   processors:
