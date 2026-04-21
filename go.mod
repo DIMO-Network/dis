@@ -10,7 +10,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.43.0
 	github.com/DIMO-Network/clickhouse-infra v0.0.8
 	github.com/DIMO-Network/cloudevent v0.2.6
-	github.com/DIMO-Network/model-garage v1.0.10
+	github.com/DIMO-Network/model-garage v1.0.11
 	github.com/DIMO-Network/shared v1.0.7
 	github.com/MicahParks/keyfunc/v3 v3.6.1
 	github.com/ethereum/go-ethereum v1.17.1
