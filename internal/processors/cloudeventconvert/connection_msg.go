@@ -91,7 +91,9 @@ func setConnectionContentType(eventHdr *cloudevent.CloudEventHeader, msg *servic
 }
 
 func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *service.Logger) bool {
-	if _, err := cloudevent.DecodeERC721DID(eventHdr.Subject); err != nil {
+	if did, err := cloudevent.DecodeERC721DID(eventHdr.Subject); err == nil {
+		eventHdr.Subject = did.String()
+	} else {
 		did, err := cloudevent.DecodeLegacyNFTDID(eventHdr.Subject)
 		if err != nil {
 			return false
@@ -100,7 +102,9 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 		logger.Debugf("Cloud event header subject for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
 	}
 
-	if _, err := cloudevent.DecodeERC721DID(eventHdr.Producer); err != nil {
+	if did, err := cloudevent.DecodeERC721DID(eventHdr.Producer); err == nil {
+		eventHdr.Producer = did.String()
+	} else {
 		did, err := cloudevent.DecodeLegacyNFTDID(eventHdr.Producer)
 		if err != nil {
 			return false
@@ -109,7 +113,11 @@ func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *serv
 		logger.Debugf("Cloud event header producer for source %s is a legacy NFT DID: %v", eventHdr.Source, eventHdr)
 	}
 
-	return common.IsHexAddress(eventHdr.Source)
+	if !common.IsHexAddress(eventHdr.Source) {
+		return false
+	}
+	eventHdr.Source = common.HexToAddress(eventHdr.Source).Hex()
+	return true
 }
 
 func isValidConnectionType(eventHdr *cloudevent.CloudEventHeader) bool {
