@@ -31,6 +31,7 @@ import (
 
 	// Add our custom plugin packages here.
 	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventconvert"
+	_ "github.com/DIMO-Network/dis/internal/processors/cloudeventsplit"
 	_ "github.com/DIMO-Network/dis/internal/processors/eventconvert"
 	_ "github.com/DIMO-Network/dis/internal/processors/eventstoslice"
 	_ "github.com/DIMO-Network/dis/internal/processors/fingerprintvalidate"

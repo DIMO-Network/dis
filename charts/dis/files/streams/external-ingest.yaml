@@ -92,6 +92,13 @@ pipeline:
                 vehicle_nft_address: ${VEHICLE_NFT_ADDRESS:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF}
             - label: convert_events
               dimo_event_convert: {}
+            # Split events with large `data` payloads: emit a stripped CE with
+            # data_index_key in metadata plus a sibling blob message routed to
+            # the blob bucket.
+            - label: split_large_cloudevents
+              dimo_cloudevent_split:
+                prefix: "cloudevent/blobs/"
+                data_size_threshold: ${DOCUMENT_SIZE_THRESHOLD:1048576}
     # If label name change, update the alerts
     - label: "processing_errors"
       catch:
@@ -122,8 +129,13 @@ pipeline:
 output:
   switch:
     cases:
-      # All valid CloudEvents → Parquet batching (large payloads are
-      # externalized to S3 inside the dimo_raw_parquet processor).
+      # Externalized large-payload bytes → blob bucket stream.
+      - check: 'metadata("dimo_message_content").or("") == "dimo_blob"'
+        output:
+          label: "inproc_blobs"
+          inproc: "dimo_blobs"
+      # All valid CloudEvents (including stripped ones with data_index_key in
+      # metadata) → Parquet batching.
       - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
         output:
           label: "inproc_cloudevents"

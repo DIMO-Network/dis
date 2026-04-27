@@ -14,8 +14,6 @@ pipeline:
     - label: "convert_cloudevent_to_parquet"
       dimo_raw_parquet:
         prefix: "cloudevent/valid/"
-        data_prefix: "cloudevent/blobs/"
-        data_size_threshold: ${DOCUMENT_SIZE_THRESHOLD:1048576}
 
 output:
   label: "insert_valid_cloudevent"
