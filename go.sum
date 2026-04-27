@@ -69,8 +69,8 @@ github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26 h1:Q56IbfT
 github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26/go.mod h1:NQBR+ek5JR3QICSV9S3UNcj9z/0Mww2+/1JkKt/3Ino=
 github.com/DIMO-Network/clickhouse-infra v0.0.8 h1:54HPXKvNjmn9T0d9ZLYgUm4DnwTavE+Z8admrf39mJI=
 github.com/DIMO-Network/clickhouse-infra v0.0.8/go.mod h1:XS80lhSJNWBWGgZ+m4j7++zFj1wAXfmtV2gJfhGlabQ=
-github.com/DIMO-Network/cloudevent v0.2.8-0.20260426193517-b653fa97af63 h1:om/htMUr7OfMXLkVWQ+pANHDh9FE84h8KMgwtiIAlI0=
-github.com/DIMO-Network/cloudevent v0.2.8-0.20260426193517-b653fa97af63/go.mod h1:I/9NcpMozV5Fw194WimhbkAsJtKVZf5UKYJ9hgc8Cdg=
+github.com/DIMO-Network/cloudevent v0.2.8 h1:Q0xGQVPlOshF2LSX/m15Qzi2n4BI0EQDgOM71gEbNsY=
+github.com/DIMO-Network/cloudevent v0.2.8/go.mod h1:I/9NcpMozV5Fw194WimhbkAsJtKVZf5UKYJ9hgc8Cdg=
 github.com/DIMO-Network/model-garage v1.0.11 h1:aLvIyeo58p9pVgz+d3DnU5k5Fxvxh6mq/jE2s3LxXoc=
 github.com/DIMO-Network/model-garage v1.0.11/go.mod h1:oi7EGKQVxFVpXRsu2H+YbizbKcx06aQg2N1Yu4GqOp8=
 github.com/DIMO-Network/shared v1.0.7 h1:LfSgsqJ6R7EUyfo2GTfuhrCpoDcweJqe7eVOa4j7Xbo=
