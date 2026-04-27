@@ -63,7 +63,7 @@ func (c *cloudeventProcessor) createConnectionMsgs(origMsg *service.Message, sou
 			logger.Warnf("Cloud event time is in the future: now() = %v is before event.time = %v \n %+v", time.Now(), hdrs[i].Time, hdrs[i])
 		}
 		newMsg := origMsg.Copy()
-		if err := validateHeadersAndSetDefaults(hdr, source, defaultID); err != nil {
+		if err := validateHeadersAndSetDefaults(hdr, source, defaultID, false); err != nil {
 			return nil, fmt.Errorf("invalid cloud event header string: %w", err)
 		}
 		if !isValidConnectionType(hdr) {

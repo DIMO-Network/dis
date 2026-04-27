@@ -362,3 +362,136 @@ func TestProcessBatch(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateAndSetContentType(t *testing.T) {
+	tests := []struct {
+		name                    string
+		inputContentType        string
+		isBase64                bool
+		expectedContentType     string
+		expectError             bool
+	}{
+		{
+			name:                "data event empty defaults to application/json",
+			inputContentType:    "",
+			isBase64:            false,
+			expectedContentType: "application/json",
+		},
+		{
+			name:                "data event with application/json passes",
+			inputContentType:    "application/json",
+			isBase64:            false,
+			expectedContentType: "application/json",
+		},
+		{
+			name:             "data event with image/png is rejected",
+			inputContentType: "image/png",
+			isBase64:         false,
+			expectError:      true,
+		},
+		{
+			name:             "data event with arbitrary type is rejected",
+			inputContentType: "text/plain",
+			isBase64:         false,
+			expectError:      true,
+		},
+		{
+			name:             "data_base64 event with empty content type is rejected",
+			inputContentType: "",
+			isBase64:         true,
+			expectError:      true,
+		},
+		{
+			name:                "data_base64 event with image/png passes",
+			inputContentType:    "image/png",
+			isBase64:            true,
+			expectedContentType: "image/png",
+		},
+		{
+			name:                "data_base64 event with image/jpeg passes",
+			inputContentType:    "image/jpeg",
+			isBase64:            true,
+			expectedContentType: "image/jpeg",
+		},
+		{
+			name:                "data_base64 event with application/pdf passes",
+			inputContentType:    "application/pdf",
+			isBase64:            true,
+			expectedContentType: "application/pdf",
+		},
+		{
+			name:                "data_base64 event with application/json passes",
+			inputContentType:    "application/json",
+			isBase64:            true,
+			expectedContentType: "application/json",
+		},
+		{
+			name:             "data_base64 event with non-whitelisted type is rejected",
+			inputContentType: "text/plain",
+			isBase64:         true,
+			expectError:      true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hdr := &cloudevent.CloudEventHeader{DataContentType: tt.inputContentType}
+			err := validateAndSetContentType(hdr, tt.isBase64)
+			if tt.expectError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedContentType, hdr.DataContentType)
+		})
+	}
+}
+
+func TestParseAndValidateAttestationContentType(t *testing.T) {
+	source := common.HexToAddress("0x07B584f6a7125491C991ca2a45ab9e641B1CeE1b").String()
+	timestamp := time.Now().UTC().Format(time.RFC3339)
+	baseFields := func(extra string) []byte {
+		return []byte(fmt.Sprintf(`{"id":"id1","source":"%s","producer":"%s","specversion":"1.0","subject":"did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005","time":"%s","type":"dimo.attestation","signature":"0xdeadbeef"%s}`, source, source, timestamp, extra))
+	}
+
+	tests := []struct {
+		name        string
+		input       []byte
+		expectError bool
+	}{
+		{
+			name:  "data event with no datacontenttype defaults to json",
+			input: baseFields(`,"data":{"k":"v"}`),
+		},
+		{
+			name:        "data event with image/png is rejected",
+			input:       baseFields(`,"data":{"k":"v"},"datacontenttype":"image/png"`),
+			expectError: true,
+		},
+		{
+			name:  "data_base64 event with image/png is accepted",
+			input: baseFields(`,"data_base64":"aGVsbG8=","datacontenttype":"image/png"`),
+		},
+		{
+			name:        "data_base64 event without datacontenttype is rejected",
+			input:       baseFields(`,"data_base64":"aGVsbG8="`),
+			expectError: true,
+		},
+		{
+			name:        "data_base64 event with non-whitelisted type is rejected",
+			input:       baseFields(`,"data_base64":"aGVsbG8=","datacontenttype":"text/plain"`),
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := parseAndValidateAttestation(tt.input, source)
+			if tt.expectError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}

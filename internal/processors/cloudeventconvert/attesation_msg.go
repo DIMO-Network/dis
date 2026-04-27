@@ -74,7 +74,7 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 	// Normalize to EIP-55 checksummed form for consistent storage.
 	resolvedSource = common.HexToAddress(resolvedSource).Hex()
 
-	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, resolvedSource, ksuid.New().String()); err != nil {
+	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, resolvedSource, ksuid.New().String(), event.DataBase64 != ""); err != nil {
 		return nil, fmt.Errorf("failed to validate headers: %w", err)
 	}
 

@@ -32,6 +32,14 @@ const (
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
 var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
 
+// allowedContentTypes is the whitelist of MIME types accepted for cloud event data.
+var allowedContentTypes = map[string]struct{}{
+	"application/json": {},
+	"image/png":        {},
+	"image/jpeg":       {},
+	"application/pdf":  {},
+}
+
 type cloudeventProcessor struct {
 	logger          *service.Logger
 	producerLoggers map[string]*ratedlogger.Logger
@@ -118,7 +126,10 @@ func (c *cloudeventProcessor) processMsg(ctx context.Context, msg *service.Messa
 	}
 }
 
-func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string) error {
+// validateHeadersAndSetDefaults validates the cloud event header and fills in defaults.
+// isBase64 indicates whether the event payload arrived as data_base64 rather than data;
+// it controls how the data content type is defaulted and validated.
+func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, defaultID string, isBase64 bool) error {
 	event.Source = source
 
 	if event.Subject == "" {
@@ -135,8 +146,8 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 	if event.SpecVersion == "" {
 		event.SpecVersion = "1.0"
 	}
-	if event.DataContentType == "" {
-		event.DataContentType = "application/json"
+	if err := validateAndSetContentType(event, isBase64); err != nil {
+		return err
 	}
 
 	if !ValidIdentifier(event.ID) {
@@ -177,4 +188,28 @@ func setMetaData(hdr *cloudevent.CloudEventHeader, msg *service.Message) {
 
 func ValidIdentifier(str string) bool {
 	return validCharacters.MatchString(str)
+}
+
+// validateAndSetContentType applies the content type rules to the event header.
+//   - If the event uses data_base64, datacontenttype must be set explicitly.
+//   - Otherwise the data field is treated as JSON: an empty value is defaulted to
+//     application/json and any other value is rejected.
+//   - In all cases, datacontenttype must be one of the whitelisted MIME types.
+func validateAndSetContentType(event *cloudevent.CloudEventHeader, isBase64 bool) error {
+	if isBase64 {
+		if event.DataContentType == "" {
+			return errors.New("datacontenttype is required for data_base64 events")
+		}
+	} else {
+		if event.DataContentType == "" {
+			event.DataContentType = "application/json"
+		}
+		if event.DataContentType != "application/json" {
+			return fmt.Errorf("datacontenttype %q is not allowed for data events: must be application/json", event.DataContentType)
+		}
+	}
+	if _, ok := allowedContentTypes[event.DataContentType]; !ok {
+		return fmt.Errorf("datacontenttype %q is not in the allowed list", event.DataContentType)
+	}
+	return nil
 }
