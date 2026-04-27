@@ -46,6 +46,12 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 	return service.MessageBatch{msg}
 }
 
+// parseAndValidateAttestation unmarshals an attestation cloud event and
+// validates it. It rewrites Subject and Source on the returned event so
+// any contract or account address is in EIP-55 checksum form: a
+// lowercased / mixed-case `did:erc721:` or `did:ethr:` Subject is
+// re-serialized via DID.String(), and Source is normalized via
+// common.HexToAddress(...).Hex() for consistent downstream storage.
 func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.RawEvent, error) {
 	var event cloudevent.RawEvent
 	if err := json.Unmarshal(msgBytes, &event); err != nil {
@@ -56,10 +62,12 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 		return nil, fmt.Errorf("event timestamp %v exceeds valid range", event.Time)
 	}
 
-	if _, err := cloudevent.DecodeERC721DID(event.Subject); err != nil {
-		if _, err := cloudevent.DecodeEthrDID(event.Subject); err != nil {
-			return nil, fmt.Errorf("invalid attestation subject format: %w", err)
-		}
+	if did, err := cloudevent.DecodeERC721DID(event.Subject); err == nil {
+		event.Subject = did.String()
+	} else if did, err := cloudevent.DecodeEthrDID(event.Subject); err == nil {
+		event.Subject = did.String()
+	} else {
+		return nil, fmt.Errorf("invalid attestation subject format: %w", err)
 	}
 
 	// If the payload includes a source, use it (delegation support);
@@ -74,7 +82,7 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 	// Normalize to EIP-55 checksummed form for consistent storage.
 	resolvedSource = common.HexToAddress(resolvedSource).Hex()
 
-	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, resolvedSource, ksuid.New().String()); err != nil {
+	if err := validateHeadersAndSetDefaults(&event.CloudEventHeader, resolvedSource, ksuid.New().String(), event.DataBase64 != ""); err != nil {
 		return nil, fmt.Errorf("failed to validate headers: %w", err)
 	}
 
