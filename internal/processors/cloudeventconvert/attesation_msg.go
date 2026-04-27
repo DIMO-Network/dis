@@ -46,6 +46,12 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 	return service.MessageBatch{msg}
 }
 
+// parseAndValidateAttestation unmarshals an attestation cloud event and
+// validates it. It rewrites Subject and Source on the returned event so
+// any contract or account address is in EIP-55 checksum form: a
+// lowercased / mixed-case `did:erc721:` or `did:ethr:` Subject is
+// re-serialized via DID.String(), and Source is normalized via
+// common.HexToAddress(...).Hex() for consistent downstream storage.
 func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.RawEvent, error) {
 	var event cloudevent.RawEvent
 	if err := json.Unmarshal(msgBytes, &event); err != nil {

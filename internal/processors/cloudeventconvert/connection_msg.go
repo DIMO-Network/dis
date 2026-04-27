@@ -90,6 +90,12 @@ func setConnectionContentType(eventHdr *cloudevent.CloudEventHeader, msg *servic
 	msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
 }
 
+// isValidConnectionHeader validates a connection cloud event header and
+// rewrites Subject, Producer, and Source in place so that any contract or
+// account address is in EIP-55 checksum form. Lowercased / mixed-case
+// addresses are accepted on input but normalized before being passed
+// downstream (metadata, ClickHouse, Kafka, Parquet). Legacy `did:nft:`
+// values are also rewritten to their canonical `did:erc721:` form.
 func isValidConnectionHeader(eventHdr *cloudevent.CloudEventHeader, logger *service.Logger) bool {
 	if did, err := cloudevent.DecodeERC721DID(eventHdr.Subject); err == nil {
 		eventHdr.Subject = did.String()
