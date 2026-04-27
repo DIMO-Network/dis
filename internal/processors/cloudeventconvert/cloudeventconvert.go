@@ -2,6 +2,7 @@ package cloudeventconvert
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"regexp"
@@ -27,6 +28,11 @@ const (
 	cloudEventIDKey = "dimo_cloudevent_id"
 
 	cloudEventValidContentType = "dimo_valid_cloudevent"
+
+	// MaxHeaderBytes caps the JSON-serialized size of a CloudEvent header
+	// (every field except data and data_base64). Prevents unbounded Tags or
+	// Extras from ballooning ClickHouse rows and Parquet columns downstream.
+	MaxHeaderBytes = 8 * 1024
 )
 
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
@@ -162,6 +168,14 @@ func validateHeadersAndSetDefaults(event *cloudevent.CloudEventHeader, source, d
 	}
 	if event.Producer != "" && !ValidIdentifier(event.Producer) {
 		return fmt.Errorf("invalid producer: %s", event.Producer)
+	}
+
+	b, err := json.Marshal(event)
+	if err != nil {
+		return fmt.Errorf("failed to marshal header for size check: %w", err)
+	}
+	if len(b) > MaxHeaderBytes {
+		return fmt.Errorf("header size %d exceeds max %d", len(b), MaxHeaderBytes)
 	}
 
 	return nil
