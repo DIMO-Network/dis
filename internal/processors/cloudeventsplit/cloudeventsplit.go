@@ -21,6 +21,10 @@ const (
 	// MetaBlobMessageContent is the dimo_message_content value set on the blob
 	// message produced by the splitter.
 	MetaBlobMessageContent = "dimo_blob"
+	// validCloudEventContent is the dimo_message_content value the splitter
+	// acts on. Signal/event derivatives emitted by upstream processors
+	// (dimo_valid_signal, dimo_valid_event) are passed through.
+	validCloudEventContent = "dimo_valid_cloudevent"
 
 	contentTypeOctetStream = "application/octet-stream"
 
@@ -86,6 +90,12 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 }
 
 func (p *processor) splitOne(msg *service.Message) (service.MessageBatch, error) {
+	// Sibling messages emitted upstream (signal/event derivatives) flow
+	// through the same switch case but should not be considered for splitting.
+	if mc, _ := msg.MetaGet(rawparquet.MetaMessageContent); mc != validCloudEventContent {
+		return service.MessageBatch{msg}, nil
+	}
+
 	b, err := msg.AsBytes()
 	if err != nil {
 		return service.MessageBatch{msg}, nil

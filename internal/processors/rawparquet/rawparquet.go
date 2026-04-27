@@ -86,12 +86,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		return []service.MessageBatch{}, nil
 	}
 
-	type goodMsg struct {
-		event        cloudevent.RawEvent
-		dataIndexKey string
-		msg          *service.Message
-	}
-	var good []goodMsg
+	var good []cloudevent.StoredEvent
 	for i, msg := range msgs {
 		b, err := msg.AsBytes()
 		if err != nil {
@@ -104,7 +99,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			continue
 		}
 		dataKey, _ := msg.MetaGet(MetaDataIndexKey)
-		good = append(good, goodMsg{event: ev, dataIndexKey: dataKey, msg: msg})
+		good = append(good, cloudevent.StoredEvent{RawEvent: ev, DataIndexKey: dataKey})
 	}
 
 	if len(good) == 0 {
@@ -119,19 +114,15 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	seenID := make(map[string]int, len(good))
 
 	for i, g := range good {
-		entry := cloudevent.StoredEvent{
-			RawEvent:     g.event,
-			DataIndexKey: g.dataIndexKey,
-		}
-		if idx, dup := seenID[g.event.ID]; dup {
+		if idx, dup := seenID[g.ID]; dup {
 			parquetIdx[i] = idx
-			if g.event.Type == "dimo.status" {
-				stored[idx] = entry
+			if g.Type == "dimo.status" {
+				stored[idx] = g
 			}
 		} else {
 			parquetIdx[i] = len(stored)
-			seenID[g.event.ID] = len(stored)
-			stored = append(stored, entry)
+			seenID[g.ID] = len(stored)
+			stored = append(stored, g)
 		}
 	}
 

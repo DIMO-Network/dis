@@ -174,6 +174,7 @@ func TestProcessBatch_MissingContentTypeFallsBack(t *testing.T) {
 	b, err := json.Marshal(ev)
 	require.NoError(t, err)
 	msg := service.NewMessage(b)
+	msg.MetaSetMut(rawparquet.MetaMessageContent, "dimo_valid_cloudevent")
 
 	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{msg})
 	require.NoError(t, err)
@@ -226,6 +227,23 @@ func TestProcessBatch_BatchOfMixedSizes(t *testing.T) {
 	require.NoError(t, err)
 	batch := result[0]
 	require.Len(t, batch, 3, "1 small + 1 big (split into 2) = 3 messages")
+}
+
+func TestProcessBatch_NonCloudEventPassesThrough(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor(1024)
+
+	// A signal-derivative message: same shape as a CE but tagged differently.
+	// Even if its `data` field were huge, the splitter must not externalize.
+	msg := makeJSONEventMsg(t, "sig-1", "did:erc721:1:0xV:1", 4096)
+	msg.MetaSetMut(rawparquet.MetaMessageContent, "dimo_valid_signal")
+
+	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{msg})
+	require.NoError(t, err)
+	require.Len(t, result[0], 1, "non-cloudevent must pass through unchanged")
+
+	mc, _ := result[0][0].MetaGet(rawparquet.MetaMessageContent)
+	assert.Equal(t, "dimo_valid_signal", mc)
 }
 
 func TestProcessBatch_MalformedPassesThrough(t *testing.T) {
