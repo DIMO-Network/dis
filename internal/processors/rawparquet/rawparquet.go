@@ -23,9 +23,8 @@ const (
 	// emitted by this processor or by the splitter — both parquet bundles and
 	// per-event data blobs use this metadata key.
 	MetaS3UploadKey = "dimo_s3_upload_key"
-	// MetaS3ContentType drives the S3 output's Content-Type per message.
-	// Parquet bundles set "application/octet-stream"; data blobs set the
-	// event's datacontenttype.
+	// MetaS3ContentType drives the blob stream's S3 Content-Type per message.
+	// Set by the splitter to the event's datacontenttype.
 	MetaS3ContentType = "dimo_s3_content_type"
 	// MetaDataIndexKey, when present on an inbound CE message, is treated as
 	// the precomputed blob S3 key for that event and is stored in the Parquet
@@ -44,8 +43,6 @@ const (
 	MetricS3Uploads      = "dis_s3_uploads_total"
 	MetricS3UploadBytes  = "dis_s3_upload_bytes_total"
 	MetricS3UploadErrors = "dis_s3_upload_errors_total"
-
-	contentTypeOctetStream = "application/octet-stream"
 )
 
 var configSpec = service.NewConfigSpec().
@@ -153,7 +150,6 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	p.uploadBytes.Incr(int64(len(parquetBytes)))
 	parquetMsg := service.NewMessage(parquetBytes)
 	parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
-	parquetMsg.MetaSetMut(MetaS3ContentType, contentTypeOctetStream)
 	parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
 	parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
 	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(stored)))

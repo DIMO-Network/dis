@@ -31,7 +31,7 @@ output:
                         aws_s3:
                           bucket: "${PARQUET_BUCKET}"
                           region: "${S3_AWS_REGION}"
-                          content_type: ${! metadata("dimo_s3_content_type").or("application/octet-stream") }
+                          content_type: application/octet-stream
                           path: ${!metadata("dimo_s3_upload_key")}
                           credentials:
                             id: "${S3_AWS_ACCESS_KEY_ID}"
