@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -59,6 +60,47 @@ func TestUnsupportedCloudEventType(t *testing.T) {
 	// Verify no signals appeared for this subject
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
 	require.Empty(t, msgs, "unsupported CloudEvent type should not produce signals")
+}
+
+func TestOversizedHeaderRejected(t *testing.T) {
+	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:777"
+
+	payload := map[string]any{
+		"id":             "test-oversized-header",
+		"source":         "will-be-overwritten",
+		"dataschema":     "testschema/v2.0",
+		"subject":        subject,
+		"producer":       subject,
+		"type":           "dimo.status",
+		"time":           "2024-04-18T17:20:46.436008782Z",
+		"vehicleTokenId": 777,
+		// Top-level junk key lands in CloudEventHeader.Extras and pushes the
+		// JSON-serialized header above MaxHeaderBytes (8 KiB).
+		"junk": strings.Repeat("z", 9*1024),
+		"data": map[string]any{
+			"timestamp": 1713460846435,
+			"signals": []map[string]any{
+				{
+					"timestamp": "2024-04-18T17:20:26.633Z",
+					"name":      "powertrainCombustionEngineECT",
+					"value":     90,
+				},
+			},
+		},
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	startOffset := kafkaEndOffset(t, "topic.device.signals")
+
+	resp := postMTLS(t, payloadBytes)
+	drainAndClose(t, resp)
+
+	time.Sleep(750 * time.Millisecond)
+
+	msgs := consumeKafka(t, "topic.device.signals", startOffset, 5*time.Second)
+	require.Empty(t, msgs, "oversized header should be rejected before any signal is produced")
 }
 
 func TestEmptyPayload(t *testing.T) {
