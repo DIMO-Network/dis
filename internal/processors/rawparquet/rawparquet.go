@@ -27,7 +27,7 @@ const (
 	// Set by the splitter to the event's datacontenttype.
 	MetaS3ContentType = "dimo_s3_content_type"
 	// MetaDataIndexKey, when present on an inbound CE message, is treated as
-	// the precomputed blob S3 key for that event and is stored in the Parquet
+	// the precomputed blob S3 key for that event and is parquetEvents in the Parquet
 	// row's data_index_key column. The splitter sets this on stripped events;
 	// inline events leave it unset.
 	MetaDataIndexKey = "dimo_data_index_key"
@@ -109,7 +109,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	// Deduplicate events by ID for parquet encoding, preferring dimo.status.
 	// Status and fingerprint may share the same ID; we store one parquet entry
 	// per ID but create ClickHouse index rows for all events.
-	stored := make([]cloudevent.StoredEvent, 0, len(good))
+	parquetEvents := make([]cloudevent.StoredEvent, 0, len(good))
 	parquetIdx := make([]int, len(good))
 	seenID := make(map[string]int, len(good))
 
@@ -117,12 +117,12 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		if idx, dup := seenID[g.ID]; dup {
 			parquetIdx[i] = idx
 			if g.Type == "dimo.status" {
-				stored[idx] = g
+				parquetEvents[idx] = g
 			}
 		} else {
-			parquetIdx[i] = len(stored)
-			seenID[g.ID] = len(stored)
-			stored = append(stored, g)
+			parquetIdx[i] = len(parquetEvents)
+			seenID[g.ID] = len(parquetEvents)
+			parquetEvents = append(parquetEvents, g)
 		}
 	}
 
@@ -130,7 +130,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	objectKey := buildObjectKey(p.prefix, now)
 
 	var buf bytes.Buffer
-	indexKeyMap, err := pq.Encode(&buf, stored, objectKey)
+	indexKeyMap, err := pq.Encode(&buf, parquetEvents, objectKey)
 	if err != nil {
 		p.uploadErrors.Incr(1)
 		return nil, fmt.Errorf("encode parquet: %w", err)
@@ -143,7 +143,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	parquetMsg.MetaSetMut(MetaS3UploadKey, objectKey)
 	parquetMsg.MetaSetMut(MetaParquetPath, objectKey)
 	parquetMsg.MetaSetMut(MetaParquetSize, strconv.Itoa(len(parquetBytes)))
-	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(stored)))
+	parquetMsg.MetaSetMut(MetaParquetCount, strconv.Itoa(len(parquetEvents)))
 
 	out := make(service.MessageBatch, 0, 1+len(good))
 	out = append(out, parquetMsg)
@@ -154,7 +154,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		// while pointing at the same parquet row + blob.
 		chRow := cloudevent.StoredEvent{
 			RawEvent:     g.RawEvent,
-			DataIndexKey: stored[parquetIdx[i]].DataIndexKey,
+			DataIndexKey: parquetEvents[parquetIdx[i]].DataIndexKey,
 		}
 		chMsg := service.NewMessage(nil)
 		row := clickhouse.StoredEventToSlice(&chRow, indexKeyMap[parquetIdx[i]])
