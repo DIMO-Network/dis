@@ -147,9 +147,17 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 
 	out := make(service.MessageBatch, 0, 1+len(good))
 	out = append(out, parquetMsg)
-	for i := range good {
+	for i, g := range good {
+		// Each CH row describes the original event (Type, ID, ...) but
+		// references the parquet survivor's location and data_index_key,
+		// so a fingerprint sharing an ID with a status keeps its own Type
+		// while pointing at the same parquet row + blob.
+		chRow := cloudevent.StoredEvent{
+			RawEvent:     g.RawEvent,
+			DataIndexKey: stored[parquetIdx[i]].DataIndexKey,
+		}
 		chMsg := service.NewMessage(nil)
-		row := clickhouse.StoredEventToSlice(&stored[parquetIdx[i]], indexKeyMap[parquetIdx[i]])
+		row := clickhouse.StoredEventToSlice(&chRow, indexKeyMap[parquetIdx[i]])
 		chMsg.SetStructured(row)
 		chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
 		out = append(out, chMsg)

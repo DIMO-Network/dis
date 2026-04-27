@@ -69,6 +69,16 @@ func chRowDataKey(t *testing.T, msg *service.Message) string {
 	return row[len(row)-1].(string)
 }
 
+// chRowType returns the type column from a ClickHouse row message. Column
+// order is subject, time, type, ... so type is at index 2.
+func chRowType(t *testing.T, msg *service.Message) string {
+	t.Helper()
+	val, err := msg.AsStructured()
+	require.NoError(t, err)
+	row := val.([]any)
+	return row[2].(string)
+}
+
 func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 	t.Parallel()
 	proc := newTestProcessor()
@@ -186,6 +196,30 @@ func TestProcessBatch_DeduplicatesSameID(t *testing.T) {
 	key1 := chRowKey(t, batch[1])
 	key2 := chRowKey(t, batch[2])
 	assert.Equal(t, key1, key2)
+}
+
+func TestProcessBatch_DedupPreservesOriginalTypeInCHRows(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+
+	// Status and fingerprint share an ID. Dedup should collapse parquet to one
+	// row, but each CH row must report its own original type — otherwise the
+	// CH ReplacingMergeTree merges two identical rows and the fingerprint
+	// disappears.
+	msgs := service.MessageBatch{
+		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.status"),
+		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.fingerprint"),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	batch := result[0]
+	require.Len(t, batch, 3)
+
+	t1 := chRowType(t, batch[1])
+	t2 := chRowType(t, batch[2])
+	assert.ElementsMatch(t, []string{"dimo.status", "dimo.fingerprint"}, []string{t1, t2},
+		"each CH row should keep its original type")
 }
 
 func TestProcessBatch_DeduplicatesPrefersStatus(t *testing.T) {
