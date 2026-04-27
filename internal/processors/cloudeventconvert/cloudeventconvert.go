@@ -30,8 +30,10 @@ const (
 	cloudEventValidContentType = "dimo_valid_cloudevent"
 
 	// MaxHeaderBytes caps the JSON-serialized size of a CloudEvent header
-	// (every field except data and data_base64). Prevents unbounded Tags or
-	// Extras from ballooning ClickHouse rows and Parquet columns downstream.
+	// (every field except data and data_base64). No individual header field
+	// has its own length limit, so without this any string field, Tags entry,
+	// or Extras value could balloon ClickHouse rows and Parquet columns
+	// downstream.
 	MaxHeaderBytes = 8 * 1024
 )
 
