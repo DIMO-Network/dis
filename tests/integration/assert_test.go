@@ -188,6 +188,7 @@ type CloudEventRow struct {
 	DataContentType string    `db:"data_content_type"`
 	DataVersion     string    `db:"data_version"`
 	IndexKey        string    `db:"index_key"`
+	DataIndexKey    string    `db:"data_index_key"`
 }
 
 // queryCloudEvents queries the ClickHouse cloud_event table for a given subject.
@@ -202,7 +203,7 @@ func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
 	require.NoError(t, err)
 
 	rows, err := indexDB.Query(
-		"SELECT subject, event_time, event_type, id, source, producer, data_content_type, data_version, index_key FROM cloud_event WHERE subject = ? ORDER BY event_type",
+		"SELECT subject, event_time, event_type, id, source, producer, data_content_type, data_version, index_key, data_index_key FROM cloud_event WHERE subject = ? ORDER BY event_type",
 		subject,
 	)
 	require.NoError(t, err)
@@ -211,7 +212,7 @@ func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
 	var result []CloudEventRow
 	for rows.Next() {
 		var r CloudEventRow
-		err := rows.Scan(&r.Subject, &r.EventTime, &r.EventType, &r.ID, &r.Source, &r.Producer, &r.DataContentType, &r.DataVersion, &r.IndexKey)
+		err := rows.Scan(&r.Subject, &r.EventTime, &r.EventType, &r.ID, &r.Source, &r.Producer, &r.DataContentType, &r.DataVersion, &r.IndexKey, &r.DataIndexKey)
 		require.NoError(t, err)
 		result = append(result, r)
 	}
@@ -219,8 +220,8 @@ func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
 
 	t.Logf("ClickHouse cloud_event: %d rows for subject=%s", len(result), subject)
 	for i, r := range result {
-		t.Logf("  cloud_event[%d]: subject=%s eventType=%s eventTime=%v id=%s source=%s producer=%s dataContentType=%s dataVersion=%s indexKey=%s",
-			i, r.Subject, r.EventType, r.EventTime, r.ID, r.Source, r.Producer, r.DataContentType, r.DataVersion, r.IndexKey)
+		t.Logf("  cloud_event[%d]: subject=%s eventType=%s eventTime=%v id=%s source=%s producer=%s dataContentType=%s dataVersion=%s indexKey=%s dataIndexKey=%s",
+			i, r.Subject, r.EventType, r.EventTime, r.ID, r.Source, r.Producer, r.DataContentType, r.DataVersion, r.IndexKey, r.DataIndexKey)
 	}
 	return result
 }
@@ -253,7 +254,7 @@ func listMinIOObjects(t *testing.T, prefix string) []string {
 
 // readParquetFromMinIO downloads a parquet file from MinIO and decodes it.
 // Logs full event data for each row.
-func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
+func readParquetFromMinIO(t *testing.T, key string) []cloudevent.StoredEvent {
 	t.Helper()
 	ctx := context.Background()
 	obj, err := minioClient.GetObject(ctx, minioBucket, key, minio.GetObjectOptions{})
@@ -270,31 +271,29 @@ func readParquetFromMinIO(t *testing.T, key string) []cloudevent.RawEvent {
 	t.Logf("Parquet %s: %d events", key, len(events))
 	for i, ev := range events {
 		dataJSON, _ := json.Marshal(ev.Data)
-		t.Logf("  parquet[%d]: id=%s subject=%s type=%s source=%s producer=%s specVersion=%s time=%v dataVersion=%s data=%s",
-			i, ev.ID, ev.Subject, ev.Type, ev.Source, ev.Producer, ev.SpecVersion, ev.Time, ev.DataVersion, string(dataJSON))
+		t.Logf("  parquet[%d]: id=%s subject=%s type=%s source=%s producer=%s specVersion=%s time=%v dataVersion=%s data=%s dataIndexKey=%s",
+			i, ev.ID, ev.Subject, ev.Type, ev.Source, ev.Producer, ev.SpecVersion, ev.Time, ev.DataVersion, string(dataJSON), ev.DataIndexKey)
 	}
 	return events
 }
 
-// readJSONFromMinIO downloads a JSON file from MinIO and unmarshals it as a RawEvent.
-func readJSONFromMinIO(t *testing.T, key string) cloudevent.RawEvent {
+// readBytesFromMinIO downloads an object from MinIO and returns the raw bytes
+// alongside its Content-Type header.
+func readBytesFromMinIO(t *testing.T, key string) ([]byte, string) {
 	t.Helper()
 	ctx := context.Background()
 	obj, err := minioClient.GetObject(ctx, minioBucket, key, minio.GetObjectOptions{})
 	require.NoError(t, err)
 	defer obj.Close()
 
+	stat, err := obj.Stat()
+	require.NoError(t, err, "failed to stat MinIO object %s", key)
+
 	data, err := io.ReadAll(obj)
 	require.NoError(t, err)
 
-	var ev cloudevent.RawEvent
-	err = json.Unmarshal(data, &ev)
-	require.NoError(t, err, "failed to unmarshal CloudEvent JSON from MinIO: %s", string(data))
-
-	dataJSON, _ := json.Marshal(ev.Data)
-	t.Logf("JSON %s: id=%s subject=%s type=%s source=%s producer=%s time=%v data=%s",
-		key, ev.ID, ev.Subject, ev.Type, ev.Source, ev.Producer, ev.Time, string(dataJSON))
-	return ev
+	t.Logf("MinIO %s: %d bytes, Content-Type=%q", key, len(data), stat.ContentType)
+	return data, stat.ContentType
 }
 
 // parseSignalCE parses a Kafka message as a SignalCloudEvent.

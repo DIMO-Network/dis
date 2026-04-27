@@ -1,12 +1,16 @@
 package rawparquet
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
+	pq "github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +44,7 @@ func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 	t.Parallel()
 	res := service.MockResources()
 	m := res.Metrics()
-	proc := &processor{prefix: "raw/test/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := &processor{prefix: "raw/test/", dataPrefix: "raw/blobs/", dataSizeThresh: 1 << 20, logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors"), dataExternals: m.NewCounter("externals"), dataExternalSize: m.NewCounter("externalbytes")}
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "id-1", "did:erc721:1:0xV:1"),
@@ -96,7 +100,7 @@ func TestProcessBatch_Empty(t *testing.T) {
 	t.Parallel()
 	res := service.MockResources()
 	m := res.Metrics()
-	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := &processor{prefix: "raw/", dataPrefix: "raw/blobs/", dataSizeThresh: 1 << 20, logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors"), dataExternals: m.NewCounter("externals"), dataExternalSize: m.NewCounter("externalbytes")}
 
 	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{})
 	require.NoError(t, err)
@@ -107,7 +111,7 @@ func TestProcessBatch_AllInvalid(t *testing.T) {
 	t.Parallel()
 	res := service.MockResources()
 	m := res.Metrics()
-	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := &processor{prefix: "raw/", dataPrefix: "raw/blobs/", dataSizeThresh: 1 << 20, logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors"), dataExternals: m.NewCounter("externals"), dataExternalSize: m.NewCounter("externalbytes")}
 
 	msgs := service.MessageBatch{
 		service.NewMessage([]byte(`not json`)),
@@ -123,7 +127,7 @@ func TestProcessBatch_MixedValidInvalid(t *testing.T) {
 	t.Parallel()
 	res := service.MockResources()
 	m := res.Metrics()
-	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := &processor{prefix: "raw/", dataPrefix: "raw/blobs/", dataSizeThresh: 1 << 20, logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors"), dataExternals: m.NewCounter("externals"), dataExternalSize: m.NewCounter("externalbytes")}
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "good-1", "did:erc721:1:0xV:1"),
@@ -147,7 +151,7 @@ func TestProcessBatch_SingleMessage(t *testing.T) {
 	t.Parallel()
 	res := service.MockResources()
 	m := res.Metrics()
-	proc := &processor{prefix: "cloudevent/valid/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := &processor{prefix: "cloudevent/valid/", dataPrefix: "cloudevent/blobs/", dataSizeThresh: 1 << 20, logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors"), dataExternals: m.NewCounter("externals"), dataExternalSize: m.NewCounter("externalbytes")}
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "solo", "did:erc721:1:0xV:99"),
@@ -171,20 +175,34 @@ func newTestProcessor() *processor {
 	res := service.MockResources()
 	m := res.Metrics()
 	return &processor{
-		prefix:       "raw/test/",
-		logger:       res.Logger(),
-		uploads:      m.NewCounter("uploads"),
-		uploadBytes:  m.NewCounter("bytes"),
-		uploadErrors: m.NewCounter("errors"),
+		prefix:           "raw/test/",
+		dataPrefix:       "raw/blobs/",
+		dataSizeThresh:   1 << 20,
+		logger:           res.Logger(),
+		uploads:          m.NewCounter("uploads"),
+		uploadBytes:      m.NewCounter("bytes"),
+		uploadErrors:     m.NewCounter("errors"),
+		dataExternals:    m.NewCounter("externals"),
+		dataExternalSize: m.NewCounter("externalbytes"),
 	}
 }
 
+// chRowKey returns the index_key column from a ClickHouse row message.
+// Column order is ..., index_key, data_index_key — index_key is second-to-last.
 func chRowKey(t *testing.T, msg *service.Message) string {
 	t.Helper()
 	val, err := msg.AsStructured()
 	require.NoError(t, err)
 	row := val.([]any)
-	// The last element in the CH row slice is the parquet index key.
+	return row[len(row)-2].(string)
+}
+
+// chRowDataKey returns the data_index_key column from a ClickHouse row message.
+func chRowDataKey(t *testing.T, msg *service.Message) string {
+	t.Helper()
+	val, err := msg.AsStructured()
+	require.NoError(t, err)
+	row := val.([]any)
 	return row[len(row)-1].(string)
 }
 
@@ -304,4 +322,230 @@ func TestBuildObjectKey_Format(t *testing.T) {
 
 	assert.Contains(t, key, "raw/data/2024/03/07/batch-")
 	assert.Contains(t, key, ".parquet")
+}
+
+// makeBigJSONEventMsg builds a CloudEvent whose JSON `data` field is at least
+// payloadSize bytes — useful for triggering the externalization branch.
+func makeBigJSONEventMsg(t *testing.T, id, subject string, payloadSize int) *service.Message {
+	t.Helper()
+	ev := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			SpecVersion:     "1.0",
+			ID:              id,
+			Source:          "0xSource",
+			Subject:         subject,
+			Producer:        "did:nft:137:0xProd:1",
+			Time:            time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC),
+			Type:            "dimo.attestation",
+			DataContentType: "application/json",
+		},
+		Data: json.RawMessage(`{"padding":"` + strings.Repeat("x", payloadSize) + `"}`),
+	}
+	b, err := json.Marshal(ev)
+	require.NoError(t, err)
+	return service.NewMessage(b)
+}
+
+// makeBigBase64EventMsg builds a CloudEvent whose `data_base64` field decodes
+// to the provided raw bytes, with the supplied datacontenttype.
+func makeBigBase64EventMsg(t *testing.T, id, subject, contentType string, raw []byte) *service.Message {
+	t.Helper()
+	ev := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			SpecVersion:     "1.0",
+			ID:              id,
+			Source:          "0xSource",
+			Subject:         subject,
+			Producer:        "did:nft:137:0xProd:1",
+			Time:            time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC),
+			Type:            "dimo.attestation",
+			DataContentType: contentType,
+		},
+		DataBase64: base64.StdEncoding.EncodeToString(raw),
+	}
+	b, err := json.Marshal(ev)
+	require.NoError(t, err)
+	return service.NewMessage(b)
+}
+
+// findS3DataMessages returns batch messages tagged with an S3 upload key under
+// the given data-blob prefix (i.e. per-event data PUTs, not the parquet bundle).
+func findS3DataMessages(batch service.MessageBatch, dataPrefix string) []*service.Message {
+	var out []*service.Message
+	for _, m := range batch {
+		key, ok := m.MetaGet(MetaS3UploadKey)
+		if !ok {
+			continue
+		}
+		if strings.HasPrefix(key, dataPrefix) {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+func TestProcessBatch_SmallEventStaysInline(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+
+	msgs := service.MessageBatch{
+		makeRawEventMsg(t, "small-1", "did:erc721:1:0xV:1"),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+	batch := result[0]
+	require.Len(t, batch, 2, "small event: 1 parquet + 1 CH row, no data blobs")
+
+	dataMsgs := findS3DataMessages(batch, proc.dataPrefix)
+	assert.Empty(t, dataMsgs, "small event should not emit a data blob message")
+
+	assert.Equal(t, "", chRowDataKey(t, batch[1]), "data_index_key should be empty for inline data")
+
+	parquetBytes, err := batch[0].AsBytes()
+	require.NoError(t, err)
+	events, err := pq.Decode(bytes.NewReader(parquetBytes), int64(len(parquetBytes)))
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	assert.NotEmpty(t, events[0].Data, "small event parquet row should keep inline data")
+	assert.Equal(t, "", events[0].DataIndexKey)
+}
+
+func TestProcessBatch_BigJSONEventExternalized(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+	proc.dataSizeThresh = 1024 // ~1 KiB so the test payload trips it
+
+	subject := "did:erc721:1:0xV:99"
+	msgs := service.MessageBatch{
+		makeBigJSONEventMsg(t, "big-1", subject, 4096),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+	batch := result[0]
+	// 1 parquet + 1 data blob + 1 CH row.
+	require.Len(t, batch, 3)
+
+	dataMsgs := findS3DataMessages(batch, proc.dataPrefix)
+	require.Len(t, dataMsgs, 1)
+	dataMsg := dataMsgs[0]
+
+	dataKey, _ := dataMsg.MetaGet(MetaS3UploadKey)
+	assert.Contains(t, dataKey, "raw/blobs/"+subject+"/", "data blob key should include subject partition")
+	ct, _ := dataMsg.MetaGet(MetaS3ContentType)
+	assert.Equal(t, "application/json", ct, "JSON data should keep its application/json content-type")
+
+	dataBytes, err := dataMsg.AsBytes()
+	require.NoError(t, err)
+	var dataObj map[string]any
+	require.NoError(t, json.Unmarshal(dataBytes, &dataObj),
+		"data blob should be valid JSON")
+	assert.Contains(t, dataObj, "padding")
+
+	// CH row: index_key is parquet#offset; data_index_key matches the blob.
+	assert.Contains(t, chRowKey(t, batch[2]), ".parquet#")
+	assert.Equal(t, dataKey, chRowDataKey(t, batch[2]))
+
+	// Parquet row: data and data_base64 cleared, DataIndexKey populated.
+	parquetBytes, err := batch[0].AsBytes()
+	require.NoError(t, err)
+	events, err := pq.Decode(bytes.NewReader(parquetBytes), int64(len(parquetBytes)))
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	assert.Empty(t, events[0].Data, "externalized parquet row should have empty Data")
+	assert.Equal(t, "", events[0].DataBase64)
+	assert.Equal(t, dataKey, events[0].DataIndexKey)
+}
+
+func TestProcessBatch_BigBase64EventDecoded(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+	proc.dataSizeThresh = 1024
+
+	// Pretend this is a JPEG body. Use random-ish bytes so we can verify
+	// the S3 object isn't accidentally re-encoded as base64.
+	raw := bytes.Repeat([]byte{0x00, 0x01, 0x02, 0x03, 0x7f, 0x80, 0xff}, 1024)
+	msgs := service.MessageBatch{
+		makeBigBase64EventMsg(t, "img-1", "did:erc721:1:0xV:99", "image/jpeg", raw),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	require.Len(t, result, 1)
+	batch := result[0]
+	require.Len(t, batch, 3)
+
+	dataMsgs := findS3DataMessages(batch, proc.dataPrefix)
+	require.Len(t, dataMsgs, 1)
+	dataMsg := dataMsgs[0]
+
+	ct, _ := dataMsg.MetaGet(MetaS3ContentType)
+	assert.Equal(t, "image/jpeg", ct)
+
+	gotBytes, err := dataMsg.AsBytes()
+	require.NoError(t, err)
+	assert.Equal(t, raw, gotBytes, "S3 object should be the decoded raw bytes, not base64")
+
+	dataKey, _ := dataMsg.MetaGet(MetaS3UploadKey)
+	assert.Equal(t, dataKey, chRowDataKey(t, batch[2]))
+}
+
+func TestProcessBatch_MissingContentTypeFallsBack(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+	proc.dataSizeThresh = 1024
+
+	ev := cloudevent.RawEvent{
+		CloudEventHeader: cloudevent.CloudEventHeader{
+			SpecVersion: "1.0",
+			ID:          "no-ct",
+			Source:      "0xSource",
+			Subject:     "did:erc721:1:0xV:1",
+			Producer:    "did:nft:137:0xProd:1",
+			Time:        time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC),
+			Type:        "dimo.attestation",
+			// No DataContentType.
+		},
+		Data: json.RawMessage(`"` + strings.Repeat("x", 4096) + `"`),
+	}
+	b, err := json.Marshal(ev)
+	require.NoError(t, err)
+	msgs := service.MessageBatch{service.NewMessage(b)}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	batch := result[0]
+
+	dataMsgs := findS3DataMessages(batch, proc.dataPrefix)
+	require.Len(t, dataMsgs, 1)
+	ct, _ := dataMsgs[0].MetaGet(MetaS3ContentType)
+	assert.Equal(t, "application/octet-stream", ct, "missing datacontenttype should fall back to octet-stream")
+}
+
+func TestProcessBatch_DedupSharesDataIndexKey(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+	proc.dataSizeThresh = 1024
+
+	subject := "did:erc721:1:0xV:1"
+	msgs := service.MessageBatch{
+		makeBigJSONEventMsg(t, "shared-id", subject, 4096),
+		makeBigJSONEventMsg(t, "shared-id", subject, 4096),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	batch := result[0]
+
+	// Dedup keeps one parquet row, so we expect: 1 parquet + 1 data blob + 2 CH rows.
+	require.Len(t, batch, 4)
+	dataMsgs := findS3DataMessages(batch, proc.dataPrefix)
+	require.Len(t, dataMsgs, 1, "duplicate IDs should produce a single externalized data PUT")
+
+	chRowMsgs := batch[2:]
+	require.Equal(t, chRowDataKey(t, chRowMsgs[0]), chRowDataKey(t, chRowMsgs[1]),
+		"both CH rows for the same parquet entry should reference the same data_index_key")
 }

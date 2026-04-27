@@ -100,6 +100,7 @@ func TestCloudEventDocument(t *testing.T) {
 
 	clearClickHouseForSubject(t, subject)
 	clearMinIOObjects(t, blobPrefix)
+	clearMinIOObjects(t, "cloudevent/valid/")
 
 	payload := map[string]any{
 		"id":             "test-ce-document-001",
@@ -155,33 +156,59 @@ func TestCloudEventDocument(t *testing.T) {
 	}
 	require.True(t, foundSpeed, "expected 'speed' signal in ClickHouse rows")
 
-	// ── 3. MinIO document — verify CloudEvent JSON blob was stored ──
+	// Wait for parquet batch flush
 	time.Sleep(750 * time.Millisecond)
 
-	keys := listMinIOObjects(t, blobPrefix)
-	require.NotEmpty(t, keys, "no document JSON files found in MinIO under %s", blobPrefix)
-
-	ev := readJSONFromMinIO(t, keys[0])
-	require.Equal(t, subject, ev.Subject)
-	require.Equal(t, testSourceAddress, ev.Source)
-	require.Equal(t, "dimo.status", ev.Type)
-	require.Equal(t, "1.0", ev.SpecVersion)
-	require.Equal(t, subject, ev.Producer)
-
-	// ── 4. ClickHouse cloud_event index — verify index row was written ──
+	// ── 3. ClickHouse cloud_event — index row references parquet AND blob ──
 	ceRows := queryCloudEvents(t, subject)
 	require.NotEmpty(t, ceRows, "expected cloud_event index rows in ClickHouse")
-	var foundIndex bool
+	var ceRow CloudEventRow
 	for _, r := range ceRows {
-		if strings.HasPrefix(r.IndexKey, "cloudevent/blobs/") {
-			foundIndex = true
-			require.Equal(t, subject, r.Subject)
-			require.Equal(t, "dimo.status", r.EventType)
-			require.Equal(t, testSourceAddress, r.Source)
+		if r.EventType == "dimo.status" {
+			ceRow = r
 			break
 		}
 	}
-	require.True(t, foundIndex, "expected cloud_event index row with blob key prefix")
+	require.Equal(t, "dimo.status", ceRow.EventType, "no dimo.status cloud_event row found")
+	require.True(t, strings.HasPrefix(ceRow.IndexKey, "cloudevent/valid/"),
+		"expected index_key to point at parquet bundle, got %q", ceRow.IndexKey)
+	require.True(t, strings.HasPrefix(ceRow.DataIndexKey, blobPrefix),
+		"expected data_index_key to point at %s, got %q", blobPrefix, ceRow.DataIndexKey)
+	require.Equal(t, testSourceAddress, ceRow.Source)
+
+	// ── 4. MinIO data blob — contains just the data bytes, with content-type ──
+	dataBytes, contentType := readBytesFromMinIO(t, ceRow.DataIndexKey)
+	require.Equal(t, "application/json", contentType, "data blob should be served as application/json")
+	var dataObj map[string]any
+	require.NoError(t, json.Unmarshal(dataBytes, &dataObj),
+		"data blob should be valid JSON: %s", string(dataBytes))
+	require.Contains(t, dataObj, "padding", "data blob should be the inner data section, not the envelope")
+	require.NotContains(t, dataObj, "specversion", "data blob should NOT contain envelope fields")
+
+	// ── 5. MinIO parquet — row has empty data + DataIndexKey set ──
+	// IndexKey is "<parquetKey>#<rowOffset>"; strip the offset.
+	parquetKey := strings.SplitN(ceRow.IndexKey, "#", 2)[0]
+	events := readParquetFromMinIO(t, parquetKey)
+	var pqEvent *struct {
+		Data         []byte
+		DataIndexKey string
+	}
+	for _, ev := range events {
+		if ev.Subject == subject && ev.Type == "dimo.status" {
+			pqEvent = &struct {
+				Data         []byte
+				DataIndexKey string
+			}{
+				Data:         []byte(ev.Data),
+				DataIndexKey: ev.DataIndexKey,
+			}
+			break
+		}
+	}
+	require.NotNil(t, pqEvent, "expected dimo.status event in parquet bundle")
+	require.Empty(t, pqEvent.Data, "parquet row Data should be empty when externalized")
+	require.Equal(t, ceRow.DataIndexKey, pqEvent.DataIndexKey,
+		"parquet row DataIndexKey should match cloud_event row data_index_key")
 }
 
 func TestCloudEventDocumentSmallPayload(t *testing.T) {

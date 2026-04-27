@@ -14,6 +14,8 @@ pipeline:
     - label: "convert_cloudevent_to_parquet"
       dimo_raw_parquet:
         prefix: "cloudevent/valid/"
+        data_prefix: "cloudevent/blobs/"
+        data_size_threshold: ${DOCUMENT_SIZE_THRESHOLD:1048576}
 
 output:
   label: "insert_valid_cloudevent"
@@ -31,7 +33,7 @@ output:
                         aws_s3:
                           bucket: "${PARQUET_BUCKET}"
                           region: "${S3_AWS_REGION}"
-                          content_type: application/octet-stream
+                          content_type: ${! metadata("dimo_s3_content_type").or("application/octet-stream") }
                           path: ${!metadata("dimo_s3_upload_key")}
                           credentials:
                             id: "${S3_AWS_ACCESS_KEY_ID}"

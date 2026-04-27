@@ -250,7 +250,7 @@ func TestTeslaFleetAPIFullPipeline(t *testing.T) {
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
 
-	var pqEvents []cloudevent.RawEvent
+	var pqEvents []cloudevent.StoredEvent
 	for _, key := range keys {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {

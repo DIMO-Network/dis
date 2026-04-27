@@ -122,13 +122,8 @@ pipeline:
 output:
   switch:
     cases:
-      # Large CloudEvents → individual document storage
-      - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent" && content().length() > ${DOCUMENT_SIZE_THRESHOLD:1048576}'
-        output:
-          label: "inproc_documents"
-          inproc: "dimo_documents"
-
-      # Normal CloudEvents → Parquet batching
+      # All valid CloudEvents → Parquet batching (large payloads are
+      # externalized to S3 inside the dimo_raw_parquet processor).
       - check: 'metadata("dimo_message_content").or("") == "dimo_valid_cloudevent"'
         output:
           label: "inproc_cloudevents"
