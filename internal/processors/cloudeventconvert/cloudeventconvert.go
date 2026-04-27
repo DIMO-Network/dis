@@ -24,7 +24,7 @@ const (
 	cloudEventTypeKey     = "dimo_cloudevent_type"
 	cloudEventProducerKey = "dimo_cloudevent_producer"
 	cloudEventSubjectKey  = "dimo_cloudevent_subject"
-	cloudEventIDKey = "dimo_cloudevent_id"
+	cloudEventIDKey       = "dimo_cloudevent_id"
 
 	cloudEventValidContentType = "dimo_valid_cloudevent"
 )
@@ -32,7 +32,7 @@ const (
 var erc1271magicValue = [4]byte{0x16, 0x26, 0xba, 0x7e}
 var validCharacters = regexp.MustCompile(`^[a-zA-Z0-9\-_/,. :]+$`)
 
-// allowedContentTypes is the whitelist of MIME types accepted for cloud event data.
+// allowedContentTypes is the whitelist of MIME types accepted for CloudEvent data.
 var allowedContentTypes = map[string]struct{}{
 	"application/json": {},
 	"image/png":        {},
