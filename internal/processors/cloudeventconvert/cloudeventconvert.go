@@ -25,7 +25,7 @@ const (
 	cloudEventTypeKey     = "dimo_cloudevent_type"
 	cloudEventProducerKey = "dimo_cloudevent_producer"
 	cloudEventSubjectKey  = "dimo_cloudevent_subject"
-	cloudEventIDKey = "dimo_cloudevent_id"
+	cloudEventIDKey       = "dimo_cloudevent_id"
 
 	cloudEventValidContentType = "dimo_valid_cloudevent"
 
