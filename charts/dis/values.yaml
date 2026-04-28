@@ -50,7 +50,7 @@ env:
   TOKEN_EXCHANGE_ISSUER: https://auth.dev.dimo.zone
   DOCUMENT_SIZE_THRESHOLD: '1048576'
   PARQUET_BUCKET: dimo-storage-dev
-  BLOB_BUCKET: dimo-storage-dev
+  BLOB_BUCKET: dimo-blob-storage-dev
   S3_AWS_REGION: us-east-2
 service:
   type: ClusterIP
