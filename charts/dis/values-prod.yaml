@@ -49,6 +49,6 @@ autoscaling:
   targetMemoryUtilizationPercentage: 80
 image:
   pullPolicy: IfNotPresent
-  tag: 0.4.15
+  tag: 0.4.16
 kafka:
   clusterName: kafka-prod-dimo-kafka
