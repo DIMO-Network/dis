@@ -344,7 +344,7 @@ func TestRuptelaFullPipeline(t *testing.T) {
 	keys := listMinIOObjects(t, "cloudevent/valid/")
 	require.NotEmpty(t, keys, "no parquet files found in MinIO")
 
-	var pqEvents []cloudevent.RawEvent
+	var pqEvents []cloudevent.StoredEvent
 	for _, key := range keys {
 		events := readParquetFromMinIO(t, key)
 		for _, ev := range events {
@@ -359,7 +359,7 @@ func TestRuptelaFullPipeline(t *testing.T) {
 	// Ruptela status+fingerprint share the same ID (deduplicated), events has a separate ID
 	require.Len(t, pqEvents, 2, "expected 2 CloudEvents in parquet (dimo.status + dimo.events, fingerprint deduplicated)")
 
-	pqByType := make(map[string]cloudevent.RawEvent)
+	pqByType := make(map[string]cloudevent.StoredEvent)
 	for _, ev := range pqEvents {
 		pqByType[ev.Type] = ev
 	}

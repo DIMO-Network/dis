@@ -68,7 +68,7 @@ processor_resources:
 	streamFiles := []string{
 		"external-ingest.yaml",
 		"output-parquet.yaml",
-		"output-document.yaml",
+		"output-blobs.yaml",
 		"output-clickhouse.yaml",
 		"output-kafka.yaml",
 	}
@@ -106,24 +106,24 @@ processor_resources:
 		return fmt.Errorf("write patched parquet config: %w", err)
 	}
 
-	// Patch output-document.yaml to point aws_s3 at local MinIO
-	docCfgPath := filepath.Join(streamsDir, "output-document.yaml")
-	docCfg, err := os.ReadFile(docCfgPath)
+	// Patch output-blobs.yaml the same way.
+	blobsCfgPath := filepath.Join(streamsDir, "output-blobs.yaml")
+	blobsCfg, err := os.ReadFile(blobsCfgPath)
 	if err != nil {
-		return fmt.Errorf("read document config for patching: %w", err)
+		return fmt.Errorf("read blobs config for patching: %w", err)
 	}
-	patched = strings.Replace(string(docCfg),
-		`                        aws_s3:
-                          bucket: "${PARQUET_BUCKET}"
-                          region: "${S3_AWS_REGION}"`,
-		`                        aws_s3:
-                          bucket: "${PARQUET_BUCKET}"
-                          region: "${S3_AWS_REGION}"
-                          endpoint: "${S3_ENDPOINT}"
-                          force_path_style_urls: ${S3_FORCE_PATH_STYLE}`,
+	blobsPatched := strings.Replace(string(blobsCfg),
+		`              aws_s3:
+                bucket: "${BLOB_BUCKET}"
+                region: "${S3_AWS_REGION}"`,
+		`              aws_s3:
+                bucket: "${BLOB_BUCKET}"
+                region: "${S3_AWS_REGION}"
+                endpoint: "${S3_ENDPOINT}"
+                force_path_style_urls: ${S3_FORCE_PATH_STYLE}`,
 		1)
-	if err := os.WriteFile(docCfgPath, []byte(patched), 0o644); err != nil {
-		return fmt.Errorf("write patched document config: %w", err)
+	if err := os.WriteFile(blobsCfgPath, []byte(blobsPatched), 0o644); err != nil {
+		return fmt.Errorf("write patched blobs config: %w", err)
 	}
 
 	// Patch all batch periods to 1s so integration tests don't wait for long flushes
@@ -193,8 +193,9 @@ func startDIS() error {
 		"CLICKHOUSE_INDEX_DATABASE=dimo_index",
 		"CLICKHOUSE_SECURE=false",
 
-		// S3 / MinIO
+		// S3 / MinIO — blobs share the parquet bucket in tests
 		fmt.Sprintf("PARQUET_BUCKET=%s", minioBucket),
+		fmt.Sprintf("BLOB_BUCKET=%s", minioBucket),
 		"S3_AWS_REGION=us-east-1",
 		fmt.Sprintf("S3_AWS_ACCESS_KEY_ID=%s", minioAccessKey),
 		fmt.Sprintf("S3_AWS_SECRET_ACCESS_KEY=%s", minioSecretKey),

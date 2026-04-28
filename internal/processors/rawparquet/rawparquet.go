@@ -19,8 +19,18 @@ import (
 )
 
 const (
-	// MetaS3UploadKey is the object key for the Parquet file (path within bucket).
+	// MetaS3UploadKey is the object key (path within bucket) for any S3 PUT
+	// emitted by this processor or by the splitter — both parquet bundles and
+	// per-event data blobs use this metadata key.
 	MetaS3UploadKey = "dimo_s3_upload_key"
+	// MetaS3ContentType drives the blob stream's S3 Content-Type per message.
+	// Set by the splitter to the event's datacontenttype.
+	MetaS3ContentType = "dimo_s3_content_type"
+	// MetaDataIndexKey, when present on an inbound CE message, is treated as
+	// the precomputed blob S3 key for that event and is parquetEvents in the Parquet
+	// row's data_index_key column. The splitter sets this on stripped events;
+	// inline events leave it unset.
+	MetaDataIndexKey = "dimo_data_index_key"
 	// MetaParquetPath is the object key (path) for downstream use.
 	MetaParquetPath  = "dimo_parquet_path"
 	MetaParquetSize  = "dimo_parquet_size"
@@ -37,7 +47,7 @@ const (
 
 var configSpec = service.NewConfigSpec().
 	Summary("Converts a batch of CloudEvents to a single Parquet message with day-partitioned path, plus originals with index metadata.").
-	Field(service.NewStringField("prefix").Description("Path prefix for object key (e.g. cloudevent/valid/)."))
+	Field(service.NewStringField("prefix").Description("Path prefix for the parquet object key (e.g. cloudevent/valid/)."))
 
 func init() {
 	err := service.RegisterBatchProcessor("dimo_raw_parquet", configSpec, ctor)
@@ -76,11 +86,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		return []service.MessageBatch{}, nil
 	}
 
-	type goodMsg struct {
-		event cloudevent.RawEvent
-		msg   *service.Message
-	}
-	var good []goodMsg
+	var good []cloudevent.StoredEvent
 	for i, msg := range msgs {
 		b, err := msg.AsBytes()
 		if err != nil {
@@ -92,7 +98,8 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			p.logger.Warnf("message %d: unmarshal cloudevent: %v, skipping", i, err)
 			continue
 		}
-		good = append(good, goodMsg{event: ev, msg: msg})
+		dataKey, _ := msg.MetaGet(MetaDataIndexKey)
+		good = append(good, cloudevent.StoredEvent{RawEvent: ev, DataIndexKey: dataKey})
 	}
 
 	if len(good) == 0 {
@@ -102,20 +109,20 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	// Deduplicate events by ID for parquet encoding, preferring dimo.status.
 	// Status and fingerprint may share the same ID; we store one parquet entry
 	// per ID but create ClickHouse index rows for all events.
-	parquetEvents := make([]cloudevent.RawEvent, 0, len(good))
+	parquetEvents := make([]cloudevent.StoredEvent, 0, len(good))
 	parquetIdx := make([]int, len(good))
 	seenID := make(map[string]int, len(good))
 
 	for i, g := range good {
-		if idx, dup := seenID[g.event.ID]; dup {
+		if idx, dup := seenID[g.ID]; dup {
 			parquetIdx[i] = idx
-			if g.event.Type == "dimo.status" {
-				parquetEvents[idx] = g.event
+			if g.Type == "dimo.status" {
+				parquetEvents[idx] = g
 			}
 		} else {
 			parquetIdx[i] = len(parquetEvents)
-			seenID[g.event.ID] = len(parquetEvents)
-			parquetEvents = append(parquetEvents, g.event)
+			seenID[g.ID] = len(parquetEvents)
+			parquetEvents = append(parquetEvents, g)
 		}
 	}
 
@@ -141,8 +148,16 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 	out := make(service.MessageBatch, 0, 1+len(good))
 	out = append(out, parquetMsg)
 	for i, g := range good {
+		// Each CH row describes the original event (Type, ID, ...) but
+		// references the parquet survivor's location and data_index_key,
+		// so a fingerprint sharing an ID with a status keeps its own Type
+		// while pointing at the same parquet row + blob.
+		chRow := cloudevent.StoredEvent{
+			RawEvent:     g.RawEvent,
+			DataIndexKey: parquetEvents[parquetIdx[i]].DataIndexKey,
+		}
 		chMsg := service.NewMessage(nil)
-		row := clickhouse.CloudEventToSliceWithKey(&g.event.CloudEventHeader, indexKeyMap[parquetIdx[i]])
+		row := clickhouse.StoredEventToSlice(&chRow, indexKeyMap[parquetIdx[i]])
 		chMsg.SetStructured(row)
 		chMsg.MetaSetMut(MetaMessageContent, MetaClickHouseCloudEvent)
 		out = append(out, chMsg)

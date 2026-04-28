@@ -1,12 +1,14 @@
 package rawparquet
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"testing"
 	"time"
 
 	"github.com/DIMO-Network/cloudevent"
+	pq "github.com/DIMO-Network/cloudevent/parquet"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,11 +38,50 @@ func makeRawEventMsgWithType(t *testing.T, id, subject, eventType string) *servi
 	return service.NewMessage(b)
 }
 
-func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
-	t.Parallel()
+func newTestProcessor() *processor {
 	res := service.MockResources()
 	m := res.Metrics()
-	proc := &processor{prefix: "raw/test/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	return &processor{
+		prefix:       "raw/test/",
+		logger:       res.Logger(),
+		uploads:      m.NewCounter("uploads"),
+		uploadBytes:  m.NewCounter("bytes"),
+		uploadErrors: m.NewCounter("errors"),
+	}
+}
+
+// chRowKey returns the index_key column from a ClickHouse row message.
+// Column order is ..., index_key, data_index_key — index_key is second-to-last.
+func chRowKey(t *testing.T, msg *service.Message) string {
+	t.Helper()
+	val, err := msg.AsStructured()
+	require.NoError(t, err)
+	row := val.([]any)
+	return row[len(row)-2].(string)
+}
+
+// chRowDataKey returns the data_index_key column from a ClickHouse row message.
+func chRowDataKey(t *testing.T, msg *service.Message) string {
+	t.Helper()
+	val, err := msg.AsStructured()
+	require.NoError(t, err)
+	row := val.([]any)
+	return row[len(row)-1].(string)
+}
+
+// chRowType returns the type column from a ClickHouse row message. Column
+// order is subject, time, type, ... so type is at index 2.
+func chRowType(t *testing.T, msg *service.Message) string {
+	t.Helper()
+	val, err := msg.AsStructured()
+	require.NoError(t, err)
+	row := val.([]any)
+	return row[2].(string)
+}
+
+func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "id-1", "did:erc721:1:0xV:1"),
@@ -50,18 +91,16 @@ func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 
 	result, err := proc.ProcessBatch(context.Background(), msgs)
 	require.NoError(t, err)
-	require.Len(t, result, 1, "should return exactly one batch")
+	require.Len(t, result, 1)
 
 	batch := result[0]
 	require.Len(t, batch, 4, "should be 1 parquet + 3 CH rows")
 
-	// First message is the parquet file.
 	parquetMsg := batch[0]
 	parquetBytes, err := parquetMsg.AsBytes()
 	require.NoError(t, err)
-	assert.True(t, len(parquetBytes) > 0, "parquet file should not be empty")
+	assert.True(t, len(parquetBytes) > 0)
 
-	// Check parquet metadata.
 	s3Key, exists := parquetMsg.MetaGet(MetaS3UploadKey)
 	assert.True(t, exists)
 	assert.Contains(t, s3Key, "raw/test/")
@@ -79,24 +118,21 @@ func TestProcessBatch_ProducesParquetPlusOriginals(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, "3", parquetCount)
 
-	// Remaining messages should be ClickHouse row messages.
 	for i := 1; i < len(batch); i++ {
 		content, exists := batch[i].MetaGet(MetaMessageContent)
 		assert.True(t, exists, "CH row message %d should have content metadata", i)
-		assert.Equal(t, MetaClickHouseCloudEvent, content, "CH row message %d should have correct content type", i)
+		assert.Equal(t, MetaClickHouseCloudEvent, content)
 		val, err := batch[i].AsStructured()
-		assert.NoError(t, err, "CH row message %d should have structured content", i)
+		assert.NoError(t, err)
 		row, ok := val.([]any)
-		assert.True(t, ok, "CH row message %d should be a []any slice", i)
-		assert.True(t, len(row) > 0, "CH row message %d should not be empty", i)
+		assert.True(t, ok)
+		assert.True(t, len(row) > 0)
 	}
 }
 
 func TestProcessBatch_Empty(t *testing.T) {
 	t.Parallel()
-	res := service.MockResources()
-	m := res.Metrics()
-	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := newTestProcessor()
 
 	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{})
 	require.NoError(t, err)
@@ -105,9 +141,7 @@ func TestProcessBatch_Empty(t *testing.T) {
 
 func TestProcessBatch_AllInvalid(t *testing.T) {
 	t.Parallel()
-	res := service.MockResources()
-	m := res.Metrics()
-	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := newTestProcessor()
 
 	msgs := service.MessageBatch{
 		service.NewMessage([]byte(`not json`)),
@@ -116,14 +150,12 @@ func TestProcessBatch_AllInvalid(t *testing.T) {
 
 	result, err := proc.ProcessBatch(context.Background(), msgs)
 	require.NoError(t, err)
-	assert.Empty(t, result, "all-invalid batch should return empty")
+	assert.Empty(t, result)
 }
 
 func TestProcessBatch_MixedValidInvalid(t *testing.T) {
 	t.Parallel()
-	res := service.MockResources()
-	m := res.Metrics()
-	proc := &processor{prefix: "raw/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
+	proc := newTestProcessor()
 
 	msgs := service.MessageBatch{
 		makeRawEventMsg(t, "good-1", "did:erc721:1:0xV:1"),
@@ -136,56 +168,10 @@ func TestProcessBatch_MixedValidInvalid(t *testing.T) {
 	require.Len(t, result, 1)
 
 	batch := result[0]
-	// 1 parquet + 2 CH rows (invalid one is skipped).
 	require.Len(t, batch, 3)
 
 	parquetCount, _ := batch[0].MetaGet(MetaParquetCount)
 	assert.Equal(t, "2", parquetCount)
-}
-
-func TestProcessBatch_SingleMessage(t *testing.T) {
-	t.Parallel()
-	res := service.MockResources()
-	m := res.Metrics()
-	proc := &processor{prefix: "cloudevent/valid/", logger: res.Logger(), uploads: m.NewCounter("uploads"), uploadBytes: m.NewCounter("bytes"), uploadErrors: m.NewCounter("errors")}
-
-	msgs := service.MessageBatch{
-		makeRawEventMsg(t, "solo", "did:erc721:1:0xV:99"),
-	}
-
-	result, err := proc.ProcessBatch(context.Background(), msgs)
-	require.NoError(t, err)
-	require.Len(t, result, 1)
-
-	batch := result[0]
-	require.Len(t, batch, 2, "1 parquet + 1 CH row")
-
-	s3Key, _ := batch[0].MetaGet(MetaS3UploadKey)
-	assert.Contains(t, s3Key, "cloudevent/valid/")
-
-	parquetCount, _ := batch[0].MetaGet(MetaParquetCount)
-	assert.Equal(t, "1", parquetCount)
-}
-
-func newTestProcessor() *processor {
-	res := service.MockResources()
-	m := res.Metrics()
-	return &processor{
-		prefix:       "raw/test/",
-		logger:       res.Logger(),
-		uploads:      m.NewCounter("uploads"),
-		uploadBytes:  m.NewCounter("bytes"),
-		uploadErrors: m.NewCounter("errors"),
-	}
-}
-
-func chRowKey(t *testing.T, msg *service.Message) string {
-	t.Helper()
-	val, err := msg.AsStructured()
-	require.NoError(t, err)
-	row := val.([]any)
-	// The last element in the CH row slice is the parquet index key.
-	return row[len(row)-1].(string)
 }
 
 func TestProcessBatch_DeduplicatesSameID(t *testing.T) {
@@ -202,24 +188,44 @@ func TestProcessBatch_DeduplicatesSameID(t *testing.T) {
 	require.Len(t, result, 1)
 
 	batch := result[0]
-	// 1 parquet message + 2 ClickHouse rows.
-	require.Len(t, batch, 3, "should be 1 parquet + 2 CH rows")
+	require.Len(t, batch, 3)
 
-	parquetCount, exists := batch[0].MetaGet(MetaParquetCount)
-	assert.True(t, exists)
-	assert.Equal(t, "1", parquetCount, "only 1 unique event should be encoded in parquet")
+	parquetCount, _ := batch[0].MetaGet(MetaParquetCount)
+	assert.Equal(t, "1", parquetCount)
 
-	// Both CH rows should reference the same parquet key.
 	key1 := chRowKey(t, batch[1])
 	key2 := chRowKey(t, batch[2])
-	assert.Equal(t, key1, key2, "duplicate-ID CH rows should reference the same parquet key")
+	assert.Equal(t, key1, key2)
+}
+
+func TestProcessBatch_DedupPreservesOriginalTypeInCHRows(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+
+	// Status and fingerprint share an ID. Dedup should collapse parquet to one
+	// row, but each CH row must report its own original type — otherwise the
+	// CH ReplacingMergeTree merges two identical rows and the fingerprint
+	// disappears.
+	msgs := service.MessageBatch{
+		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.status"),
+		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.fingerprint"),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	batch := result[0]
+	require.Len(t, batch, 3)
+
+	t1 := chRowType(t, batch[1])
+	t2 := chRowType(t, batch[2])
+	assert.ElementsMatch(t, []string{"dimo.status", "dimo.fingerprint"}, []string{t1, t2},
+		"each CH row should keep its original type")
 }
 
 func TestProcessBatch_DeduplicatesPrefersStatus(t *testing.T) {
 	t.Parallel()
 	proc := newTestProcessor()
 
-	// Fingerprint arrives before status — parquet should still contain the status event.
 	msgs := service.MessageBatch{
 		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.fingerprint"),
 		makeRawEventMsgWithType(t, "shared-id", "did:erc721:1:0xV:1", "dimo.status"),
@@ -227,16 +233,12 @@ func TestProcessBatch_DeduplicatesPrefersStatus(t *testing.T) {
 
 	result, err := proc.ProcessBatch(context.Background(), msgs)
 	require.NoError(t, err)
-	require.Len(t, result, 1)
-
 	batch := result[0]
-	require.Len(t, batch, 3, "should be 1 parquet + 2 CH rows")
+	require.Len(t, batch, 3)
 
-	parquetCount, exists := batch[0].MetaGet(MetaParquetCount)
-	assert.True(t, exists)
+	parquetCount, _ := batch[0].MetaGet(MetaParquetCount)
 	assert.Equal(t, "1", parquetCount)
 
-	// Both CH rows should reference the same parquet key.
 	key1 := chRowKey(t, batch[1])
 	key2 := chRowKey(t, batch[2])
 	assert.Equal(t, key1, key2)
@@ -253,48 +255,62 @@ func TestProcessBatch_NoDedupDifferentIDs(t *testing.T) {
 
 	result, err := proc.ProcessBatch(context.Background(), msgs)
 	require.NoError(t, err)
-	require.Len(t, result, 1)
-
 	batch := result[0]
-	require.Len(t, batch, 3, "should be 1 parquet + 2 CH rows")
+	require.Len(t, batch, 3)
 
-	parquetCount, exists := batch[0].MetaGet(MetaParquetCount)
-	assert.True(t, exists)
-	assert.Equal(t, "2", parquetCount, "different IDs should not be deduplicated")
+	parquetCount, _ := batch[0].MetaGet(MetaParquetCount)
+	assert.Equal(t, "2", parquetCount)
 
-	key1 := chRowKey(t, batch[1])
-	key2 := chRowKey(t, batch[2])
-	assert.NotEqual(t, key1, key2, "different-ID CH rows should reference different parquet keys")
+	assert.NotEqual(t, chRowKey(t, batch[1]), chRowKey(t, batch[2]))
 }
 
-func TestProcessBatch_MixedDedupAndUnique(t *testing.T) {
+func TestProcessBatch_DataIndexKeyFromMetadata(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+
+	subject := "did:erc721:1:0xV:1"
+	msg := makeRawEventMsg(t, "ext-id", subject)
+	msg.MetaSetMut(MetaDataIndexKey, "cloudevent/blobs/some/key")
+
+	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{msg})
+	require.NoError(t, err)
+	batch := result[0]
+	require.Len(t, batch, 2)
+
+	// CH row's data_index_key column should match the metadata value.
+	assert.Equal(t, "cloudevent/blobs/some/key", chRowDataKey(t, batch[1]))
+
+	// Parquet row should carry the same DataIndexKey.
+	parquetBytes, err := batch[0].AsBytes()
+	require.NoError(t, err)
+	events, err := pq.Decode(bytes.NewReader(parquetBytes), int64(len(parquetBytes)))
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	assert.Equal(t, "cloudevent/blobs/some/key", events[0].DataIndexKey)
+}
+
+func TestProcessBatch_NoDataIndexKeyMetaIsEmpty(t *testing.T) {
 	t.Parallel()
 	proc := newTestProcessor()
 
 	msgs := service.MessageBatch{
-		makeRawEventMsgWithType(t, "dup-id", "did:erc721:1:0xV:1", "dimo.status"),
-		makeRawEventMsgWithType(t, "dup-id", "did:erc721:1:0xV:1", "dimo.fingerprint"),
-		makeRawEventMsgWithType(t, "unique-id", "did:erc721:1:0xV:2", "dimo.status"),
+		makeRawEventMsg(t, "inline", "did:erc721:1:0xV:1"),
 	}
 
 	result, err := proc.ProcessBatch(context.Background(), msgs)
 	require.NoError(t, err)
-	require.Len(t, result, 1)
-
 	batch := result[0]
-	// 1 parquet + 3 CH rows.
-	require.Len(t, batch, 4, "should be 1 parquet + 3 CH rows")
+	require.Len(t, batch, 2)
 
-	parquetCount, exists := batch[0].MetaGet(MetaParquetCount)
-	assert.True(t, exists)
-	assert.Equal(t, "2", parquetCount, "2 unique events (dup-id counted once + unique-id)")
+	assert.Equal(t, "", chRowDataKey(t, batch[1]))
 
-	// The two dup-id CH rows should share a key.
-	key1 := chRowKey(t, batch[1])
-	key2 := chRowKey(t, batch[2])
-	key3 := chRowKey(t, batch[3])
-	assert.Equal(t, key1, key2, "duplicate-ID CH rows should share parquet key")
-	assert.NotEqual(t, key1, key3, "unique-ID CH row should have a different parquet key")
+	parquetBytes, err := batch[0].AsBytes()
+	require.NoError(t, err)
+	events, err := pq.Decode(bytes.NewReader(parquetBytes), int64(len(parquetBytes)))
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	assert.Equal(t, "", events[0].DataIndexKey)
+	assert.NotEmpty(t, events[0].Data, "inline event should retain its data")
 }
 
 func TestBuildObjectKey_Format(t *testing.T) {
