@@ -189,6 +189,7 @@ type CloudEventRow struct {
 	DataVersion     string    `db:"data_version"`
 	IndexKey        string    `db:"index_key"`
 	DataIndexKey    string    `db:"data_index_key"`
+	VoidsID         string    `db:"voids_id"`
 }
 
 // queryCloudEvents queries the ClickHouse cloud_event table for a given subject.
@@ -203,7 +204,7 @@ func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
 	require.NoError(t, err)
 
 	rows, err := indexDB.Query(
-		"SELECT subject, event_time, event_type, id, source, producer, data_content_type, data_version, index_key, data_index_key FROM cloud_event WHERE subject = ? ORDER BY event_type",
+		"SELECT subject, event_time, event_type, id, source, producer, data_content_type, data_version, index_key, data_index_key, voids_id FROM cloud_event WHERE subject = ? ORDER BY event_type",
 		subject,
 	)
 	require.NoError(t, err)
@@ -212,7 +213,7 @@ func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
 	var result []CloudEventRow
 	for rows.Next() {
 		var r CloudEventRow
-		err := rows.Scan(&r.Subject, &r.EventTime, &r.EventType, &r.ID, &r.Source, &r.Producer, &r.DataContentType, &r.DataVersion, &r.IndexKey, &r.DataIndexKey)
+		err := rows.Scan(&r.Subject, &r.EventTime, &r.EventType, &r.ID, &r.Source, &r.Producer, &r.DataContentType, &r.DataVersion, &r.IndexKey, &r.DataIndexKey, &r.VoidsID)
 		require.NoError(t, err)
 		result = append(result, r)
 	}
@@ -220,8 +221,8 @@ func queryCloudEvents(t *testing.T, subject string) []CloudEventRow {
 
 	t.Logf("ClickHouse cloud_event: %d rows for subject=%s", len(result), subject)
 	for i, r := range result {
-		t.Logf("  cloud_event[%d]: subject=%s eventType=%s eventTime=%v id=%s source=%s producer=%s dataContentType=%s dataVersion=%s indexKey=%s dataIndexKey=%s",
-			i, r.Subject, r.EventType, r.EventTime, r.ID, r.Source, r.Producer, r.DataContentType, r.DataVersion, r.IndexKey, r.DataIndexKey)
+		t.Logf("  cloud_event[%d]: subject=%s eventType=%s eventTime=%v id=%s source=%s producer=%s dataContentType=%s dataVersion=%s indexKey=%s dataIndexKey=%s voidsId=%s",
+			i, r.Subject, r.EventType, r.EventTime, r.ID, r.Source, r.Producer, r.DataContentType, r.DataVersion, r.IndexKey, r.DataIndexKey, r.VoidsID)
 	}
 	return result
 }

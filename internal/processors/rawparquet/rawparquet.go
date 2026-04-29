@@ -31,6 +31,11 @@ const (
 	// row's data_index_key column. The splitter sets this on stripped events;
 	// inline events leave it unset.
 	MetaDataIndexKey = "dimo_data_index_key"
+	// MetaVoidsID, when present on an inbound CE message, is the id of the
+	// attestation that this event tombstones. It is server-extracted from
+	// the validated dimo.tombstone payload and ends up in the ClickHouse
+	// voids_id column. Empty/absent for non-tombstone events.
+	MetaVoidsID = "dimo_voids_id"
 	// MetaParquetPath is the object key (path) for downstream use.
 	MetaParquetPath  = "dimo_parquet_path"
 	MetaParquetSize  = "dimo_parquet_size"
@@ -99,7 +104,8 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 			continue
 		}
 		dataKey, _ := msg.MetaGet(MetaDataIndexKey)
-		good = append(good, cloudevent.StoredEvent{RawEvent: ev, DataIndexKey: dataKey})
+		voidsID, _ := msg.MetaGet(MetaVoidsID)
+		good = append(good, cloudevent.StoredEvent{RawEvent: ev, DataIndexKey: dataKey, VoidsID: voidsID})
 	}
 
 	if len(good) == 0 {
@@ -155,6 +161,7 @@ func (p *processor) ProcessBatch(_ context.Context, msgs service.MessageBatch) (
 		chRow := cloudevent.StoredEvent{
 			RawEvent:     g.RawEvent,
 			DataIndexKey: parquetEvents[parquetIdx[i]].DataIndexKey,
+			VoidsID:      g.VoidsID,
 		}
 		chMsg := service.NewMessage(nil)
 		row := clickhouse.StoredEventToSlice(&chRow, indexKeyMap[parquetIdx[i]])

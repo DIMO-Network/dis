@@ -9,6 +9,7 @@ import (
 
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
+	"github.com/DIMO-Network/dis/internal/processors/rawparquet"
 	"github.com/DIMO-Network/dis/internal/web3"
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,6 +17,11 @@ import (
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/segmentio/ksuid"
 )
+
+// MaxTombstoneReasonBytes caps the length of the reason field in a tombstone
+// data payload. Tombstones are tiny by design and live alongside attestations
+// in ClickHouse; bounding reason keeps row size predictable and limits abuse.
+const MaxTombstoneReasonBytes = 512
 
 // processAttestationMsg is the entrypoint for attestation messages.
 // It validates the message, verifies the signature, and sets the metadata.
@@ -37,6 +43,15 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 		return service.MessageBatch{msg}
 	}
 
+	if event.Type == cloudevent.TypeAttestationTombstone {
+		voidsID, err := parseTombstoneData(event.Data)
+		if err != nil {
+			processors.SetError(msg, processorName, "invalid tombstone payload", err)
+			return service.MessageBatch{msg}
+		}
+		msg.MetaSetMut(rawparquet.MetaVoidsID, voidsID)
+	}
+
 	msg.MetaDelete("Authorization")
 	setMetaData(&event.CloudEventHeader, msg)
 	msg.MetaSetMut(processors.MessageContentKey, cloudEventValidContentType)
@@ -44,6 +59,34 @@ func (c *cloudeventProcessor) processAttestationMsg(ctx context.Context, msg *se
 	msg.SetStructuredMut(event)
 
 	return service.MessageBatch{msg}
+}
+
+// tombstoneData is the expected shape of a dimo.tombstone event's data payload.
+type tombstoneData struct {
+	VoidsID string `json:"voidsId"`
+	Reason  string `json:"reason,omitempty"`
+}
+
+// parseTombstoneData parses and validates a tombstone's data payload.
+// It returns the target attestation id (the value of voidsId).
+func parseTombstoneData(data json.RawMessage) (string, error) {
+	if len(data) == 0 {
+		return "", errors.New("data payload is required for tombstones")
+	}
+	var td tombstoneData
+	if err := json.Unmarshal(data, &td); err != nil {
+		return "", fmt.Errorf("data payload is not a tombstone object: %w", err)
+	}
+	if td.VoidsID == "" {
+		return "", errors.New("voidsId is required and must be non-empty")
+	}
+	if !ValidIdentifier(td.VoidsID) {
+		return "", fmt.Errorf("invalid voidsId: %s", td.VoidsID)
+	}
+	if len(td.Reason) > MaxTombstoneReasonBytes {
+		return "", fmt.Errorf("reason length %d exceeds max %d", len(td.Reason), MaxTombstoneReasonBytes)
+	}
+	return td.VoidsID, nil
 }
 
 // parseAndValidateAttestation unmarshals an attestation cloud event and
@@ -90,7 +133,7 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 		event.Type = cloudevent.TypeAttestation
 	}
 	if !isValidAttestationType(event.Type) {
-		return nil, fmt.Errorf("invalid attestation type %q: must be dimo.attestation, dimo.raw.*, or dimo.document.*", event.Type)
+		return nil, fmt.Errorf("invalid attestation type %q: must be dimo.attestation, dimo.tombstone, dimo.raw.*, or dimo.document.*", event.Type)
 	}
 	return &event, nil
 }
@@ -98,6 +141,8 @@ func parseAndValidateAttestation(msgBytes []byte, source string) (*cloudevent.Ra
 func isValidAttestationType(t string) bool {
 	switch {
 	case t == cloudevent.TypeAttestation:
+		return true
+	case t == cloudevent.TypeAttestationTombstone:
 		return true
 	case strings.HasPrefix(t, "dimo.raw.") && len(t) > len("dimo.raw."):
 		return true
