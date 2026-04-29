@@ -12,8 +12,11 @@ import (
 	"github.com/DIMO-Network/cloudevent"
 	"github.com/DIMO-Network/dis/internal/processors"
 	"github.com/DIMO-Network/dis/internal/processors/httpinputserver"
+	"github.com/DIMO-Network/dis/internal/processors/rawparquet"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/redpanda-data/benthos/v4/public/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -591,4 +594,216 @@ func TestParseAndValidateAttestationContentType(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsValidAttestationType(t *testing.T) {
+	t.Parallel()
+
+	valid := []string{
+		cloudevent.TypeAttestation,
+		cloudevent.TypeAttestationTombstone,
+		"dimo.raw.insurance",
+		"dimo.document.vehicle.registration",
+	}
+	for _, ty := range valid {
+		assert.True(t, isValidAttestationType(ty), "expected %q to be valid", ty)
+	}
+
+	invalid := []string{
+		"",
+		"dimo.raw.",
+		"dimo.document.",
+		"dimo.signals",
+		"dimo.status",
+		"random",
+	}
+	for _, ty := range invalid {
+		assert.False(t, isValidAttestationType(ty), "expected %q to be invalid", ty)
+	}
+}
+
+func TestParseTombstoneData(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name            string
+		data            string
+		expectVoidsID   string
+		expectErr       bool
+		expectErrSubstr string
+	}{
+		{
+			name:          "valid tombstone",
+			data:          `{"voidsId":"target-id-1","reason":"uploaded by mistake"}`,
+			expectVoidsID: "target-id-1",
+		},
+		{
+			name:          "valid tombstone without reason",
+			data:          `{"voidsId":"target-id-1"}`,
+			expectVoidsID: "target-id-1",
+		},
+		{
+			name:            "empty data",
+			data:            ``,
+			expectErr:       true,
+			expectErrSubstr: "data payload is required",
+		},
+		{
+			name:            "data is not an object",
+			data:            `"just a string"`,
+			expectErr:       true,
+			expectErrSubstr: "not a tombstone object",
+		},
+		{
+			name:            "missing voidsId",
+			data:            `{"reason":"oops"}`,
+			expectErr:       true,
+			expectErrSubstr: "voidsId is required",
+		},
+		{
+			name:            "empty voidsId",
+			data:            `{"voidsId":"","reason":"oops"}`,
+			expectErr:       true,
+			expectErrSubstr: "voidsId is required",
+		},
+		{
+			name:            "voidsId with disallowed character",
+			data:            `{"voidsId":"bad id$"}`,
+			expectErr:       true,
+			expectErrSubstr: "invalid voidsId",
+		},
+		{
+			name:            "reason exceeds cap",
+			data:            fmt.Sprintf(`{"voidsId":"target-id-1","reason":"%s"}`, strings.Repeat("a", MaxTombstoneReasonBytes+1)),
+			expectErr:       true,
+			expectErrSubstr: "reason length",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			voidsID, err := parseTombstoneData(json.RawMessage(tt.data))
+			if tt.expectErr {
+				require.Error(t, err)
+				if tt.expectErrSubstr != "" {
+					assert.Contains(t, err.Error(), tt.expectErrSubstr)
+				}
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectVoidsID, voidsID)
+		})
+	}
+}
+
+// signTombstoneEvent builds a signed dimo.tombstone CloudEvent JSON using
+// the provided ECDSA key. The returned bytes match the wire format that DIS
+// would receive over the attestation endpoint, with a real EOA signature
+// over the data field.
+func signTombstoneEvent(t *testing.T, key string, source common.Address, subject, id, voidsID, reason string, ts time.Time) []byte {
+	t.Helper()
+	privKey, err := crypto.HexToECDSA(key)
+	require.NoError(t, err)
+
+	dataObj := map[string]string{"voidsId": voidsID}
+	if reason != "" {
+		dataObj["reason"] = reason
+	}
+	dataBytes, err := json.Marshal(dataObj)
+	require.NoError(t, err)
+
+	hash := accounts.TextHash(dataBytes)
+	sig, err := crypto.Sign(hash, privKey)
+	require.NoError(t, err)
+	// crypto.Sign returns v as 0/1; convert to Ethereum's 27/28.
+	sig[64] += 27
+
+	envelope := map[string]any{
+		"id":          id,
+		"source":      source.Hex(),
+		"producer":    source.Hex(),
+		"specversion": "1.0",
+		"subject":     subject,
+		"time":        ts.Format(time.RFC3339),
+		"type":        cloudevent.TypeAttestationTombstone,
+		"signature":   "0x" + common.Bytes2Hex(sig),
+		"data":        json.RawMessage(dataBytes),
+	}
+	out, err := json.Marshal(envelope)
+	require.NoError(t, err)
+	return out
+}
+
+func TestProcessAttestationMsg_Tombstone(t *testing.T) {
+	t.Parallel()
+
+	// Deterministic test key so the test is reproducible.
+	const privHex = "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+	privKey, err := crypto.HexToECDSA(privHex)
+	require.NoError(t, err)
+	source := crypto.PubkeyToAddress(privKey.PublicKey)
+
+	subject := "did:erc721:80002:0x45fbCD3ef7361d156e8b16F5538AE36DEdf61Da8:1005"
+	now := time.Now().UTC().Truncate(time.Minute)
+
+	t.Run("valid tombstone is accepted and sets dimo_voids_id metadata", func(t *testing.T) {
+		input := signTombstoneEvent(t, privHex, source, subject, "tombstone-id-1", "target-attestation-id-1", "uploaded in error", now)
+
+		msg := service.NewMessage(input)
+		msg.MetaSet(httpinputserver.DIMOCloudEventSource, source.Hex())
+		msg.MetaSet(processors.MessageContentKey, httpinputserver.AttestationContent)
+
+		proc := &cloudeventProcessor{}
+		out := proc.processAttestationMsg(context.Background(), msg, input, source.Hex())
+		require.Len(t, out, 1)
+		require.Nil(t, out[0].GetError(), "unexpected error: %v", out[0].GetError())
+
+		voidsID, ok := out[0].MetaGetMut(rawparquet.MetaVoidsID)
+		require.True(t, ok, "expected dimo_voids_id metadata to be set")
+		assert.Equal(t, "target-attestation-id-1", voidsID)
+
+		typeMeta, _ := out[0].MetaGetMut(cloudEventTypeKey)
+		assert.Equal(t, cloudevent.TypeAttestationTombstone, typeMeta)
+
+		contentMeta, _ := out[0].MetaGetMut(processors.MessageContentKey)
+		assert.Equal(t, "dimo_valid_cloudevent", contentMeta)
+	})
+
+	t.Run("tombstone with empty voidsId in data is rejected", func(t *testing.T) {
+		// Manually craft a tombstone where voidsId is empty but the signature
+		// still recovers (we sign over the actual empty-voidsId data).
+		dataObj := map[string]string{"voidsId": "", "reason": "x"}
+		dataBytes, err := json.Marshal(dataObj)
+		require.NoError(t, err)
+		hash := accounts.TextHash(dataBytes)
+		sig, err := crypto.Sign(hash, privKey)
+		require.NoError(t, err)
+		sig[64] += 27
+		envelope := map[string]any{
+			"id":          "tombstone-id-2",
+			"source":      source.Hex(),
+			"producer":    source.Hex(),
+			"specversion": "1.0",
+			"subject":     subject,
+			"time":        now.Format(time.RFC3339),
+			"type":        cloudevent.TypeAttestationTombstone,
+			"signature":   "0x" + common.Bytes2Hex(sig),
+			"data":        json.RawMessage(dataBytes),
+		}
+		input, err := json.Marshal(envelope)
+		require.NoError(t, err)
+
+		msg := service.NewMessage(input)
+		msg.MetaSet(httpinputserver.DIMOCloudEventSource, source.Hex())
+		msg.MetaSet(processors.MessageContentKey, httpinputserver.AttestationContent)
+
+		proc := &cloudeventProcessor{}
+		out := proc.processAttestationMsg(context.Background(), msg, input, source.Hex())
+		require.Len(t, out, 1)
+		require.NotNil(t, out[0].GetError(), "expected error for empty voidsId")
+	})
+
+	// Bad-signature behavior is identical for all attestation flavors and is
+	// covered by the existing TestProcessBatch cases for `dimo.attestation`;
+	// no need to duplicate it here.
 }

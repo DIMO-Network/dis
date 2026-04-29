@@ -50,14 +50,23 @@ func newTestProcessor() *processor {
 	}
 }
 
+// Column order matches cloudevent/clickhouse.InsertStmt:
+// 0:subject, 1:time, 2:type, 3:id, 4:source, 5:producer,
+// 6:data_content_type, 7:data_version, 8:extras,
+// 9:index_key, 10:data_index_key, 11:voids_id.
+const (
+	chColIndexKey     = 9
+	chColDataIndexKey = 10
+	chColVoidsID      = 11
+)
+
 // chRowKey returns the index_key column from a ClickHouse row message.
-// Column order is ..., index_key, data_index_key — index_key is second-to-last.
 func chRowKey(t *testing.T, msg *service.Message) string {
 	t.Helper()
 	val, err := msg.AsStructured()
 	require.NoError(t, err)
 	row := val.([]any)
-	return row[len(row)-2].(string)
+	return row[chColIndexKey].(string)
 }
 
 // chRowDataKey returns the data_index_key column from a ClickHouse row message.
@@ -66,7 +75,16 @@ func chRowDataKey(t *testing.T, msg *service.Message) string {
 	val, err := msg.AsStructured()
 	require.NoError(t, err)
 	row := val.([]any)
-	return row[len(row)-1].(string)
+	return row[chColDataIndexKey].(string)
+}
+
+// chRowVoidsID returns the voids_id column from a ClickHouse row message.
+func chRowVoidsID(t *testing.T, msg *service.Message) string {
+	t.Helper()
+	val, err := msg.AsStructured()
+	require.NoError(t, err)
+	row := val.([]any)
+	return row[chColVoidsID].(string)
 }
 
 // chRowType returns the type column from a ClickHouse row message. Column
@@ -287,6 +305,40 @@ func TestProcessBatch_DataIndexKeyFromMetadata(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, events, 1)
 	assert.Equal(t, "cloudevent/blobs/some/key", events[0].DataIndexKey)
+}
+
+func TestProcessBatch_VoidsIDFromMetadata(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+
+	subject := "did:erc721:1:0xV:1"
+	msg := makeRawEventMsgWithType(t, "tombstone-row-1", subject, "dimo.tombstone")
+	msg.MetaSetMut(MetaVoidsID, "target-attestation-id-1")
+
+	result, err := proc.ProcessBatch(context.Background(), service.MessageBatch{msg})
+	require.NoError(t, err)
+	batch := result[0]
+	require.Len(t, batch, 2)
+
+	// The CH row should carry the voids_id from metadata, with data_index_key empty.
+	assert.Equal(t, "target-attestation-id-1", chRowVoidsID(t, batch[1]))
+	assert.Equal(t, "", chRowDataKey(t, batch[1]))
+}
+
+func TestProcessBatch_NoVoidsIDMetaIsEmpty(t *testing.T) {
+	t.Parallel()
+	proc := newTestProcessor()
+
+	msgs := service.MessageBatch{
+		makeRawEventMsg(t, "regular-event", "did:erc721:1:0xV:1"),
+	}
+
+	result, err := proc.ProcessBatch(context.Background(), msgs)
+	require.NoError(t, err)
+	batch := result[0]
+	require.Len(t, batch, 2)
+
+	assert.Equal(t, "", chRowVoidsID(t, batch[1]))
 }
 
 func TestProcessBatch_NoDataIndexKeyMetaIsEmpty(t *testing.T) {
