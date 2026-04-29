@@ -45,9 +45,21 @@ processor_resources:
   - label: "dimo_error_count"
     noop: {}
   - label: "dimo_bad_request_sync_response"
-    noop: {}
+    processors:
+      - label: "bad_request_response_mapping"
+        mapping: |
+          meta response_status = 400
+          root = metadata("response_message").or("Bad Request")
+      - label: "bad_request_sync_response"
+        sync_response: {}
   - label: "dimo_internal_error_sync_response"
-    noop: {}
+    processors:
+      - label: "internal_error_response_mapping"
+        mapping: |
+          meta response_status = 500
+          root  =  metadata("response_message").or("Internal Error: Please try again later")
+      - label: "internal_error_sync_response"
+        sync_response: {}
   - label: "dimo_provider_input_count"
     noop: {}
   - label: "handle_db_connection_error"
