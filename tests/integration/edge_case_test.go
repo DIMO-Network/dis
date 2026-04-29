@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFutureTimestampSignalPruning(t *testing.T) {
+func TestFutureTimestampSignalRejected(t *testing.T) {
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:8001"
 
 	futureTime := time.Now().Add(1 * time.Hour).UTC().Format("2006-01-02T15:04:05.000Z")
@@ -44,15 +44,12 @@ func TestFutureTimestampSignalPruning(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	require.Equal(t, 200, resp.StatusCode)
+	require.NotEqual(t, 200, resp.StatusCode, "future-timestamp signal should be rejected")
 
 	time.Sleep(750 * time.Millisecond)
 
-	// The CloudEvent is still processed but the signal should be pruned
-	// because its timestamp is 1 hour in the future (> 5 min threshold).
-	// After pruning, all signals are removed so no signal CE should be produced.
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
-	require.Empty(t, msgs, "no signal CE should be produced when all signals are pruned")
+	require.Empty(t, msgs, "no signal CE should be produced when the input is rejected")
 }
 
 func TestDuplicateSignalPruning(t *testing.T) {
@@ -111,7 +108,7 @@ func TestDuplicateSignalPruning(t *testing.T) {
 	require.InDelta(t, 107.0, rows[0].ValueNumber, 0.01)
 }
 
-func TestEmptySignalsArray(t *testing.T) {
+func TestEmptySignalsArrayRejected(t *testing.T) {
 	subject := "did:erc721:137:0xbA5738a18d83D41847dfFbDC6101d37C69c9B0cF:8003"
 
 	payload := map[string]any{
@@ -136,11 +133,10 @@ func TestEmptySignalsArray(t *testing.T) {
 
 	resp := postMTLS(t, payloadBytes)
 	drainAndClose(t, resp)
-	require.Equal(t, 200, resp.StatusCode)
+	require.NotEqual(t, 200, resp.StatusCode, "empty signals array should be rejected")
 
 	time.Sleep(750 * time.Millisecond)
 
-	// No signal CE should be produced for an empty signals array
 	msgs := consumeKafka(t, "topic.device.signals", startOffset, 10*time.Second)
 	require.Empty(t, msgs, "no signal CE should be produced for empty signals array")
 }
