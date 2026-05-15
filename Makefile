@@ -22,9 +22,7 @@ GOOS_LIST := linux darwin
 GOARCH_LIST := amd64 arm64
 
 # Dependency versions
-# Pinned: 'latest' resolved to v2.12.2, whose tarball SHA256 doesn't match
-# the checksum baked into the upstream install script.
-GOLANGCI_VERSION   = v2.11.4
+GOLANGCI_VERSION   = latest
 MOCKGEN_VERSION    = $(shell go list -m -f '{{.Version}}' go.uber.org/mock)
 PROMETHEUS_VERSION = 2.47.0
 
@@ -108,7 +106,7 @@ tools-prometheus: ## Install Prometheus and promtool
 
 tools-golangci-lint:
 	@mkdir -p $(PATHINSTBIN)
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
+	curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b $(PATHINSTBIN) $(GOLANGCI_VERSION)
 
 tools-mockgen: ## install mockgen tool
 	@mkdir -p $(PATHINSTBIN)
