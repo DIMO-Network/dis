@@ -22,7 +22,9 @@ GOOS_LIST := linux darwin
 GOARCH_LIST := amd64 arm64
 
 # Dependency versions
-GOLANGCI_VERSION   = latest
+# Pinned: 'latest' resolved to v2.12.2, whose tarball SHA256 doesn't match
+# the checksum baked into the upstream install script.
+GOLANGCI_VERSION   = v2.11.4
 MOCKGEN_VERSION    = $(shell go list -m -f '{{.Version}}' go.uber.org/mock)
 PROMETHEUS_VERSION = 2.47.0
 
