@@ -14,6 +14,7 @@ import (
 	"github.com/DIMO-Network/dis/internal/ratedlogger"
 	"github.com/DIMO-Network/model-garage/pkg/autopi"
 	"github.com/DIMO-Network/model-garage/pkg/hashdog"
+	"github.com/DIMO-Network/model-garage/pkg/kaufmann"
 	"github.com/DIMO-Network/model-garage/pkg/modules"
 	"github.com/DIMO-Network/model-garage/pkg/ruptela"
 	"github.com/ethereum/go-ethereum/common"
@@ -75,13 +76,16 @@ func newCloudConvertProcessor(client *ethclient.Client, lgr *service.Logger, cha
 		ChainID:                 chainID}
 	modules.CloudEventRegistry.Override(modules.RuptelaSource.String(), ruptelaModule)
 
-	// Ruptela Protocol - currently handled by Kaufmann Oracle only
-	ruptelaSyntheticModule := &ruptela.Module{
+	// Kaufmann — carries both Ruptela ("r/") and Queclink/Kamaleon ("kam/")
+	// telemetry on one connection, routed by the event ds. AftermarketContractAddr
+	// is the synthetic device contract (Kaufmann devices are synthetic devices), so
+	// the producer DID resolves to the synthetic NFT as before.
+	kaufmannModule := &kaufmann.Module{
 		AftermarketContractAddr: syntheticAddr,
 		VehicleContractAddr:     vehicleAddr,
 		ChainID:                 chainID,
 	}
-	modules.CloudEventRegistry.Override(modules.KaufmannSource.String(), ruptelaSyntheticModule)
+	modules.CloudEventRegistry.Override(modules.KaufmannSource.String(), kaufmannModule)
 
 	// HashDog
 	hashDogModule := &hashdog.Module{
