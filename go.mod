@@ -1,6 +1,6 @@
 module github.com/DIMO-Network/dis
 
-go 1.25.0
+go 1.27.0
 
 replace github.com/redpanda-data/benthos/v4 => github.com/DIMO-Network/benthos/v4 v4.0.0-20250911163055-af824a0c7e26
 
